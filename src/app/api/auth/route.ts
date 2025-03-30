@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signupController, loginController } from "@/controllers/authController";
+import { signupController, loginController, guestLoginController } from "@/controllers/authController";
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +12,11 @@ export async function POST(req: Request) {
 
     if (type === "login") {
       const response = await loginController(email, password);
+      return NextResponse.json(response, { status: response.success ? 200 : 401 });
+    }
+
+    if (type === "guest") {
+      const response = await guestLoginController();
       return NextResponse.json(response, { status: response.success ? 200 : 401 });
     }
 

@@ -16,7 +16,6 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import Badge from '@mui/material/Badge';
-import AdbIcon from "@mui/icons-material/Adb";
 import Image from "next/image";
 import { jwtDecode } from "jwt-decode";
 
@@ -47,8 +46,6 @@ export default function Navbar() {
         if (typeof window !== "undefined") {
           const token = localStorage.getItem("token");
 
-          console.log("token:", token);
-
           if (token) {
             const decoded: { userName?: string } = jwtDecode(token);
             setUserName(decoded.userName || null);
@@ -75,10 +72,6 @@ export default function Navbar() {
       window.removeEventListener("authChange", checkAuth);
     };
   }, []);
-
-  console.log("decoded token:", userName);
-
-
 
   const handleLogin = () => {
     router.push("/login"); // ✅ Redirect
@@ -121,7 +114,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
             <IconButton
-              size="large"
+              size="medium"
               aria-label="menu"
               aria-controls="menu-appbar"
               aria-haspopup="true"
@@ -149,26 +142,32 @@ export default function Navbar() {
               ))}
             </Menu>
           </Box>
-
           {/* Logo (Mobile) */}
-          <AdbIcon sx={{ display: { xs: "flex", md: "none" }, mr: 1 }} />
           <Typography
-            variant="h5"
-            noWrap
+            variant="h6"
             component={Link}
             href="/"
             sx={{
-              mr: 2,
               display: { xs: "flex", md: "none" },
               flexGrow: 1,
               fontFamily: "monospace",
               fontWeight: 700,
-              letterSpacing: ".3rem",
               color: "inherit",
               textDecoration: "none",
+              lineHeight: 1,
+              flexDirection: "column",
+              textAlign: "center",
+              fontSize: '1.1rem', // Explicit font size
+              '& br': {
+                display: 'block',
+                content: '""',
+                marginBottom: '0.2em' // Space between lines
+              }
             }}
           >
-            Dukandar Shandar
+            Dukandar
+            <br />
+            Shandar
           </Typography>
 
           {/* Desktop Menu */}

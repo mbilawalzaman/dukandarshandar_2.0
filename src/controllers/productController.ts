@@ -4,7 +4,7 @@ import { verifyToken } from "@/lib/auth";
 import { ObjectId } from "mongodb";
 
 // 🛍️ Create Product
-export async function createProduct(req: Request) {
+export const createProduct = async (req: Request) =>  {
   try {
     // Authenticate user
     const token = req.headers.get("authorization")?.split(" ")[1];
@@ -61,78 +61,66 @@ export async function createProduct(req: Request) {
 
 // ✏️ Update Product
 
-  export async function updateProduct(req: Request) {
-    interface UpdateQuery {
-      $set?: Record<string, unknown>;
+export const updateProduct = async (req: Request) => {
+  try {
+    const { _id, rating, ...updateFields } = await req.json();
+
+    if (!_id) {
+      return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
     }
 
-    try {
-      const { _id, rating, ...updateFields } = await req.json(); // Extract `_id`, rating, and other fields
-
-      if (!_id) {
-        return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
-      }
-
-      if (!ObjectId.isValid(_id)) {
-        return NextResponse.json({ success: false, message: "Invalid Product ID format" }, { status: 400 });
-      }
-
-      const client = await clientPromise;
-      const db = client.db("dukandarshandar");
-
-      // Fetch the existing product
-      const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
-
-      if (!product) {
-        return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
-      }
-
-      // Prepare update object
-      const updateQuery: UpdateQuery = { $set: {} };
-
-      // If `rating` is provided, update rating logic
-      if (rating !== undefined) {
-        const ratings = product.ratings || [];
-        ratings.push(rating);
-
-        const newAverageRating = Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
-
-        updateQuery.$set = { ...updateFields, rating: newAverageRating, ratings };
-      } else {
-        updateQuery.$set = { ...updateFields };
-      }
-
-      // Remove undefined fields from update
-      if (updateQuery.$set) {
-        const setObject = updateQuery.$set as Record<string, unknown>;
-        Object.keys(setObject).forEach((key) => {
-          if (setObject[key] === undefined) {
-            delete setObject[key];
-          }
-        });
-      }
-
-      // Perform update
-      const updateResult = await db.collection("products").updateOne(
-        { _id: new ObjectId(_id) },
-        updateQuery
-      );
-
-      if (updateResult.modifiedCount === 0) {
-        return NextResponse.json({ success: false, message: "No changes were made" }, { status: 400 });
-      }
-
-      // Fetch and return the updated product
-      const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
-
-      return NextResponse.json({ success: true, message: "Product updated successfully", product: updatedProduct });
-    } catch (error) {
-      console.error("Error updating product:", error);
-      return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+    if (!ObjectId.isValid(_id)) {
+      return NextResponse.json({ success: false, message: "Invalid Product ID format" }, { status: 400 });
     }
+
+    const client = await clientPromise;
+    const db = client.db("dukandarshandar");
+
+    // Fetch existing product
+    const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+
+    if (!product) {
+      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    }
+
+    // Prepare update query
+    const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields } };
+
+    // Update rating logic
+    if (rating !== undefined) {
+      const ratings = product.ratings || []; // Ensure ratings array exists
+      ratings.push(rating); // Add new rating
+
+      // Calculate the new average rating, rounded to the nearest 0.5
+      const newAverageRating = Math.round(
+        (ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2
+      ) / 2;
+
+      updateQuery.$set.rating = newAverageRating;
+      updateQuery.$set.ratings = ratings;
+    }
+
+    // Perform update
+    const updateResult = await db.collection("products").updateOne(
+      { _id: new ObjectId(_id) },
+      updateQuery
+    );
+
+    if (updateResult.modifiedCount === 0) {
+      return NextResponse.json({ success: false, message: "No changes were made" }, { status: 400 });
+    }
+
+    // Fetch and return updated product
+    const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+
+    return NextResponse.json({ success: true, message: "Product updated successfully", product: updatedProduct });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
   }
+}
 
-export async function getProductByID(id: string) {
+export const getProductByID = async  (id: string) => {
   try {
     if (!id) {
       return {
@@ -178,7 +166,7 @@ export async function getProductByID(id: string) {
   }
 }
 
-export async function fetchProducts() {
+export const fetchProducts = async () => {
   try {
     const client = await clientPromise;
     const db = client.db("dukandarshandar");
@@ -192,3 +180,21 @@ export async function fetchProducts() {
     return { success: false, message: "Failed to fetch products" };
   }
 }
+
+export const getTopRatedProducts = async () => {
+  try {
+    const client = await clientPromise;
+    const db = client.db("dukandarshandar");
+
+    const products = await db.collection("products")
+    .find({ status: "active" })
+    .sort({ rating: -1 }) 
+    .limit(8)
+    .toArray(); 
+
+return products;
+  } catch (error) {
+    console.error("Error fetching top-rated products:", error);
+    return [];
+  }
+};

@@ -1,11 +1,17 @@
-import React from 'react'
+"use client";
 
-const Page = () => {
+import { useState } from "react";
+import React from "react";
+import ProductList from "../components/ProductList";
+
+const ShopPage = () => {
+  const [refreshTrigger] = useState(false);
+
   return (
-    <div>
-      <h1>Comming Soon</h1>
+    <div className="container mx-auto p-4">
+      <ProductList refreshTrigger={refreshTrigger} />
     </div>
-  )
-}
+  );
+};
 
-export default Page
+export default ShopPage;
