@@ -24,8 +24,6 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    console.log("Submitting Form Data:", formData); // ✅ Debugging: Ensure role is included
-
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

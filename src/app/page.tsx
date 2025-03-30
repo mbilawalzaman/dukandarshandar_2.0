@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Banner from "./components/Banner";
-import ProductList from "./components/ProductList";
 import UploadProduct from "./components/UploadProduct";
 import { jwtDecode } from "jwt-decode";
+import TopRatedProducts from "./components/TopRatedProducts";
 
 export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(false);
@@ -26,8 +26,6 @@ export default function Home() {
           try {
             const decodedToken: DecodedToken = jwtDecode<DecodedToken>(token);
             const role = decodedToken.role; // ✅ Extract role from token
-
-            console.log("Decoded Role:", role); // Debugging
             setUserRole(role); // ✅ Set user role in state
 
           } catch (error) {
@@ -50,8 +48,8 @@ export default function Home() {
         {userRole === "admin" && (
           <UploadProduct onProductUpload={() => setRefreshTrigger((prev) => !prev)} />
         )}
-
-        <ProductList refreshTrigger={refreshTrigger} />
+        <TopRatedProducts refreshTrigger={refreshTrigger} />
+        {/* <ProductList refreshTrigger={refreshTrigger} /> */}
       </main>
     </>
   );

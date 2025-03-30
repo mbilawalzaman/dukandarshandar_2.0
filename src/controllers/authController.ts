@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import clientPromise from "@/lib/mongodb";
+import { UserRole } from "@/models/User";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey"; // Change this in production
 
@@ -53,4 +54,15 @@ export async function loginController(email: string, password: string) {
   const token = jwt.sign({ userId: user._id, email: user.email, userName: user.name, role:user.role }, JWT_SECRET, { expiresIn: "7d" });
 
   return { success: true, token, user: { name: user.name, email: user.email, role:user.role} };
+}
+
+// Guest Login Controller
+export async function guestLoginController() {
+  const token = jwt.sign(
+    { userId: "guest", email: "guest@guest.com", userName: "Guest User", role: UserRole.GUEST },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return { success: true, token, user: { name: "Guest User", email: "guest@guest.com", role: UserRole.GUEST } };
 }

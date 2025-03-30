@@ -36,7 +36,25 @@ export default function Login() {
       setError(data.error);
     }
   };
+  const handleGuestLogin = async () => {
+    const res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "guest" }),
+    });
 
+    const data = await res.json();
+    if (data.success) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", data.token);
+        window.dispatchEvent(new Event("authChange"));
+      }
+
+      router.push("/");
+    } else {
+      setError(data.error);
+    }
+  };
 
 
   return (
@@ -74,6 +92,9 @@ export default function Login() {
                 )}
                 <Button type="submit" variant="contained" color="primary" fullWidth>
                   Login
+                </Button>
+                <Button variant="outlined" color="secondary" fullWidth onClick={handleGuestLogin}>
+                  Continue as Guest
                 </Button>
                 <Typography align="center">
                   Don not have an account?{' '}

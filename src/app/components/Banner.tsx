@@ -53,7 +53,13 @@ const Banner = () => {
             <Slider {...settings}>
                 {images.map((src, index) => (
                     <Box key={index} sx={{ position: "relative", width: "100vw", height: 500 }}>
-                        <Image src={src} alt={`Banner ${index + 1}`} layout="fill" objectFit="cover" />
+                        <Image
+                            src={src}
+                            alt={`Banner ${index + 1}`}
+                            fill
+                            priority
+                            style={{ objectFit: "cover" }} // Use style instead of objectFit
+                        />
                     </Box>
                 ))}
             </Slider>
