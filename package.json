@@ -18,7 +18,7 @@
     "jwt-decode": "^4.0.0",
     "mongodb": "^6.15.0",
     "mongoose": "^8.12.2",
-    "next": "15.2.3",
+    "next": "^15.5.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-slick": "^0.30.3",
@@ -33,7 +33,7 @@
     "@types/react-dom": "^19",
     "@types/react-slick": "^0.23.13",
     "eslint": "^9",
-    "eslint-config-next": "15.2.3",
+    "eslint-config-next": "^15.5.24",
     "prisma": "^6.5.0",
     "tailwindcss": "^4",
     "typescript": "^5"
