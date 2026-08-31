@@ -64,9 +64,9 @@ export default function Footer() {
               <MuiLink component={Link} href="/contact" color="inherit" underline="hover">
                 Contact
               </MuiLink>
-              <MuiLink component={Link} href="/blog" color="inherit" underline="hover">
+              {/* <MuiLink component={Link} href="/blog" color="inherit" underline="hover">
                 Blog
-              </MuiLink>
+              </MuiLink> */}
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>

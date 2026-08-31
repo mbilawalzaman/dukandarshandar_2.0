@@ -9,8 +9,8 @@ export default function ShopPage() {
 
   return (
     <div>
-      <PageBanner title="Shop" subtitle="Stationery and craft supplies for every project" />
-      <ProductList refreshTrigger={refreshTrigger} />
+      <PageBanner title="Shop Catalog" subtitle="Explore all stationery, crafts, and creative essentials" />
+      <ProductList refreshTrigger={refreshTrigger} hideHeader={true} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,16 +17,19 @@ import {
   MenuItem,
   FormControlLabel,
   Checkbox,
+  IconButton,
 } from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export interface ProductFormData {
   _id?: string;
   name: string;
   category: string;
-  price: number;
-  quantity: number;
-  rating: number;
+  price: number | string;
+  quantity: number | string;
+  rating: number | string;
   description: string;
   image: string;
   featured?: boolean;
@@ -42,8 +45,8 @@ interface ProductFormModalProps {
 const initialFormState: ProductFormData = {
   name: "",
   category: "",
-  price: 0,
-  quantity: 0,
+  price: "",
+  quantity: "",
   rating: 5,
   description: "",
   image: "",
@@ -60,6 +63,8 @@ export default function ProductFormModal({
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (productToEdit) {
@@ -67,9 +72,9 @@ export default function ProductFormModal({
         _id: productToEdit._id,
         name: productToEdit.name || "",
         category: productToEdit.category || "",
-        price: productToEdit.price || 0,
-        quantity: productToEdit.quantity || 0,
-        rating: productToEdit.rating || 5,
+        price: productToEdit.price !== undefined && productToEdit.price !== null ? productToEdit.price : "",
+        quantity: productToEdit.quantity !== undefined && productToEdit.quantity !== null ? productToEdit.quantity : "",
+        rating: productToEdit.rating !== undefined && productToEdit.rating !== null ? productToEdit.rating : 5,
         description: productToEdit.description || "",
         image: productToEdit.image || "",
         featured: Boolean(productToEdit.featured),
@@ -80,25 +85,29 @@ export default function ProductFormModal({
       setSelectedImage("");
     }
     setErrorMsg("");
+    setIsDragging(false);
   }, [productToEdit, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "quantity" || name === "rating" ? Number(value) : value,
+      [name]: value,
     }));
   };
 
-  const handleBase64 = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please upload a valid image file (JPEG, PNG, WebP).");
+      return;
+    }
 
     if (file.size > 5 * 1024 * 1024) {
       setErrorMsg("Image must be under 5MB.");
       return;
     }
 
+    setErrorMsg("");
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
@@ -106,15 +115,61 @@ export default function ProductFormModal({
       setSelectedImage(result);
       setFormData((prev) => ({ ...prev, image: result }));
     };
-    reader.onerror = (error) => console.error("Error reading image:", error);
+    reader.onerror = (error) => {
+      console.error("Error reading image:", error);
+      setErrorMsg("Failed to read image file.");
+    };
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      processFile(file);
+    }
+  };
+
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedImage("");
+    setFormData((prev) => ({ ...prev, image: "" }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!formData.name || !formData.category || !formData.price || !formData.description) {
-      setErrorMsg("Please fill in all required fields.");
+    const priceNum = Number(formData.price);
+    const qtyNum = Number(formData.quantity);
+    const ratingNum = formData.rating !== "" ? Number(formData.rating) : 5;
+
+    if (!formData.name.trim() || !formData.category || isNaN(priceNum) || priceNum <= 0 || !formData.description.trim()) {
+      setErrorMsg("Please fill in all required fields with valid values.");
       return;
     }
 
@@ -139,6 +194,11 @@ export default function ProductFormModal({
         },
         body: JSON.stringify({
           ...formData,
+          name: formData.name.trim(),
+          price: priceNum,
+          quantity: isNaN(qtyNum) || qtyNum < 0 ? 0 : qtyNum,
+          rating: isNaN(ratingNum) ? 5 : ratingNum,
+          description: formData.description.trim(),
           image: selectedImage || formData.image,
           created_by: "admin",
         }),
@@ -175,7 +235,7 @@ export default function ProductFormModal({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Product Name *"
+                label="Product Name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -184,10 +244,10 @@ export default function ProductFormModal({
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
-                <InputLabel>Category *</InputLabel>
+                <InputLabel>Category</InputLabel>
                 <Select
                   name="category"
-                  label="Category *"
+                  label="Category"
                   value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: String(e.target.value) }))}
                 >
@@ -203,8 +263,9 @@ export default function ProductFormModal({
               <TextField
                 fullWidth
                 type="number"
-                label="Price (PKR) *"
+                label="Price (PKR)"
                 name="price"
+                inputProps={{ min: 0, step: "any" }}
                 value={formData.price}
                 onChange={handleChange}
                 required
@@ -214,8 +275,9 @@ export default function ProductFormModal({
               <TextField
                 fullWidth
                 type="number"
-                label="Quantity *"
+                label="Quantity"
                 name="quantity"
+                inputProps={{ min: 0, step: 1 }}
                 value={formData.quantity}
                 onChange={handleChange}
                 required
@@ -237,7 +299,7 @@ export default function ProductFormModal({
                 fullWidth
                 multiline
                 rows={3}
-                label="Description *"
+                label="Description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -252,28 +314,93 @@ export default function ProductFormModal({
                     onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
                   />
                 }
-                label="Feature this product on the Blog page"
+                label="Feature this product (Featured / Top Product)"
               />
             </Grid>
+
+            {/* Enhanced Drag & Drop Area */}
             <Grid item xs={12}>
-              <Box sx={{ border: "2px dashed #cbd5e1", borderRadius: 2, p: 3, textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Drag & drop an image, or click to choose file
-                </Typography>
+              <Box
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                sx={{
+                  border: isDragging ? "2px dashed #febe4c" : "2px dashed #cbd5e1",
+                  backgroundColor: isDragging ? "rgba(254, 190, 76, 0.08)" : "#fafafa",
+                  borderRadius: 2.5,
+                  p: 3,
+                  textAlign: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    borderColor: "#febe4c",
+                    backgroundColor: "rgba(254, 190, 76, 0.04)",
+                  },
+                }}
+              >
                 <input
+                  ref={fileInputRef}
                   accept="image/*"
                   type="file"
-                  onChange={handleBase64}
-                  style={{ display: "block", margin: "0 auto" }}
+                  onChange={handleFileInputChange}
+                  style={{ display: "none" }}
                 />
-                {selectedImage && (
-                  <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+
+                {selectedImage ? (
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
                     <Box
-                      component="img"
-                      src={selectedImage}
-                      alt="Preview"
-                      sx={{ width: 120, height: 120, objectFit: "cover", borderRadius: 1 }}
-                    />
+                      sx={{
+                        position: "relative",
+                        display: "inline-block",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={selectedImage}
+                        alt="Preview"
+                        sx={{
+                          width: 140,
+                          height: 140,
+                          objectFit: "contain",
+                          backgroundColor: "#ffffff",
+                          display: "block",
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleRemoveImage}
+                        sx={{
+                          position: "absolute",
+                          top: 4,
+                          right: 4,
+                          backgroundColor: "rgba(0,0,0,0.6)",
+                          color: "#fff",
+                          "&:hover": { backgroundColor: "rgba(239, 68, 68, 0.9)" },
+                        }}
+                        title="Remove image"
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Click or drop another image to replace
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ py: 1 }}>
+                    <CloudUploadIcon sx={{ fontSize: 44, color: isDragging ? "primary.main" : "#94a3b8", mb: 1 }} />
+                    <Typography variant="body1" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                      {isDragging ? "Drop image here" : "Drag & drop an image here"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      or <Box component="span" sx={{ color: "primary.main", fontWeight: 600, textDecoration: "underline" }}>browse</Box> from your computer (max 5MB)
+                    </Typography>
                   </Box>
                 )}
               </Box>
