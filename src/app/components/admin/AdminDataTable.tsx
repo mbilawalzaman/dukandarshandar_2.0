@@ -75,10 +75,31 @@ export default function AdminDataTable<T extends { _id?: string }>({
   };
 
   return (
-    <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-      <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+    <Paper
+      elevation={0}
+      sx={{
+        width: "100%",
+        overflow: "hidden",
+        borderRadius: 3,
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+      }}
+    >
+      <Box
+        sx={{
+          p: { xs: 2, sm: 3 },
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+          >
             {title}
           </Typography>
           <Chip label={`${filteredData.length} entries`} size="small" color="primary" variant="outlined" />
@@ -91,19 +112,28 @@ export default function AdminDataTable<T extends { _id?: string }>({
             setSearchTerm(e.target.value);
             setPage(0);
           }}
-          sx={{ width: 260 }}
+          sx={{ width: { xs: "100%", sm: 260 } }}
         />
       </Box>
 
-      <TableContainer sx={{ maxHeight: 600 }}>
-        <Table stickyHeader aria-label="admin data table">
-          <TableHead>
-            <TableRow>
+      <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
+        <Table aria-label="admin data table" sx={{ minWidth: 600 }}>
+          <TableHead sx={{ backgroundColor: "#f8fafc", display: "table-header-group" }}>
+            <TableRow sx={{ backgroundColor: "#f8fafc" }}>
               {columns.map((column) => (
                 <TableCell
                   key={String(column.id)}
                   align={column.align || "left"}
-                  style={{ minWidth: column.minWidth, fontWeight: 700, backgroundColor: "#f8fafc", color: "#475569" }}
+                  sx={{
+                    minWidth: column.minWidth || 120,
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    backgroundColor: "#f8fafc",
+                    color: "#334155",
+                    borderBottom: "2px solid #e2e8f0",
+                    whiteSpace: "nowrap",
+                    py: 1.75,
+                  }}
                 >
                   {column.label}
                 </TableCell>
@@ -131,8 +161,14 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     {columns.map((column) => {
                       if (column.id === "actions") {
                         return (
-                          <TableCell key="actions" align={column.align || "center"}>
-                            <Box sx={{ display: "flex", justifyContent: column.align === "right" ? "flex-end" : "center", gap: 0.5 }}>
+                          <TableCell key="actions" align={column.align || "center"} sx={{ py: 1.5 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: column.align === "right" ? "flex-end" : "center",
+                                gap: 0.5,
+                              }}
+                            >
                               {onView && (
                                 <Tooltip title="View">
                                   <IconButton size="small" color="info" onClick={() => onView(row)}>
@@ -161,7 +197,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
                       const value = row[column.id as keyof T];
                       return (
-                        <TableCell key={String(column.id)} align={column.align || "left"}>
+                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
                           {column.format ? column.format(value, row) : String(value ?? "")}
                         </TableCell>
                       );

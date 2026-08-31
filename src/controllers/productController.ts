@@ -178,7 +178,20 @@ export const deleteProduct = async (id: string) => {
 export const getAdminDashboardStats = async () => {
   try {
     const db = await getDb();
-    const [totalProducts, totalUsers, totalOrders, earningsAgg] = await Promise.all([
+    const [
+      totalProducts,
+      totalUsers,
+      totalOrders,
+      earningsAgg,
+      lowStockCount,
+      outOfStockCount,
+      lowStockProducts,
+      categoryDistributionAgg,
+      orderStatusAgg,
+      recentOrders,
+      recentUsers,
+      allOrders,
+    ] = await Promise.all([
       db.collection("products").countDocuments({}),
       db.collection("users").countDocuments({}),
       db.collection("orders").countDocuments({}),
@@ -186,7 +199,82 @@ export const getAdminDashboardStats = async () => {
         .collection("orders")
         .aggregate([{ $match: { status: "delivered" } }, { $group: { _id: null, total: { $sum: "$total_amount" } } }])
         .toArray(),
+      db.collection("products").countDocuments({ quantity: { $gt: 0, $lte: 5 } }),
+      db.collection("products").countDocuments({ quantity: { $lte: 0 } }),
+      db
+        .collection("products")
+        .find({ quantity: { $lte: 5 } })
+        .sort({ quantity: 1 })
+        .limit(6)
+        .toArray(),
+      db
+        .collection("products")
+        .aggregate([
+          { $group: { _id: "$category", count: { $sum: 1 }, totalStock: { $sum: "$quantity" } } },
+          { $sort: { count: -1 } },
+        ])
+        .toArray(),
+      db
+        .collection("orders")
+        .aggregate([
+          { $group: { _id: "$status", count: { $sum: 1 }, totalValue: { $sum: "$total_amount" } } },
+          { $sort: { count: -1 } },
+        ])
+        .toArray(),
+      db
+        .collection("orders")
+        .find({})
+        .sort({ created_at: -1 })
+        .limit(5)
+        .toArray(),
+      db
+        .collection("users")
+        .find({}, { projection: { password: 0 } })
+        .sort({ created_at: -1 })
+        .limit(5)
+        .toArray(),
+      db
+        .collection("orders")
+        .find({})
+        .sort({ created_at: 1 })
+        .toArray(),
     ]);
+
+    // Build 6-Month Timeline Sales & Orders Trend
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    const salesTrendMap: Record<string, { name: string; revenue: number; orders: number }> = {};
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
+      salesTrendMap[key] = { name: key, revenue: 0, orders: 0 };
+    }
+
+    allOrders.forEach((order) => {
+      const orderDate = order.created_at ? new Date(order.created_at) : new Date();
+      const key = `${monthNames[orderDate.getMonth()]} ${orderDate.getFullYear().toString().slice(-2)}`;
+      if (salesTrendMap[key]) {
+        salesTrendMap[key].orders += 1;
+        if (order.status === "delivered") {
+          salesTrendMap[key].revenue += Number(order.total_amount) || 0;
+        }
+      }
+    });
+
+    const salesTrend = Object.values(salesTrendMap);
+
+    const categoryDistribution = categoryDistributionAgg.map((item) => ({
+      name: item._id || "Uncategorized",
+      count: item.count,
+      stock: item.totalStock || 0,
+    }));
+
+    const orderStatusBreakdown = orderStatusAgg.map((item) => ({
+      status: item._id || "pending",
+      count: item.count,
+      value: item.totalValue || 0,
+    }));
 
     return {
       success: true,
@@ -195,6 +283,14 @@ export const getAdminDashboardStats = async () => {
         totalUsers,
         totalOrders,
         totalEarnings: earningsAgg[0]?.total || 0,
+        lowStockCount,
+        outOfStockCount,
+        lowStockProducts,
+        salesTrend,
+        categoryDistribution,
+        orderStatusBreakdown,
+        recentOrders,
+        recentUsers,
       },
     };
   } catch (error) {

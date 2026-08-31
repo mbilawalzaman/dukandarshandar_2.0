@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Box, Button, Typography, Chip, Rating } from "@mui/material";
+import React, { useEffect, useState, useMemo } from "react";
+import { Box, Button, Typography, Chip, Rating, Tabs, Tab, Paper } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable";
 import ProductFormModal, { ProductFormData } from "../../components/admin/ProductFormModal";
 import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
@@ -17,11 +21,13 @@ interface Product {
   rating: number;
   description: string;
   image: string;
+  featured?: boolean;
 }
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stockFilter, setStockFilter] = useState<"all" | "in-stock" | "low-stock" | "out-of-stock">("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductFormData | null>(null);
 
@@ -47,6 +53,23 @@ export default function AdminProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const inStockCount = useMemo(() => products.filter((p) => p.quantity > 5).length, [products]);
+  const lowStockCount = useMemo(() => products.filter((p) => p.quantity > 0 && p.quantity <= 5).length, [products]);
+  const outOfStockCount = useMemo(() => products.filter((p) => p.quantity <= 0).length, [products]);
+
+  const filteredProducts = useMemo(() => {
+    switch (stockFilter) {
+      case "in-stock":
+        return products.filter((p) => p.quantity > 5);
+      case "low-stock":
+        return products.filter((p) => p.quantity > 0 && p.quantity <= 5);
+      case "out-of-stock":
+        return products.filter((p) => p.quantity <= 0);
+      default:
+        return products;
+    }
+  }, [products, stockFilter]);
 
   const handleOpenAddModal = () => {
     setSelectedProduct(null);
@@ -116,13 +139,17 @@ export default function AdminProductsPage() {
       label: "Stock Qty",
       minWidth: 90,
       align: "center",
-      format: (val) => (
-        <Chip
-          label={Number(val)}
-          size="small"
-          color={Number(val) > 10 ? "success" : Number(val) > 0 ? "warning" : "error"}
-        />
-      ),
+      format: (val) => {
+        const qty = Number(val) || 0;
+        return (
+          <Chip
+            label={qty <= 0 ? "0 (Out of stock)" : qty <= 5 ? `${qty} (Low stock)` : String(qty)}
+            size="small"
+            color={qty > 5 ? "success" : qty > 0 ? "warning" : "error"}
+            sx={{ fontWeight: 600 }}
+          />
+        );
+      },
     },
     {
       id: "rating",
@@ -140,13 +167,13 @@ export default function AdminProductsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
             Products Inventory Management
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            View, add, edit, or remove catalog items.
+            View real-time stock levels, update inventory, add, edit, or remove catalog items.
           </Typography>
         </Box>
         <Button
@@ -159,10 +186,62 @@ export default function AdminProductsPage() {
         </Button>
       </Box>
 
+      {/* Stock Health Tabs */}
+      <Paper sx={{ mb: 3, borderRadius: 2.5, border: "1px solid #e2e8f0" }} elevation={0}>
+        <Tabs
+          value={stockFilter}
+          onChange={(_, val) => setStockFilter(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            px: 1,
+            "& .MuiTab-root": {
+              fontWeight: 600,
+              textTransform: "none",
+              fontSize: "0.9rem",
+              minHeight: 48,
+            },
+          }}
+        >
+          <Tab
+            value="all"
+            icon={<InventoryIcon fontSize="small" />}
+            iconPosition="start"
+            label={`All Items (${products.length})`}
+          />
+          <Tab
+            value="in-stock"
+            icon={<CheckCircleOutlineIcon fontSize="small" color="success" />}
+            iconPosition="start"
+            label={`Healthy Stock (${inStockCount})`}
+          />
+          <Tab
+            value="low-stock"
+            icon={<WarningAmberIcon fontSize="small" color="warning" />}
+            iconPosition="start"
+            label={`Low Stock ≤ 5 (${lowStockCount})`}
+          />
+          <Tab
+            value="out-of-stock"
+            icon={<ErrorOutlineIcon fontSize="small" color="error" />}
+            iconPosition="start"
+            label={`Out of Stock (${outOfStockCount})`}
+          />
+        </Tabs>
+      </Paper>
+
       <AdminDataTable
-        title="Products List"
+        title={
+          stockFilter === "low-stock"
+            ? "Low Stock Inventory Items"
+            : stockFilter === "out-of-stock"
+            ? "Out of Stock Items"
+            : stockFilter === "in-stock"
+            ? "Healthy Stock Items"
+            : "All Products Inventory"
+        }
         columns={columns}
-        data={products}
+        data={filteredProducts}
         searchField="name"
         searchPlaceholder="Search product by name..."
         onEdit={handleOpenEditModal}

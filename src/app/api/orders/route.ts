@@ -130,30 +130,76 @@ export async function PUT(req: NextRequest) {
     }
 
     const db = await getDb();
+    const existingOrder = await db.collection("orders").findOne({ _id: new ObjectId(_id) });
+
+    if (!existingOrder) {
+      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+    }
+
+    const previousStatus = existingOrder.status;
+
+    // Automatic Inventory Restock when order is cancelled
+    if (previousStatus !== "cancelled" && status === "cancelled") {
+      if (Array.isArray(existingOrder.items)) {
+        for (const item of existingOrder.items) {
+          if (item._id && ObjectId.isValid(item._id)) {
+            await db.collection("products").updateOne(
+              { _id: new ObjectId(item._id) },
+              {
+                $inc: { quantity: Number(item.quantity) || 1 },
+                $set: { updated_at: new Date() },
+              }
+            );
+          }
+        }
+      }
+    }
+    // Re-deduct Inventory if order was uncancelled
+    else if (previousStatus === "cancelled" && status !== "cancelled") {
+      if (Array.isArray(existingOrder.items)) {
+        for (const item of existingOrder.items) {
+          if (item._id && ObjectId.isValid(item._id)) {
+            await db.collection("products").updateOne(
+              { _id: new ObjectId(item._id) },
+              {
+                $inc: { quantity: -(Number(item.quantity) || 1) },
+                $set: { updated_at: new Date() },
+              }
+            );
+          }
+        }
+      }
+    }
+
     const result = await db.collection("orders").updateOne(
       { _id: new ObjectId(_id) },
       { $set: { status, updated_at: new Date() } }
     );
 
-    if (result.modifiedCount === 0) {
-      return NextResponse.json({ success: false, message: "Order not found or no changes made" }, { status: 400 });
+    if (result.modifiedCount === 0 && previousStatus === status) {
+      return NextResponse.json({ success: false, message: "Order already has this status" }, { status: 400 });
     }
 
-    const order = await db.collection("orders").findOne({ _id: new ObjectId(_id) });
-    if (order?.customer_email) {
-      const orderId = String(order._id).slice(-8).toUpperCase();
+    if (existingOrder.customer_email) {
+      const orderId = String(existingOrder._id).slice(-8).toUpperCase();
       await sendMail({
-        to: order.customer_email,
+        to: existingOrder.customer_email,
         subject: `Order #${orderId} is ${status} — Dukandar Shandar`,
         html: orderStatusEmail({
-          name: order.customer_name || "Customer",
+          name: existingOrder.customer_name || "Customer",
           orderId,
           status,
         }),
       });
     }
 
-    return NextResponse.json({ success: true, message: "Order status updated successfully" });
+    return NextResponse.json({
+      success: true,
+      message:
+        status === "cancelled"
+          ? "Order cancelled and items restocked to inventory successfully"
+          : "Order status updated successfully",
+    });
   } catch (error) {
     console.error("Error updating order:", error);
     return NextResponse.json({ success: false, message: "Failed to update order" }, { status: 500 });

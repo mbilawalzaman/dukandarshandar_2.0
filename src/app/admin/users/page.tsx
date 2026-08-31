@@ -63,11 +63,14 @@ export default function AdminUsersPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
+      <Box sx={{ mb: { xs: 2.5, sm: 4 } }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 800, color: "#0f172a", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+        >
           Registered Accounts Directory
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
           Monitor user registrations, account emails, and assigned permissions.
         </Typography>
       </Box>
