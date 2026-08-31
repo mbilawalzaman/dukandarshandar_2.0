@@ -1,28 +1,12 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import ProductList from "../components/ProductList";
 import PageBanner from "../components/PageBanner";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
-export default function ShopPage() {
-  const [refreshTrigger] = useState(false);
-  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await fetch("/api/page-settings");
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Error loading shop page settings:", err);
-      }
-    };
-    loadSettings();
-  }, []);
+export default async function ShopPage() {
+  const settings = await getGlobalPageSettings();
 
   return (
     <div>
@@ -30,9 +14,9 @@ export default function ShopPage() {
         title={settings.shop.bannerTitle || "Shop Catalog"}
         subtitle={settings.shop.bannerSubtitle}
         bgImage={settings.shop.bannerImage}
+        bgMedia={settings.shop.bannerMedia}
       />
       <ProductList
-        refreshTrigger={refreshTrigger}
         hideHeader={true}
         productsPerPage={settings.shop.productsPerPage}
       />

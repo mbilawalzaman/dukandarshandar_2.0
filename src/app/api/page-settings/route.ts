@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import { normalizePageSettings, DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -14,16 +17,11 @@ export async function GET() {
       });
     }
 
-    const mergedSettings: PageSettings = {
-      home: { ...DEFAULT_PAGE_SETTINGS.home, ...(doc.home || {}) },
-      shop: { ...DEFAULT_PAGE_SETTINGS.shop, ...(doc.shop || {}) },
-      about: { ...DEFAULT_PAGE_SETTINGS.about, ...(doc.about || {}) },
-      contact: { ...DEFAULT_PAGE_SETTINGS.contact, ...(doc.contact || {}) },
-    };
+    const normalized = normalizePageSettings(doc);
 
     return NextResponse.json({
       success: true,
-      settings: mergedSettings,
+      settings: normalized,
     });
   } catch (error) {
     console.error("Error fetching page settings:", error);

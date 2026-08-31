@@ -1,37 +1,26 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Banner from "./components/Banner";
 import HeroSection from "./components/HeroSection";
 import TopRatedProducts from "./components/TopRatedProducts";
 import ProductList from "./components/ProductList";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
-export default function Home() {
-  const [refreshTrigger] = useState(false);
-  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await fetch("/api/page-settings");
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Error loading home page settings:", err);
-      }
-    };
-    loadSettings();
-  }, []);
+export default async function Home() {
+  const settings = await getGlobalPageSettings();
 
   return (
     <main>
-      <Banner images={settings.home.bannerImages} />
+      <Banner
+        banners={settings.home.banners}
+        singleBanner={settings.home.singleBanner}
+        bannerMode={settings.home.bannerMode}
+        images={settings.home.bannerImages}
+      />
       <HeroSection />
-      <TopRatedProducts refreshTrigger={refreshTrigger} count={settings.home.topRatedCount} />
-      <ProductList refreshTrigger={refreshTrigger} productsPerPage={settings.home.productsPerPage} />
+      <TopRatedProducts count={settings.home.topRatedCount} />
+      <ProductList productsPerPage={settings.home.productsPerPage} />
     </main>
   );
 }

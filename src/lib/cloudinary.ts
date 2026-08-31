@@ -3,9 +3,15 @@ import { v2 as cloudinary } from "cloudinary";
 export type CloudinaryUpload = {
   url: string;
   publicId: string;
+  format?: string;
+  resourceType?: "image" | "video" | "raw";
+  width?: number;
+  height?: number;
+  duration?: number;
+  bytes?: number;
 };
 
-function isConfigured() {
+export function isConfigured(): boolean {
   return Boolean(
     process.env.CLOUDINARY_CLOUD_NAME &&
       process.env.CLOUDINARY_API_KEY &&
@@ -13,7 +19,7 @@ function isConfigured() {
   );
 }
 
-function configure() {
+export function configure() {
   if (!isConfigured()) {
     throw new Error("Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
   }
@@ -26,10 +32,13 @@ function configure() {
   });
 }
 
-export function isCloudinaryUrl(value: string) {
-  return value.includes("res.cloudinary.com");
+export function isCloudinaryUrl(value: string): boolean {
+  return typeof value === "string" && value.includes("res.cloudinary.com");
 }
 
+/**
+ * Standard image upload helper for products, icons, and storefront static assets
+ */
 export async function uploadImage(
   image: string,
   folder = "dukandarshandar/products"
@@ -53,18 +62,29 @@ export async function uploadImage(
   return {
     url: result.secure_url,
     publicId: result.public_id,
+    format: result.format,
+    resourceType: "image",
+    width: result.width,
+    height: result.height,
+    bytes: result.bytes,
   };
 }
 
-export async function deleteImage(publicId?: string | null) {
+/**
+ * Deletes an asset from Cloudinary storage
+ */
+export async function deleteAsset(publicId?: string | null, resourceType: "image" | "video" | "raw" = "image") {
   if (!publicId) return;
   try {
     configure();
-    await cloudinary.uploader.destroy(publicId);
+    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
   } catch (error) {
     console.error("Cloudinary delete failed:", error);
   }
 }
+
+/** @deprecated use deleteAsset */
+export const deleteImage = deleteAsset;
 
 /** @deprecated use uploadImage */
 export async function persistImage(image: string | undefined | null): Promise<string> {

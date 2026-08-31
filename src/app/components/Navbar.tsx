@@ -145,12 +145,14 @@ export default function Navbar() {
               <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
                 {/* Mobile: Compact DS icon */}
                 <Box
+                  style={{ position: "relative", width: 38, height: 38 }}
                   sx={{
                     display: { xs: "block", md: "none" },
                     width: 38,
                     height: 38,
                     position: "relative",
                     cursor: "pointer",
+                    flexShrink: 0,
                   }}
                 >
                   <Image
@@ -164,12 +166,14 @@ export default function Navbar() {
 
                 {/* Desktop: Full Banner Logo */}
                 <Box
+                  style={{ position: "relative", width: 140, height: 46 }}
                   sx={{
                     display: { xs: "none", md: "block" },
                     width: 140,
                     height: 46,
                     position: "relative",
                     cursor: "pointer",
+                    flexShrink: 0,
                   }}
                 >
                   <Image
@@ -250,6 +254,7 @@ export default function Navbar() {
                       aria-label="user profile"
                     >
                       <Avatar
+                        style={{ width: 36, height: 36 }}
                         sx={{
                           bgcolor: BRAND.gold,
                           color: BRAND.navy,
@@ -387,7 +392,7 @@ export default function Navbar() {
       >
         {/* Drawer Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexShrink: 0 }}>
-          <Box sx={{ width: 120, height: 40, position: "relative" }}>
+          <Box style={{ position: "relative", width: 120, height: 40 }} sx={{ width: 120, height: 40, position: "relative", flexShrink: 0 }}>
             <Image src="/images/logo.jpg" alt="Dukandar Shandar" fill style={{ objectFit: "contain" }} />
           </Box>
           <IconButton onClick={() => setMobileDrawerOpen(false)} size="small" aria-label="close navigation drawer">
@@ -445,7 +450,7 @@ export default function Navbar() {
                 border: "1px solid #e2e8f0",
               }}
             >
-              <Avatar sx={{ bgcolor: BRAND.gold, color: BRAND.navy, width: 38, height: 38, fontWeight: 700 }}>
+              <Avatar style={{ width: 38, height: 38 }} sx={{ bgcolor: BRAND.gold, color: BRAND.navy, width: 38, height: 38, fontWeight: 700 }}>
                 {(userName || "U").charAt(0).toUpperCase()}
               </Avatar>
               <Box sx={{ minWidth: 0, flexGrow: 1 }}>

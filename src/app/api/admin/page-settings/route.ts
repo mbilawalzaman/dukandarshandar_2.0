@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import { MediaQueueService } from "@/services/mediaQueueService";
+import { DEFAULT_PAGE_SETTINGS, PageSettings, BannerItem, normalizePageSettings } from "@/lib/pageSettings";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);
@@ -19,16 +23,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const mergedSettings: PageSettings = {
-      home: { ...DEFAULT_PAGE_SETTINGS.home, ...(doc.home || {}) },
-      shop: { ...DEFAULT_PAGE_SETTINGS.shop, ...(doc.shop || {}) },
-      about: { ...DEFAULT_PAGE_SETTINGS.about, ...(doc.about || {}) },
-      contact: { ...DEFAULT_PAGE_SETTINGS.contact, ...(doc.contact || {}) },
-    };
+    const normalized = normalizePageSettings(doc);
 
     return NextResponse.json({
       success: true,
-      settings: mergedSettings,
+      settings: normalized,
     });
   } catch (error) {
     console.error("Admin error fetching page settings:", error);
@@ -44,64 +43,156 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const db = await getDb();
 
-    // Process home banner images (if any base64 image strings were uploaded, upload to Cloudinary)
-    const processedBannerImages: string[] = [];
-    if (Array.isArray(body.home?.bannerImages)) {
-      for (const img of body.home.bannerImages) {
-        if (typeof img === "string" && img.startsWith("data:image/")) {
-          const uploaded = await uploadImage(img);
-          processedBannerImages.push(uploaded.url);
-        } else if (typeof img === "string" && img.trim()) {
-          processedBannerImages.push(img.trim());
-        }
+    const bannerMode: "image_slider" | "single_lottie" =
+      body.home?.bannerMode === "single_lottie" ? "single_lottie" : "image_slider";
+
+    // 1. Process Multiple Image Slides (Home Slideshow)
+    const rawBanners: Array<{
+      id?: string;
+      title?: string;
+      subtitle?: string;
+      order?: number;
+      isActive?: boolean;
+      activeMedia?: { type: "image" | "lottie"; url: string };
+      mediaUpload?: string;
+    }> = Array.isArray(body.home?.banners) ? body.home.banners : [];
+
+    const processedBanners: BannerItem[] = [];
+
+    for (let i = 0; i < rawBanners.length; i++) {
+      const b = rawBanners[i];
+      const bannerId = b.id || `banner-${i + 1}`;
+
+      if (b.mediaUpload && b.mediaUpload.startsWith("data:image/")) {
+        const uploaded = await uploadImage(b.mediaUpload, "dukandarshandar/banners");
+        processedBanners.push({
+          id: bannerId,
+          title: b.title || "",
+          subtitle: b.subtitle || "",
+          order: typeof b.order === "number" ? b.order : i + 1,
+          isActive: b.isActive !== false,
+          activeMedia: {
+            type: "image",
+            url: uploaded.url,
+            publicId: uploaded.publicId,
+            resourceType: "image",
+            format: uploaded.format,
+          },
+          pendingMedia: null,
+          processingStatus: "idle",
+        });
+      } else {
+        processedBanners.push({
+          id: bannerId,
+          title: b.title || "",
+          subtitle: b.subtitle || "",
+          order: typeof b.order === "number" ? b.order : i + 1,
+          isActive: b.isActive !== false,
+          activeMedia: b.activeMedia || {
+            type: "image",
+            url: "",
+          },
+          pendingMedia: null,
+          processingStatus: "idle",
+        });
       }
     }
 
-    // Process Shop banner image
+    // 2. Process Single Video / Lottie Banner
+    const rawSingle = body.home?.singleBanner || {};
+    const singleVideoUpload = rawSingle.videoUpload;
+
+    const singleBanner: BannerItem = {
+      id: rawSingle.id || "single-banner-1",
+      title: rawSingle.title || "Dukandar Shandar",
+      subtitle: rawSingle.subtitle || "",
+      order: 1,
+      isActive: rawSingle.isActive !== false,
+      activeMedia: rawSingle.activeMedia || processedBanners[0]?.activeMedia || {
+        type: "image",
+        url: "",
+      },
+      pendingMedia: null,
+      processingStatus: singleVideoUpload ? "processing" : (rawSingle.processingStatus || "idle"),
+      errorMessage: rawSingle.errorMessage || undefined,
+    };
+
+    if (singleVideoUpload && (singleVideoUpload.startsWith("data:") || singleVideoUpload.length > 500)) {
+      // Enqueue background video-to-Lottie conversion asynchronously
+      await MediaQueueService.enqueueVideoConversion({
+        videoData: singleVideoUpload,
+        pageKey: "home",
+        bannerId: singleBanner.id,
+        isSingleBanner: true,
+      });
+    }
+
+    // 3. Process Shop banner (Image or Video)
     let shopBannerImage = body.shop?.bannerImage || "";
     if (typeof shopBannerImage === "string" && shopBannerImage.startsWith("data:image/")) {
-      const uploaded = await uploadImage(shopBannerImage);
+      const uploaded = await uploadImage(shopBannerImage, "dukandarshandar/banners");
       shopBannerImage = uploaded.url;
+    } else if (body.shop?.videoUpload) {
+      await MediaQueueService.enqueueVideoConversion({
+        videoData: body.shop.videoUpload,
+        pageKey: "shop",
+      });
     }
 
-    // Process About banner image
+    // 4. Process About banner (Image or Video)
     let aboutBannerImage = body.about?.bannerImage || "";
     if (typeof aboutBannerImage === "string" && aboutBannerImage.startsWith("data:image/")) {
-      const uploaded = await uploadImage(aboutBannerImage);
+      const uploaded = await uploadImage(aboutBannerImage, "dukandarshandar/banners");
       aboutBannerImage = uploaded.url;
+    } else if (body.about?.videoUpload) {
+      await MediaQueueService.enqueueVideoConversion({
+        videoData: body.about.videoUpload,
+        pageKey: "about",
+      });
     }
 
-    // Process Contact banner image
+    // 5. Process Contact banner (Image or Video)
     let contactBannerImage = body.contact?.bannerImage || "";
     if (typeof contactBannerImage === "string" && contactBannerImage.startsWith("data:image/")) {
-      const uploaded = await uploadImage(contactBannerImage);
+      const uploaded = await uploadImage(contactBannerImage, "dukandarshandar/banners");
       contactBannerImage = uploaded.url;
+    } else if (body.contact?.videoUpload) {
+      await MediaQueueService.enqueueVideoConversion({
+        videoData: body.contact.videoUpload,
+        pageKey: "contact",
+      });
     }
 
     const updatedSettings: PageSettings = {
       home: {
-        bannerImages: processedBannerImages.length > 0 ? processedBannerImages : DEFAULT_PAGE_SETTINGS.home.bannerImages,
+        bannerMode,
+        banners: processedBanners.length > 0 ? processedBanners : DEFAULT_PAGE_SETTINGS.home.banners,
+        singleBanner,
         topRatedCount: Math.max(1, Math.min(24, Number(body.home?.topRatedCount) || 4)),
         productsPerPage: Math.max(1, Math.min(48, Number(body.home?.productsPerPage) || 9)),
       },
       shop: {
         bannerTitle: body.shop?.bannerTitle?.trim() || DEFAULT_PAGE_SETTINGS.shop.bannerTitle,
         bannerSubtitle: body.shop?.bannerSubtitle?.trim() ?? DEFAULT_PAGE_SETTINGS.shop.bannerSubtitle,
+        bannerType: body.shop?.bannerType || "image",
         bannerImage: shopBannerImage,
         productsPerPage: Math.max(1, Math.min(48, Number(body.shop?.productsPerPage) || 9)),
       },
       about: {
         bannerTitle: body.about?.bannerTitle?.trim() || DEFAULT_PAGE_SETTINGS.about.bannerTitle,
         bannerSubtitle: body.about?.bannerSubtitle?.trim() ?? DEFAULT_PAGE_SETTINGS.about.bannerSubtitle,
+        bannerType: body.about?.bannerType || "image",
         bannerImage: aboutBannerImage,
       },
       contact: {
         bannerTitle: body.contact?.bannerTitle?.trim() || DEFAULT_PAGE_SETTINGS.contact.bannerTitle,
         bannerSubtitle: body.contact?.bannerSubtitle?.trim() ?? DEFAULT_PAGE_SETTINGS.contact.bannerSubtitle,
+        bannerType: body.contact?.bannerType || "image",
         bannerImage: contactBannerImage,
       },
     };
 
+    // Save strictly clean settings (without raw video uploads)
     await db.collection("page_settings").updateOne(
       { key: "global_page_settings" },
       {

@@ -16,6 +16,48 @@ export async function GET(req: NextRequest) {
     const db = await getDb();
     const query = user.role === "admin" ? {} : { customer_email: user.email };
     const orders = await db.collection("orders").find(query).sort({ created_at: -1 }).toArray();
+
+    // Enrich order items with product images if missing
+    const productIdsToFetch: ObjectId[] = [];
+    const productNamesToFetch: string[] = [];
+
+    orders.forEach((o) => {
+      o.items?.forEach((it: { _id?: string; name?: string; image?: string }) => {
+        if (!it.image) {
+          if (it._id && ObjectId.isValid(it._id)) {
+            productIdsToFetch.push(new ObjectId(it._id));
+          } else if (it.name) {
+            productNamesToFetch.push(it.name);
+          }
+        }
+      });
+    });
+
+    if (productIdsToFetch.length > 0 || productNamesToFetch.length > 0) {
+      const orConditions: Array<Record<string, unknown>> = [];
+      if (productIdsToFetch.length > 0) orConditions.push({ _id: { $in: productIdsToFetch } });
+      if (productNamesToFetch.length > 0) orConditions.push({ name: { $in: productNamesToFetch } });
+
+      const products = await db.collection("products").find({ $or: orConditions }).toArray();
+
+      const imgById: Record<string, string> = {};
+      const imgByName: Record<string, string> = {};
+      products.forEach((p) => {
+        if (p.image) {
+          imgById[String(p._id)] = p.image;
+          imgByName[p.name] = p.image;
+        }
+      });
+
+      orders.forEach((o) => {
+        o.items?.forEach((it: { _id?: string; name?: string; image?: string }) => {
+          if (!it.image) {
+            it.image = (it._id && imgById[String(it._id)]) || (it.name && imgByName[it.name]) || "";
+          }
+        });
+      });
+    }
+
     return NextResponse.json({ success: true, orders });
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -65,6 +107,15 @@ export async function POST(req: NextRequest) {
     const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
     const computedTotal = total_amount || subtotal + shipping;
 
+    const enrichedItems = [];
+    for (const item of items) {
+      const product = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
+      enrichedItems.push({
+        ...item,
+        image: product?.image || item.image || "",
+      });
+    }
+
     const newOrder = {
       customer_name: customer_name || user?.userName || "Guest Customer",
       customer_email: customer_email || user?.email || "guest@example.com",
@@ -72,7 +123,7 @@ export async function POST(req: NextRequest) {
       phone: phone || "",
       address: address || "",
       city: city || "",
-      items,
+      items: enrichedItems,
       subtotal,
       shipping,
       total_amount: computedTotal,
