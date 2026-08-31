@@ -1,12 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getTopRatedProducts } from "@/controllers/productController";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const products = await getTopRatedProducts();
+    const { searchParams } = new URL(req.url);
+    const limit = Number(searchParams.get("limit")) || 8;
+    const products = await getTopRatedProducts(limit);
     return NextResponse.json(products);
   } catch (error) {
-    console.error("Error adding product:", error);
-    return NextResponse.json({ success: false, message: "Failed to create product" }, { status: 500 });
+    console.error("Error fetching top-rated products:", error);
+    return NextResponse.json({ success: false, message: "Failed to fetch top products" }, { status: 500 });
   }
 }

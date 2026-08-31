@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -16,11 +16,28 @@ import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
+import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
 
 export default function ContactPage() {
   const { toast } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch("/api/page-settings");
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setSettings(data.settings);
+        }
+      } catch (err) {
+        console.error("Error loading contact page settings:", err);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -51,7 +68,11 @@ export default function ContactPage() {
 
   return (
     <Box>
-      <PageBanner title="CONTACT" subtitle="We would love to hear from you" />
+      <PageBanner
+        title={settings.contact.bannerTitle || "CONTACT"}
+        subtitle={settings.contact.bannerSubtitle}
+        bgImage={settings.contact.bannerImage}
+      />
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={5}>

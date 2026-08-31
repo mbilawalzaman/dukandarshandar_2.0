@@ -29,6 +29,7 @@ interface ProductListProps {
   title?: string;
   subtitle?: string;
   hideHeader?: boolean;
+  productsPerPage?: number;
 }
 
 const initialFilters: FilterState = {
@@ -45,13 +46,14 @@ export default function ProductList({
   title = "All Products",
   subtitle,
   hideHeader = false,
+  productsPerPage = 9,
 }: ProductListProps) {
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [page, setPage] = useState(1);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const productsPerPage = 9;
+  const perPage = productsPerPage > 0 ? productsPerPage : 9;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -66,6 +68,7 @@ export default function ProductList({
               price: Number(product.price) || 0,
               quantity: Number(product.quantity) || 0,
               rating: Number(product.rating) || 0,
+              description: product.description || "",
             }))
           );
         }
@@ -109,7 +112,7 @@ export default function ProductList({
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q) ||
-          (p as any).description?.toLowerCase().includes(q)
+          p.description?.toLowerCase().includes(q)
       );
     }
 
@@ -150,11 +153,11 @@ export default function ProductList({
     return list;
   }, [products, filters]);
 
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
+  const totalPages = Math.ceil(filteredProducts.length / perPage) || 1;
   const paginatedProducts = useMemo(() => {
-    const start = (page - 1) * productsPerPage;
-    return filteredProducts.slice(start, start + productsPerPage);
-  }, [filteredProducts, page]);
+    const start = (page - 1) * perPage;
+    return filteredProducts.slice(start, start + perPage);
+  }, [filteredProducts, page, perPage]);
 
   const hasActiveFilters =
     Boolean(filters.searchInput) ||
@@ -281,8 +284,8 @@ export default function ProductList({
                 {filters.category === "all" ? "All Products" : filters.category}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Showing {paginatedProducts.length > 0 ? (page - 1) * productsPerPage + 1 : 0}–
-                {Math.min(page * productsPerPage, filteredProducts.length)} of {filteredProducts.length} items
+                Showing {paginatedProducts.length > 0 ? (page - 1) * perPage + 1 : 0}–
+                {Math.min(page * perPage, filteredProducts.length)} of {filteredProducts.length} items
               </Typography>
             </Box>
 

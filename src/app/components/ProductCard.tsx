@@ -21,6 +21,7 @@ export type ProductCardData = {
   rating?: number;
   image?: string;
   quantity?: number;
+  description?: string;
 };
 
 export default function ProductCard({ product }: { product: ProductCardData }) {

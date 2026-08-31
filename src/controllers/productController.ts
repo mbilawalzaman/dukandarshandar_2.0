@@ -137,10 +137,11 @@ export const fetchProducts = async () => {
   }
 };
 
-export const getTopRatedProducts = async () => {
+export const getTopRatedProducts = async (limit: number = 8) => {
   try {
     const db = await getDb();
-    return await db.collection("products").find({ status: "active" }).sort({ rating: -1 }).limit(8).toArray();
+    const count = Math.max(1, Math.min(24, Number(limit) || 8));
+    return await db.collection("products").find({ status: "active" }).sort({ rating: -1 }).limit(count).toArray();
   } catch (error) {
     console.error("Error fetching top-rated products:", error);
     return [];

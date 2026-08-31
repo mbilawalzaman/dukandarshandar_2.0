@@ -20,6 +20,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PeopleIcon from "@mui/icons-material/People";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AutoAwesomeMosaicIcon from "@mui/icons-material/AutoAwesomeMosaic";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
@@ -33,6 +34,7 @@ interface AdminSidebarProps {
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: <DashboardIcon /> },
   { label: "Products", path: "/admin/products", icon: <ShoppingBagIcon /> },
+  { label: "Manage Pages", path: "/admin/pages", icon: <AutoAwesomeMosaicIcon /> },
   { label: "Users", path: "/admin/users", icon: <PeopleIcon /> },
   { label: "Orders", path: "/admin/orders", icon: <ShoppingCartIcon /> },
 ];

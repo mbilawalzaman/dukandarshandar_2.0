@@ -8,6 +8,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PaidIcon from "@mui/icons-material/Paid";
 import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeMosaicIcon from "@mui/icons-material/AutoAwesomeMosaic";
 import Link from "next/link";
 import ProductFormModal from "../components/admin/ProductFormModal";
 
@@ -58,18 +59,29 @@ export default function AdminDashboardPage() {
             Welcome to Admin Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage products, view users, monitor orders, and track revenue.
+            Manage products, configure page banners, view users, and monitor orders.
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setIsAddModalOpen(true)}
-          sx={{ borderRadius: 2, px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0284c7" }}
-        >
-          Add Product
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+          <Button
+            component={Link}
+            href="/admin/pages"
+            variant="outlined"
+            startIcon={<AutoAwesomeMosaicIcon />}
+            sx={{ borderRadius: 2, px: 2.5, py: 1.2, fontWeight: 600, borderColor: "#0284c7", color: "#0284c7" }}
+          >
+            Manage Pages
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setIsAddModalOpen(true)}
+            sx={{ borderRadius: 2, px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0284c7" }}
+          >
+            Add Product
+          </Button>
+        </Box>
       </Box>
 
       {/* Metric Cards Grid */}
@@ -114,12 +126,12 @@ export default function AdminDashboardPage() {
 
       {/* Quick Access Panels */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #0284c7" }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #0284c7", display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
               Products Management
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
               View, edit, filter, or delete products from the catalog.
             </Typography>
             <Button component={Link} href="/admin/products" variant="outlined" color="primary" fullWidth>
@@ -127,12 +139,27 @@ export default function AdminDashboardPage() {
             </Button>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #8b5cf6" }}>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #06b6d4", display: "flex", flexDirection: "column" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+              Page & Banner Setup
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
+              Update slider banners, page headings, and product counts per page.
+            </Typography>
+            <Button component={Link} href="/admin/pages" variant="outlined" sx={{ color: "#0891b2", borderColor: "#0891b2" }} fullWidth>
+              Manage Pages →
+            </Button>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #8b5cf6", display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
               Users Directory
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
               Inspect registered customer profiles and account details.
             </Typography>
             <Button component={Link} href="/admin/users" variant="outlined" color="secondary" fullWidth>
@@ -140,12 +167,13 @@ export default function AdminDashboardPage() {
             </Button>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #f59e0b" }}>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: "100%", borderTop: "4px solid #f59e0b", display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
               Order Fulfillment
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
               Track order statuses, update delivery state, and view revenues.
             </Typography>
             <Button component={Link} href="/admin/orders" variant="outlined" color="warning" fullWidth>

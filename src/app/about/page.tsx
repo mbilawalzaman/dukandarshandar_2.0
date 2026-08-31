@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -21,6 +21,7 @@ import SecurityIcon from "@mui/icons-material/Security";
 import Link from "next/link";
 import PageBanner from "../components/PageBanner";
 import { BRAND } from "@/lib/constants";
+import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
 
 const highlights = [
   {
@@ -53,10 +54,30 @@ const carousel = [
 
 export default function AboutPage() {
   const [index, setIndex] = useState(0);
+  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch("/api/page-settings");
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setSettings(data.settings);
+        }
+      } catch (err) {
+        console.error("Error loading about page settings:", err);
+      }
+    };
+    loadSettings();
+  }, []);
 
   return (
     <Box>
-      <PageBanner title="ABOUT US" subtitle="Where creativity meets convenience" />
+      <PageBanner
+        title={settings.about.bannerTitle || "ABOUT US"}
+        subtitle={settings.about.bannerSubtitle}
+        bgImage={settings.about.bannerImage}
+      />
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Grid container spacing={3} sx={{ mb: 6 }}>
