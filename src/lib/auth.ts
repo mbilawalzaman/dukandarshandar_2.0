@@ -1,19 +1,85 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
+import { TOKEN_COOKIE } from "@/lib/constants";
 
-export function verifyToken(token: string) {
+export type JwtPayload = {
+  userId: string;
+  email: string;
+  userName: string;
+  role: string;
+};
+
+export function getJwtSecret() {
+  return process.env.JWT_SECRET || "supersecretkey";
+}
+
+export function verifyToken(token: string): JwtPayload | null {
   try {
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT secret is not defined");
-    }
-
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, getJwtSecret()) as JwtPayload;
   } catch (error) {
     console.error("Token verification failed:", error);
     return null;
   }
 }
+
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return await bcrypt.hash(password, saltRounds);
+  return bcrypt.hash(password, 10);
+}
+
+export function getTokenFromRequest(req: Request): string | null {
+  const header = req.headers.get("authorization");
+  if (header?.startsWith("Bearer ")) {
+    return header.slice(7);
+  }
+
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${TOKEN_COOKIE}=([^;]+)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function getAuthUser(req: Request): JwtPayload | null {
+  const token = getTokenFromRequest(req);
+  if (!token) return null;
+  return verifyToken(token);
+}
+
+export function requireAuth(req: Request) {
+  const user = getAuthUser(req);
+  if (!user) {
+    return { ok: false as const, response: NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }) };
+  }
+  return { ok: true as const, user };
+}
+
+export function requireAdmin(req: Request) {
+  const auth = requireAuth(req);
+  if (!auth.ok) return auth;
+  if (auth.user.role !== "admin") {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 }),
+    };
+  }
+  return auth;
+}
+
+export function cookieOptions(maxAgeSeconds = 60 * 60 * 24 * 7) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: maxAgeSeconds,
+  };
+}
+
+export function attachAuthCookie(response: NextResponse, token: string) {
+  response.cookies.set(TOKEN_COOKIE, token, cookieOptions());
+  return response;
+}
+
+export function clearAuthCookie(response: NextResponse) {
+  response.cookies.set(TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
+  return response;
 }

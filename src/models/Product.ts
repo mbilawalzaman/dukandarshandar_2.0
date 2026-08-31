@@ -24,7 +24,7 @@ const ProductSchema: Schema = new Schema(
     ratings: [Number], // Store all user ratings
     rating: { type: Number, default: 0 },
     description: {type: String, required: true},
-    image: { type: String, required: true }, // Base64 image
+    image: { type: String, required: true },
 
     status: { type: String, default: "active" },
     created_at: { type: Date, default: Date.now },

@@ -49,10 +49,10 @@ const Banner = () => {
     };
 
     return (
-        <Box sx={{ width: "100vw", overflow: "hidden", mt: 4, pb: 4, position: "relative" }}>
+        <Box sx={{ width: "100%", overflow: "hidden", position: "relative" }}>
             <Slider {...settings}>
                 {images.map((src, index) => (
-                    <Box key={index} sx={{ position: "relative", width: "100vw", height: 500 }}>
+                    <Box key={index} sx={{ position: "relative", width: "100%", height: { xs: 220, md: 460 } }}>
                         <Image
                             src={src}
                             alt={`Banner ${index + 1}`}

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { TextField, Button, Typography, Container, Box, Card, CardContent, Link } from "@mui/material";
 
-export default function Login() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || "/";
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
@@ -13,6 +15,10 @@ export default function Login() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const persistAuth = (token: string) => {
+    localStorage.setItem("token", token);
+    window.dispatchEvent(new Event("authChange"));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,16 +32,13 @@ export default function Login() {
 
     const data = await res.json();
     if (data.success) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.token);
-        window.dispatchEvent(new Event("authChange"));
-      }
-
-      router.push("/");
+      persistAuth(data.token);
+      router.push(data.user?.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
     } else {
       setError(data.error);
     }
   };
+
   const handleGuestLogin = async () => {
     const res = await fetch("/api/auth", {
       method: "POST",
@@ -45,68 +48,53 @@ export default function Login() {
 
     const data = await res.json();
     if (data.success) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.token);
-        window.dispatchEvent(new Event("authChange"));
-      }
-
-      router.push("/");
+      persistAuth(data.token);
+      router.push(nextPath);
     } else {
       setError(data.error);
     }
   };
 
-
   return (
-    <div>
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h4" align="center" gutterBottom>
-              Login
-            </Typography>
-            <form onSubmit={handleSubmit}>
-              <Box display="flex" flexDirection="column" gap={2}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  name="email"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  onChange={handleChange}
-                />
-                <TextField
-                  label="Password"
-                  type="password"
-                  name="password"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  onChange={handleChange}
-                />
-                {error && (
-                  <Typography color="error" align="center">
-                    {error}
-                  </Typography>
-                )}
-                <Button type="submit" variant="contained" color="primary" fullWidth>
-                  Login
-                </Button>
-                <Button variant="outlined" color="secondary" fullWidth onClick={handleGuestLogin}>
-                  Continue as Guest
-                </Button>
-                <Typography align="center">
-                  Don not have an account?{' '}
-                  <Link href="/signup" color="primary">
-                    Sign Up
-                  </Link>
+    <Container maxWidth="xs" sx={{ mt: 8, mb: 8 }}>
+      <Card sx={{ borderRadius: 3 }}>
+        <CardContent>
+          <Typography variant="h4" align="center" gutterBottom>
+            Login
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <TextField label="Email" type="email" name="email" variant="outlined" fullWidth required onChange={handleChange} />
+              <TextField label="Password" type="password" name="password" variant="outlined" fullWidth required onChange={handleChange} />
+              {error && (
+                <Typography color="error" align="center">
+                  {error}
                 </Typography>
-              </Box>
-            </form>
-          </CardContent>
-        </Card>
-      </Container>
-    </div>
+              )}
+              <Button type="submit" variant="contained" color="primary" fullWidth>
+                Login
+              </Button>
+              <Button variant="outlined" color="secondary" fullWidth onClick={handleGuestLogin}>
+                Continue as Guest
+              </Button>
+              <Typography align="center">
+                Don&apos;t have an account?{" "}
+                <Link href="/signup" color="primary">
+                  Sign Up
+                </Link>
+              </Typography>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+    </Container>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

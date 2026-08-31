@@ -1,31 +1,63 @@
-"use client"; // Mark as client component
+"use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode } from "react";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
-import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+import { BRAND } from "@/lib/constants";
+import { CartProvider } from "./providers/CartProvider";
 
-// Create Emotion cache to prevent hydration issues
 const cache = createCache({ key: "mui", prepend: true });
 
-// Create a default MUI theme (you can customize it)
-const theme = createTheme();
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: BRAND.gold,
+      dark: BRAND.goldHover,
+      contrastText: "#1a1a1a",
+    },
+    secondary: {
+      main: BRAND.navy,
+    },
+    background: {
+      default: "#ffffff",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: BRAND.navy,
+      secondary: BRAND.muted,
+    },
+  },
+  typography: {
+    fontFamily: "var(--font-poppins), Poppins, sans-serif",
+    h1: { fontWeight: 800 },
+    h2: { fontWeight: 800 },
+    h3: { fontWeight: 700 },
+    h4: { fontWeight: 700 },
+    h5: { fontWeight: 700 },
+    h6: { fontWeight: 700 },
+    button: { textTransform: "none", fontWeight: 700 },
+  },
+  shape: { borderRadius: 10 },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        containedPrimary: {
+          boxShadow: "none",
+          "&:hover": { backgroundColor: BRAND.goldHover, boxShadow: "none" },
+        },
+      },
+    },
+  },
+});
 
 export default function ThemeRegistry({ children }: { children: ReactNode }) {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true); // Ensures consistent rendering on client
-    }, []);
-
-    if (!mounted) return null; // Prevents SSR/client mismatch
-
-    return (
-        <CacheProvider value={cache}>
-            <ThemeProvider theme={theme}>
-                <CssBaseline /> {/* Ensures consistent baseline styling */}
-                {children}
-            </ThemeProvider>
-        </CacheProvider>
-    );
+  return (
+    <CacheProvider value={cache}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <CartProvider>{children}</CartProvider>
+      </ThemeProvider>
+    </CacheProvider>
+  );
 }

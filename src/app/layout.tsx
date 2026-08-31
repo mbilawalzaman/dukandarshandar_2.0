@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import ThemeRegistry from "./ThemeRegistry"; // ✅ Import ThemeRegistry
+import ThemeRegistry from "./ThemeRegistry";
+import AppShell from "./components/AppShell";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {
   title: "Dukandar Shandar",
-  description: "The Best Ecommerce for you",
+  description: "Stationery and craft ecommerce — quality supplies for every project.",
 };
 
 export default function RootLayout({
@@ -27,11 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Navbar />
-        <ThemeRegistry>{children}</ThemeRegistry>
+      <body className={`${poppins.variable} antialiased`}>
+        <ThemeRegistry>
+          <AppShell>{children}</AppShell>
+        </ThemeRegistry>
       </body>
     </html>
   );

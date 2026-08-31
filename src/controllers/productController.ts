@@ -1,69 +1,61 @@
 import { NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
-import { verifyToken } from "@/lib/auth";
 import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db";
+import { uploadImage, deleteImage } from "@/lib/cloudinary";
+import { getAuthUser } from "@/lib/auth";
 
-// 🛍️ Create Product
-export const createProduct = async (req: Request) =>  {
+export const createProduct = async (req: Request) => {
   try {
-    // Authenticate user
-    const token = req.headers.get("authorization")?.split(" ")[1];
-    if (!token) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    const user = getAuthUser(req);
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
 
-    const decoded = verifyToken(token);
-    if (!decoded) return NextResponse.json({ success: false, error: "Invalid Token" }, { status: 403 });
+    const { name, category, price, quantity, description, rating, image, featured, created_by } = await req.json();
 
-    // Extract product details
-    const { name, category, price, quantity, description, rating, image, created_by } = await req.json();
-
-    if (!name || !category || !price || !quantity || !image || !description) {
+    if (!name || !category || !price || quantity === undefined || !image || !description) {
       return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 });
     }
 
-    // Connect to MongoDB
-    const client = await clientPromise;
-    const db = client.db("dukandarshandar");
+    const db = await getDb();
+    const uploaded = await uploadImage(image);
 
-    // Create product object
     const newProduct = {
       name,
       category,
-      price,
-      quantity,
+      price: Number(price),
+      quantity: Number(quantity),
       rating: rating || 0,
+      ratings: rating ? [rating] : [],
       description,
-      image,
+      image: uploaded.url,
+      image_public_id: uploaded.publicId,
+      featured: Boolean(featured),
       status: "active",
-      created_by,
-      updated_by: created_by,
+      created_by: created_by || user.userName,
+      updated_by: user.userName,
       created_at: new Date(),
       updated_at: new Date(),
     };
 
-    // Insert product into database
     const result = await db.collection("products").insertOne(newProduct);
+    const insertedProduct = await db.collection("products").findOne({ _id: result.insertedId });
 
-    // Fetch the newly inserted product
-    const insertedProduct = await db.collection("products").findOne({ _id: new ObjectId(result.insertedId) });
-
-    if (!insertedProduct) {
-      return NextResponse.json({ success: false, message: "Failed to fetch the product after insertion." }, { status: 500 });
-    }
-
-    // Return success response with the created product
-    return NextResponse.json({ success: true, message: "Product created successfully", product: insertedProduct });
+    return NextResponse.json({
+      success: true,
+      message: "Product created successfully",
+      product: insertedProduct,
+    });
   } catch (error) {
     console.error("Error adding product:", error);
-    return NextResponse.json({ success: false, message: "Failed to create product" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to create product";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
-}
-
-
-// ✏️ Update Product
+};
 
 export const updateProduct = async (req: Request) => {
   try {
-    const { _id, rating, ...updateFields } = await req.json();
+    const { _id, rating, image, ...updateFields } = await req.json();
 
     if (!_id) {
       return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
@@ -73,128 +65,139 @@ export const updateProduct = async (req: Request) => {
       return NextResponse.json({ success: false, message: "Invalid Product ID format" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db("dukandarshandar");
-
-    // Fetch existing product
+    const db = await getDb();
     const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
 
     if (!product) {
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     }
 
-    // Prepare update query
-    const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields } };
+    const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields, updated_at: new Date() } };
 
-    // Update rating logic
+    if (image && (image.startsWith("data:") || (image.startsWith("http") && image !== product.image))) {
+      const uploaded = await uploadImage(image);
+      updateQuery.$set.image = uploaded.url;
+      updateQuery.$set.image_public_id = uploaded.publicId;
+      if (product.image_public_id && uploaded.publicId) {
+        await deleteImage(product.image_public_id);
+      }
+    }
+
     if (rating !== undefined) {
-      const ratings = product.ratings || []; // Ensure ratings array exists
-      ratings.push(rating); // Add new rating
-
-      // Calculate the new average rating, rounded to the nearest 0.5
-      const newAverageRating = Math.round(
-        (ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2
-      ) / 2;
-
+      const ratings = product.ratings || [];
+      ratings.push(rating);
+      const newAverageRating =
+        Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
       updateQuery.$set.rating = newAverageRating;
       updateQuery.$set.ratings = ratings;
     }
 
-    // Perform update
-    const updateResult = await db.collection("products").updateOne(
-      { _id: new ObjectId(_id) },
-      updateQuery
-    );
+    const updateResult = await db.collection("products").updateOne({ _id: new ObjectId(_id) }, updateQuery);
 
     if (updateResult.modifiedCount === 0) {
       return NextResponse.json({ success: false, message: "No changes were made" }, { status: 400 });
     }
 
-    // Fetch and return updated product
     const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
-
     return NextResponse.json({ success: true, message: "Product updated successfully", product: updatedProduct });
   } catch (error) {
     console.error("Error updating product:", error);
     return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
   }
-}
+};
 
-export const getProductByID = async  (id: string) => {
+export const getProductByID = async (id: string) => {
   try {
-    if (!id) {
-      return {
-        success: false,
-        message: "Missing product ID",
-        status: 400,
-      };
+    if (!id || !ObjectId.isValid(id)) {
+      return { success: false, message: "Invalid product ID", status: 400 };
     }
 
-    if (!ObjectId.isValid(id)) {
-      return {
-        success: false,
-        message: "Invalid product ID",
-        status: 400,
-      };
-    }
-
-    const client = await clientPromise;
-    const db = client.db("dukandarshandar");
-
+    const db = await getDb();
     const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
 
     if (!product) {
-      return {
-        success: false,
-        message: "Product not found",
-        status: 404,
-      };
+      return { success: false, message: "Product not found", status: 404 };
     }
 
-    return {
-      success: true,
-      product,
-      status: 200,
-    };
+    return { success: true, product, status: 200 };
   } catch (error) {
     console.error("Error fetching product:", error);
-    return {
-      success: false,
-      message: "Failed to fetch product",
-      status: 500,
-    };
+    return { success: false, message: "Failed to fetch product", status: 500 };
   }
-}
+};
 
 export const fetchProducts = async () => {
   try {
-    const client = await clientPromise;
-    const db = client.db("dukandarshandar");
-
-    // Fetch all products from the "products" collection
-    const products = await db.collection("products").find({}).toArray();
-
+    const db = await getDb();
+    const products = await db.collection("products").find({}).sort({ created_at: -1 }).toArray();
     return { success: true, products };
   } catch (error) {
     console.error("Error fetching products:", error);
     return { success: false, message: "Failed to fetch products" };
   }
-}
+};
 
 export const getTopRatedProducts = async () => {
   try {
-    const client = await clientPromise;
-    const db = client.db("dukandarshandar");
-
-    const products = await db.collection("products")
-    .find({ status: "active" })
-    .sort({ rating: -1 }) 
-    .limit(8)
-    .toArray(); 
-
-return products;
+    const db = await getDb();
+    return await db.collection("products").find({ status: "active" }).sort({ rating: -1 }).limit(8).toArray();
   } catch (error) {
     console.error("Error fetching top-rated products:", error);
     return [];
+  }
+};
+
+export const deleteProduct = async (id: string) => {
+  try {
+    if (!id || !ObjectId.isValid(id)) {
+      return { success: false, message: "Invalid product ID", status: 400 };
+    }
+
+    const db = await getDb();
+    const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
+    if (!product) {
+      return { success: false, message: "Product not found", status: 404 };
+    }
+
+    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return { success: false, message: "Product not found", status: 404 };
+    }
+
+    await deleteImage(product.image_public_id);
+
+    return { success: true, message: "Product deleted successfully", status: 200 };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return { success: false, message: "Internal server error", status: 500 };
+  }
+};
+
+export const getAdminDashboardStats = async () => {
+  try {
+    const db = await getDb();
+    const [totalProducts, totalUsers, totalOrders, earningsAgg] = await Promise.all([
+      db.collection("products").countDocuments({}),
+      db.collection("users").countDocuments({}),
+      db.collection("orders").countDocuments({}),
+      db
+        .collection("orders")
+        .aggregate([{ $match: { status: "delivered" } }, { $group: { _id: null, total: { $sum: "$total_amount" } } }])
+        .toArray(),
+    ]);
+
+    return {
+      success: true,
+      stats: {
+        totalProducts,
+        totalUsers,
+        totalOrders,
+        totalEarnings: earningsAgg[0]?.total || 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching admin stats:", error);
+    return { success: false, message: "Failed to fetch stats" };
   }
 };

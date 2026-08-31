@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import React from "react";
 import ProductList from "../components/ProductList";
+import PageBanner from "../components/PageBanner";
 
-const ShopPage = () => {
+export default function ShopPage() {
   const [refreshTrigger] = useState(false);
 
   return (
-    <div className="container mx-auto p-4">
+    <div>
+      <PageBanner title="Shop" subtitle="Stationery and craft supplies for every project" />
       <ProductList refreshTrigger={refreshTrigger} />
     </div>
   );
-};
-
-export default ShopPage;
+}
