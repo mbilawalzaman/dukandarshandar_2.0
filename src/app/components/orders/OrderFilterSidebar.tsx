@@ -43,10 +43,12 @@ interface OrderFilterSidebarProps {
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Orders", color: "default" as const },
-  { value: "pending", label: "Pending", color: "warning" as const },
+  { value: "pending_payment", label: "Awaiting Payment", color: "warning" as const },
+  { value: "pending", label: "Confirmed", color: "success" as const },
   { value: "processing", label: "Processing", color: "info" as const },
   { value: "shipped", label: "Shipped", color: "primary" as const },
   { value: "delivered", label: "Delivered", color: "success" as const },
+  { value: "payment_failed", label: "Payment Failed", color: "error" as const },
   { value: "cancelled", label: "Cancelled", color: "error" as const },
 ];
 

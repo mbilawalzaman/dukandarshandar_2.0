@@ -23,6 +23,7 @@ export default function AdminDashboardPage() {
     salesTrend: [],
     categoryDistribution: [],
     orderStatusBreakdown: [],
+    paymentBreakdown: [],
     recentOrders: [],
     recentUsers: [],
   });
@@ -101,6 +102,7 @@ export default function AdminDashboardPage() {
         salesTrend={stats.salesTrend}
         categoryDistribution={stats.categoryDistribution}
         orderStatusBreakdown={stats.orderStatusBreakdown}
+        paymentBreakdown={stats.paymentBreakdown}
         loading={loading}
       />
 

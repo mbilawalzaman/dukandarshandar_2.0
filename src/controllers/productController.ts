@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { getAuthUser } from "@/lib/auth";
+import type { PaymentBreakdownPoint } from "@/types/admin";
 
 export const createProduct = async (req: Request) => {
   try {
@@ -394,6 +395,36 @@ export const getAdminDashboardStats = async () => {
       value: item.totalValue || 0,
     }));
 
+    const paymentBuckets: Record<string, PaymentBreakdownPoint> = {
+      paid: { status: "Paid Online", count: 0, value: 0 },
+      cod: { status: "COD", count: 0, value: 0 },
+      awaiting: { status: "Awaiting", count: 0, value: 0 },
+      failed: { status: "Failed", count: 0, value: 0 },
+    };
+
+    allOrders.forEach((order) => {
+      const amount = Number(order.total_amount) || 0;
+      const method = order.payment_method || "cod";
+      const orderStatus = order.status;
+      const paymentStatus = order.payment_status;
+
+      if (orderStatus === "pending_payment") {
+        paymentBuckets.awaiting.count += 1;
+        paymentBuckets.awaiting.value += amount;
+      } else if (orderStatus === "payment_failed" || paymentStatus === "failed") {
+        paymentBuckets.failed.count += 1;
+        paymentBuckets.failed.value += amount;
+      } else if (paymentStatus === "paid" && method === "card") {
+        paymentBuckets.paid.count += 1;
+        paymentBuckets.paid.value += amount;
+      } else if (method === "cod" && orderStatus !== "cancelled") {
+        paymentBuckets.cod.count += 1;
+        paymentBuckets.cod.value += amount;
+      }
+    });
+
+    const paymentBreakdown = Object.values(paymentBuckets).filter((item) => item.count > 0);
+
     return {
       success: true,
       stats: {
@@ -407,6 +438,7 @@ export const getAdminDashboardStats = async () => {
         salesTrend,
         categoryDistribution,
         orderStatusBreakdown,
+        paymentBreakdown,
         recentOrders,
         recentUsers,
       },

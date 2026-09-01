@@ -24,14 +24,19 @@ import {
   SalesTrendPoint,
   CategoryDistPoint,
   OrderStatusPoint,
+  PaymentBreakdownPoint,
   CATEGORY_COLORS,
   STATUS_COLORS,
+  PAYMENT_COLORS,
 } from "@/types/admin";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import Link from "next/link";
 
 interface DashboardChartsProps {
   salesTrend?: SalesTrendPoint[];
   categoryDistribution?: CategoryDistPoint[];
   orderStatusBreakdown?: OrderStatusPoint[];
+  paymentBreakdown?: PaymentBreakdownPoint[];
   loading: boolean;
 }
 
@@ -39,6 +44,7 @@ export default function DashboardCharts({
   salesTrend = [],
   categoryDistribution = [],
   orderStatusBreakdown = [],
+  paymentBreakdown = [],
   loading,
 }: DashboardChartsProps) {
   return (
@@ -198,15 +204,16 @@ export default function DashboardCharts({
         </Grid>
       </Grid>
 
-      {/* Row 2: Order Fulfillment Bar Chart */}
+      {/* Row 2: Order Fulfillment & Payments — 50/50 */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <Paper
             elevation={0}
             sx={{
               p: 3,
               borderRadius: 3,
               border: "1px solid #e2e8f0",
+              height: "100%",
               display: "flex",
               flexDirection: "column",
             }}
@@ -218,17 +225,21 @@ export default function DashboardCharts({
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Real-time distribution of pending, shipped, delivered, and cancelled orders.
+              Pending, shipped, delivered, and cancelled orders.
             </Typography>
 
-            <Box sx={{ width: "100%", height: 240, mt: "auto" }}>
+            <Box sx={{ width: "100%", height: 220, mt: "auto" }}>
               {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
                   <CircularProgress size={32} />
                 </Box>
               ) : orderStatusBreakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={orderStatusBreakdown} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart
+                    data={orderStatusBreakdown}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    barCategoryGap="35%"
+                  >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
                     <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
@@ -239,7 +250,7 @@ export default function DashboardCharts({
                       ]}
                       contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
                     />
-                    <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    <Bar dataKey="count" maxBarSize={48} radius={[6, 6, 0, 0]}>
                       {orderStatusBreakdown.map((entry, index) => (
                         <Cell key={`status-cell-${index}`} fill={STATUS_COLORS[entry.status.toLowerCase()] || "#0284c7"} />
                       ))}
@@ -250,6 +261,82 @@ export default function DashboardCharts({
                 <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
                   <Typography variant="body2" color="text.secondary">
                     No orders placed yet.
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid #e2e8f0",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PaymentsIcon sx={{ color: "#0284c7" }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                  Payment Overview
+                </Typography>
+              </Box>
+              <Chip
+                label="View all"
+                size="small"
+                component={Link}
+                href="/admin/payments"
+                clickable
+                variant="outlined"
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Paid online, COD, awaiting, and failed payment attempts.
+            </Typography>
+
+            <Box sx={{ width: "100%", height: 220, mt: "auto" }}>
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                  <CircularProgress size={32} />
+                </Box>
+              ) : paymentBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={paymentBreakdown}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    barCategoryGap="35%"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <RechartsTooltip
+                      formatter={(val, _, item) => [
+                        `${val} payments (PKR ${Number(item.payload.value || 0).toLocaleString()})`,
+                        "Count",
+                      ]}
+                      contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                    />
+                    <Bar dataKey="count" maxBarSize={48} radius={[6, 6, 0, 0]}>
+                      {paymentBreakdown.map((entry, index) => (
+                        <Cell
+                          key={`payment-cell-${index}`}
+                          fill={PAYMENT_COLORS[entry.status.toLowerCase()] || "#0284c7"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No payment records yet.
                   </Typography>
                 </Box>
               )}
