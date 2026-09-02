@@ -83,6 +83,28 @@ export async function deleteAsset(publicId?: string | null, resourceType: "image
   }
 }
 
+/** Signed params for browser → Cloudinary direct upload (avoids Next.js body size limits). */
+export function getSignedUploadParams(options?: {
+  folder?: string;
+  resourceType?: "image" | "video" | "raw" | "auto";
+}) {
+  configure();
+
+  const folder = options?.folder || "dukandarshandar/banners/videos";
+  const timestamp = Math.round(Date.now() / 1000);
+  const paramsToSign = { timestamp, folder };
+  const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
+
+  return {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+    apiKey: process.env.CLOUDINARY_API_KEY!,
+    timestamp,
+    folder,
+    signature,
+    resourceType: options?.resourceType || "video",
+  };
+}
+
 /** @deprecated use deleteAsset */
 export const deleteImage = deleteAsset;
 

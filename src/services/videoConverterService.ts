@@ -89,7 +89,10 @@ export async function convertVideoToLottieJson(
   }
 
   // If already a Lottie JSON URL or direct JSON string
-  if (videoData.startsWith("http") && (videoData.endsWith(".json") || videoData.includes("raw/upload"))) {
+  if (
+    videoData.startsWith("http") &&
+    (videoData.endsWith(".json") || videoData.includes("/raw/upload/"))
+  ) {
     return {
       asset: {
         type: "lottie",
@@ -105,16 +108,24 @@ export async function convertVideoToLottieJson(
   const inputVideoPath = path.join(tmpDir, "input_video.mp4");
 
   try {
-    // 1. Write video payload to temp file
-    let videoBuffer: Buffer;
-    if (videoData.startsWith("data:")) {
-      const base64Data = videoData.split(",")[1];
-      videoBuffer = Buffer.from(base64Data, "base64");
+    // 1. Write video payload to temp file (base64 data URL or remote Cloudinary URL)
+    if (videoData.startsWith("http://") || videoData.startsWith("https://")) {
+      const response = await fetch(videoData);
+      if (!response.ok) {
+        throw new Error(`Failed to download video for conversion (${response.status})`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      fs.writeFileSync(inputVideoPath, Buffer.from(arrayBuffer));
     } else {
-      videoBuffer = Buffer.from(videoData, "base64");
+      let videoBuffer: Buffer;
+      if (videoData.startsWith("data:")) {
+        const base64Data = videoData.split(",")[1];
+        videoBuffer = Buffer.from(base64Data, "base64");
+      } else {
+        videoBuffer = Buffer.from(videoData, "base64");
+      }
+      fs.writeFileSync(inputVideoPath, videoBuffer);
     }
-
-    fs.writeFileSync(inputVideoPath, videoBuffer);
 
     // 2. Extract frames using ffmpeg (support up to 15 seconds full duration, 10 fps, 540px width)
     const framePattern = path.join(tmpDir, "frame_%03d.jpg");

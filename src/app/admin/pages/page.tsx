@@ -41,6 +41,7 @@ import AnimationIcon from "@mui/icons-material/Animation";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import { DEFAULT_PAGE_SETTINGS, PageSettings, BannerItem } from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
+import { uploadVideoToCloudinary } from "@/lib/cloudinaryClientUpload";
 
 export default function AdminManagePages() {
   const [activeTab, setActiveTab] = useState(0);
@@ -59,6 +60,8 @@ export default function AdminManagePages() {
   const [modalTargetPage, setModalTargetPage] = useState<"home" | "shop" | "about" | "contact">("home");
   const [modalMediaPayload, setModalMediaPayload] = useState<string>("");
   const [modalMediaPreview, setModalMediaPreview] = useState<string>("");
+  const [modalVideoFile, setModalVideoFile] = useState<File | null>(null);
+  const [modalUploading, setModalUploading] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalSubtitle, setModalSubtitle] = useState("");
 
@@ -187,9 +190,24 @@ export default function AdminManagePages() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const raw = await res.text();
+      let data: { success?: boolean; message?: string; settings?: PageSettings } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        setToast({
+          open: true,
+          message:
+            res.status === 413
+              ? "Upload is too large for the server. Videos must be uploaded via Cloudinary first."
+              : `Failed to save settings (HTTP ${res.status})`,
+          severity: "error",
+        });
+        return;
+      }
+
       if (res.ok && data.success) {
-        setSettings(data.settings);
+        setSettings(data.settings!);
         setSlideImageUploads({});
         setToast({
           open: true,
@@ -209,10 +227,14 @@ export default function AdminManagePages() {
 
   // Open Modal to Add New Banner or Video
   const handleOpenModal = (pageKey: "home" | "shop" | "about" | "contact") => {
+    if (modalMediaPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(modalMediaPreview);
+    }
     setModalTargetPage(pageKey);
     setModalType("image");
     setModalMediaPayload("");
     setModalMediaPreview("");
+    setModalVideoFile(null);
     setModalTitle("");
     setModalSubtitle("");
     setModalOpen(true);
@@ -228,13 +250,22 @@ export default function AdminManagePages() {
         setToast({ open: true, message: "Video must be under 25MB", severity: "error" });
         return;
       }
-    } else {
-      if (file.size > 6 * 1024 * 1024) {
-        setToast({ open: true, message: "Image must be under 6MB", severity: "error" });
-        return;
+      if (modalMediaPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(modalMediaPreview);
       }
+      const previewUrl = URL.createObjectURL(file);
+      setModalVideoFile(file);
+      setModalMediaPayload("");
+      setModalMediaPreview(previewUrl);
+      return;
     }
 
+    if (file.size > 6 * 1024 * 1024) {
+      setToast({ open: true, message: "Image must be under 6MB", severity: "error" });
+      return;
+    }
+
+    setModalVideoFile(null);
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
@@ -246,89 +277,102 @@ export default function AdminManagePages() {
 
   // Submit Modal Action
   const handleModalSubmit = async () => {
-    if (!modalMediaPayload) {
+    if (modalType === "video" && !modalVideoFile) {
+      setToast({ open: true, message: "Please select a video file first", severity: "error" });
+      return;
+    }
+    if (modalType === "image" && !modalMediaPayload) {
       setToast({ open: true, message: "Please select an image or video file first", severity: "error" });
       return;
     }
 
-    if (modalTargetPage === "home") {
-      if (modalType === "image") {
-        // Add as a new image slide in Home Carousel
-        const nextIdx = settings.home.banners.length + 1;
-        const newSlide: BannerItem = {
-          id: `banner-${Date.now()}`,
-          title: modalTitle.trim() || `Slide #${nextIdx}`,
-          subtitle: modalSubtitle.trim() || "",
-          order: nextIdx,
-          isActive: true,
-          activeMedia: {
-            type: "image",
-            url: modalMediaPayload, // temporary preview
-          },
-          pendingMedia: null,
-          processingStatus: "idle",
-        };
-
-        const updated: PageSettings = {
-          ...settings,
-          home: {
-            ...settings.home,
-            bannerMode: "image_slider",
-            banners: [...settings.home.banners, newSlide],
-          },
-        };
-
-        setSlideImageUploads((prev) => ({ ...prev, [newSlide.id]: modalMediaPayload }));
-        setModalOpen(false);
-        await handleSave(updated);
-      } else {
-        // Single Video Banner -> Convert to Lottie in Background Queue
-        // Retain the user's current live image banner until the video finishes converting
-        const currentActiveMedia =
-          settings.home.singleBanner?.activeMedia?.url
-            ? settings.home.singleBanner.activeMedia
-            : settings.home.banners.find((b) => b.isActive !== false && b.activeMedia?.url)?.activeMedia ||
-              settings.home.banners[0]?.activeMedia || {
-                type: "image" as const,
-                url: "",
-              };
-
-        const updated = {
-          ...settings,
-          home: {
-            ...settings.home,
-            bannerMode: "single_lottie" as const,
-            singleBanner: {
-              id: "single-banner-1",
-              title: modalTitle.trim() || settings.home.singleBanner?.title || "Dukandar Shandar",
-              subtitle: modalSubtitle.trim() || settings.home.singleBanner?.subtitle || "",
-              order: 1,
-              isActive: true,
-              activeMedia: currentActiveMedia,
-              pendingMedia: null,
-              processingStatus: "processing" as const,
-              videoUpload: modalMediaPayload,
-            },
-          },
-        };
-
-        setModalOpen(false);
-        await handleSave(updated as unknown as PageSettings);
+    try {
+      let videoUrl = "";
+      if (modalType === "video" && modalVideoFile) {
+        setModalUploading(true);
         setToast({
           open: true,
-          message: "Video conversion to Lottie is in progress. Your current banner will remain live until processing finishes.",
+          message: "Uploading video to Cloudinary…",
           severity: "info",
         });
+        const uploaded = await uploadVideoToCloudinary(modalVideoFile);
+        videoUrl = uploaded.url;
       }
-    } else {
-      // Storefront Subpages (Shop, About, Contact)
-      if (modalType === "video") {
+
+      if (modalTargetPage === "home") {
+        if (modalType === "image") {
+          const nextIdx = settings.home.banners.length + 1;
+          const newSlide: BannerItem = {
+            id: `banner-${Date.now()}`,
+            title: modalTitle.trim() || `Slide #${nextIdx}`,
+            subtitle: modalSubtitle.trim() || "",
+            order: nextIdx,
+            isActive: true,
+            activeMedia: {
+              type: "image",
+              url: modalMediaPayload,
+            },
+            pendingMedia: null,
+            processingStatus: "idle",
+          };
+
+          const updated: PageSettings = {
+            ...settings,
+            home: {
+              ...settings.home,
+              bannerMode: "image_slider",
+              banners: [...settings.home.banners, newSlide],
+            },
+          };
+
+          setSlideImageUploads((prev) => ({ ...prev, [newSlide.id]: modalMediaPayload }));
+          setModalOpen(false);
+          await handleSave(updated);
+        } else {
+          const currentActiveMedia =
+            settings.home.singleBanner?.activeMedia?.url
+              ? settings.home.singleBanner.activeMedia
+              : settings.home.banners.find((b) => b.isActive !== false && b.activeMedia?.url)?.activeMedia ||
+                settings.home.banners[0]?.activeMedia || {
+                  type: "image" as const,
+                  url: "",
+                };
+
+          const updated = {
+            ...settings,
+            home: {
+              ...settings.home,
+              bannerMode: "single_lottie" as const,
+              singleBanner: {
+                id: "single-banner-1",
+                title: modalTitle.trim() || settings.home.singleBanner?.title || "Dukandar Shandar",
+                subtitle: modalSubtitle.trim() || settings.home.singleBanner?.subtitle || "",
+                order: 1,
+                isActive: true,
+                activeMedia: currentActiveMedia,
+                pendingMedia: null,
+                processingStatus: "processing" as const,
+                videoUrl,
+              },
+            },
+          };
+
+          setModalOpen(false);
+          await handleSave(updated as unknown as PageSettings);
+          setToast({
+            open: true,
+            message:
+              "Video conversion to Lottie is in progress. Your current banner will remain live until processing finishes.",
+            severity: "info",
+          });
+        }
+      } else if (modalType === "video") {
         const updated = {
           ...settings,
           [modalTargetPage]: {
             ...settings[modalTargetPage],
             bannerType: "lottie" as const,
-            videoUpload: modalMediaPayload,
+            videoUrl,
           },
         };
         setModalOpen(false);
@@ -350,6 +394,15 @@ export default function AdminManagePages() {
         setModalOpen(false);
         await handleSave(updated);
       }
+    } catch (err) {
+      console.error("Error submitting banner media:", err);
+      setToast({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to upload video",
+        severity: "error",
+      });
+    } finally {
+      setModalUploading(false);
     }
   };
 
@@ -925,9 +978,13 @@ export default function AdminManagePages() {
               row
               value={modalType}
               onChange={(e) => {
+                if (modalMediaPreview.startsWith("blob:")) {
+                  URL.revokeObjectURL(modalMediaPreview);
+                }
                 setModalType(e.target.value as "image" | "video");
                 setModalMediaPayload("");
                 setModalMediaPreview("");
+                setModalVideoFile(null);
               }}
             >
               <FormControlLabel
@@ -972,13 +1029,17 @@ export default function AdminManagePages() {
                 startIcon={<CloudUploadIcon />}
                 sx={{ py: 1.5, textTransform: "none", fontWeight: 700 }}
               >
-                {modalMediaPayload ? "Change Selected File" : `Browse ${modalType === "video" ? "MOV / MP4 Video" : "Image"}`}
+                {modalVideoFile || modalMediaPayload
+                  ? "Change Selected File"
+                  : `Browse ${modalType === "video" ? "MOV / MP4 Video" : "Image"}`}
               </Button>
             </label>
 
             {modalType === "video" && (
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                ℹ️ Uploaded video will be processed by our backend queue into a lightweight Lottie animation. Your current live banner will remain active until the queue resolves.
+                Video uploads go directly to Cloudinary (avoids size limits), then convert to Lottie in the background.
+                Your current live banner stays active until processing finishes.
+                {modalVideoFile ? ` Selected: ${modalVideoFile.name}` : ""}
               </Typography>
             )}
 
@@ -1015,13 +1076,22 @@ export default function AdminManagePages() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setModalOpen(false)} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() => setModalOpen(false)}
+            disabled={modalUploading || saving}
+            sx={{ textTransform: "none" }}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleModalSubmit}
-            disabled={!modalMediaPayload}
+            disabled={
+              modalUploading ||
+              saving ||
+              (modalType === "video" ? !modalVideoFile : !modalMediaPayload)
+            }
+            startIcon={modalUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -1029,7 +1099,11 @@ export default function AdminManagePages() {
               "&:hover": { backgroundColor: "#0369a1" },
             }}
           >
-            {modalType === "video" ? "Start Video Conversion Queue" : "Add Image Slide"}
+            {modalUploading
+              ? "Uploading video…"
+              : modalType === "video"
+                ? "Start Video Conversion Queue"
+                : "Add Image Slide"}
           </Button>
         </DialogActions>
       </Dialog>

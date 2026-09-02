@@ -98,9 +98,14 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // 2. Process Single Video / Lottie Banner
+    // 2. Process Single Video / Lottie Banner (videoUrl = Cloudinary URL, not base64)
     const rawSingle = body.home?.singleBanner || {};
-    const singleVideoUpload = rawSingle.videoUpload;
+    const singleVideoUrl =
+      typeof rawSingle.videoUrl === "string"
+        ? rawSingle.videoUrl
+        : typeof rawSingle.videoUpload === "string" && rawSingle.videoUpload.startsWith("http")
+          ? rawSingle.videoUpload
+          : "";
 
     const singleBanner: BannerItem = {
       id: rawSingle.id || "single-banner-1",
@@ -113,14 +118,13 @@ export async function PUT(req: NextRequest) {
         url: "",
       },
       pendingMedia: null,
-      processingStatus: singleVideoUpload ? "processing" : (rawSingle.processingStatus || "idle"),
+      processingStatus: singleVideoUrl ? "processing" : (rawSingle.processingStatus || "idle"),
       errorMessage: rawSingle.errorMessage || undefined,
     };
 
-    if (singleVideoUpload && (singleVideoUpload.startsWith("data:") || singleVideoUpload.length > 500)) {
-      // Enqueue background video-to-Lottie conversion asynchronously
+    if (singleVideoUrl.startsWith("http")) {
       await MediaQueueService.enqueueVideoConversion({
-        videoData: singleVideoUpload,
+        videoData: singleVideoUrl,
         pageKey: "home",
         bannerId: singleBanner.id,
         isSingleBanner: true,
@@ -132,11 +136,19 @@ export async function PUT(req: NextRequest) {
     if (typeof shopBannerImage === "string" && shopBannerImage.startsWith("data:image/")) {
       const uploaded = await uploadImage(shopBannerImage, "dukandarshandar/banners");
       shopBannerImage = uploaded.url;
-    } else if (body.shop?.videoUpload) {
-      await MediaQueueService.enqueueVideoConversion({
-        videoData: body.shop.videoUpload,
-        pageKey: "shop",
-      });
+    } else {
+      const shopVideoUrl =
+        typeof body.shop?.videoUrl === "string"
+          ? body.shop.videoUrl
+          : typeof body.shop?.videoUpload === "string" && body.shop.videoUpload.startsWith("http")
+            ? body.shop.videoUpload
+            : "";
+      if (shopVideoUrl) {
+        await MediaQueueService.enqueueVideoConversion({
+          videoData: shopVideoUrl,
+          pageKey: "shop",
+        });
+      }
     }
 
     // 4. Process About banner (Image or Video)
@@ -144,11 +156,19 @@ export async function PUT(req: NextRequest) {
     if (typeof aboutBannerImage === "string" && aboutBannerImage.startsWith("data:image/")) {
       const uploaded = await uploadImage(aboutBannerImage, "dukandarshandar/banners");
       aboutBannerImage = uploaded.url;
-    } else if (body.about?.videoUpload) {
-      await MediaQueueService.enqueueVideoConversion({
-        videoData: body.about.videoUpload,
-        pageKey: "about",
-      });
+    } else {
+      const aboutVideoUrl =
+        typeof body.about?.videoUrl === "string"
+          ? body.about.videoUrl
+          : typeof body.about?.videoUpload === "string" && body.about.videoUpload.startsWith("http")
+            ? body.about.videoUpload
+            : "";
+      if (aboutVideoUrl) {
+        await MediaQueueService.enqueueVideoConversion({
+          videoData: aboutVideoUrl,
+          pageKey: "about",
+        });
+      }
     }
 
     // 5. Process Contact banner (Image or Video)
@@ -156,11 +176,19 @@ export async function PUT(req: NextRequest) {
     if (typeof contactBannerImage === "string" && contactBannerImage.startsWith("data:image/")) {
       const uploaded = await uploadImage(contactBannerImage, "dukandarshandar/banners");
       contactBannerImage = uploaded.url;
-    } else if (body.contact?.videoUpload) {
-      await MediaQueueService.enqueueVideoConversion({
-        videoData: body.contact.videoUpload,
-        pageKey: "contact",
-      });
+    } else {
+      const contactVideoUrl =
+        typeof body.contact?.videoUrl === "string"
+          ? body.contact.videoUrl
+          : typeof body.contact?.videoUpload === "string" && body.contact.videoUpload.startsWith("http")
+            ? body.contact.videoUpload
+            : "";
+      if (contactVideoUrl) {
+        await MediaQueueService.enqueueVideoConversion({
+          videoData: contactVideoUrl,
+          pageKey: "contact",
+        });
+      }
     }
 
     const updatedSettings: PageSettings = {
