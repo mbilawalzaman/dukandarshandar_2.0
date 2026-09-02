@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
+import { safeNotify } from "@/lib/safeNotify";
+import { notifyAdmins } from "@/services/notificationService";
 
 const JWT_SECRET = getJwtSecret();
 
@@ -28,6 +30,22 @@ export async function signupController(name: string, email: string, password: st
     created_at: new Date(),
   });
 
+  const created = await usersCollection.findOne({ email });
+  if (created && assignedRole !== UserRole.ADMIN) {
+    await safeNotify(() =>
+      notifyAdmins({
+        type: "new_user",
+        title: "New customer signup",
+        body: `${name} (${email}) joined the store`,
+        entityType: "user",
+        entityId: String(created._id),
+        idempotencyKey: `new_user:${created._id}`,
+        sendPush: true,
+        route: "/admin/users",
+      })
+    );
+  }
+
   return { success: true, message: "User created successfully" };
 }
 
@@ -44,7 +62,7 @@ export async function loginController(email: string, password: string) {
   }
 
   const token = jwt.sign(
-    { userId: user._id, email: user.email, userName: user.name, role: user.role },
+    { userId: String(user._id), email: user.email, userName: user.name, role: user.role },
     JWT_SECRET,
     { expiresIn: "7d" }
   );

@@ -137,6 +137,124 @@ export const fetchProducts = async () => {
   }
 };
 
+type ProductQueryOptions = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  sortBy?: string;
+  stock?: string;
+};
+
+function buildProductFilter(options: ProductQueryOptions) {
+  const filter: Record<string, unknown> = {};
+  const and: Record<string, unknown>[] = [];
+
+  if (options.search?.trim()) {
+    const q = options.search.trim();
+    and.push({
+      $or: [
+        { name: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ],
+    });
+  }
+
+  if (options.category && options.category !== "all") {
+    and.push({ category: { $regex: new RegExp(`^${options.category}$`, "i") } });
+  }
+
+  if (options.minPrice !== undefined && !Number.isNaN(options.minPrice)) {
+    and.push({ price: { $gte: options.minPrice } });
+  }
+  if (options.maxPrice !== undefined && !Number.isNaN(options.maxPrice)) {
+    and.push({ price: { $lte: options.maxPrice } });
+  }
+  if (options.inStockOnly) {
+    and.push({ quantity: { $gt: 0 } });
+  }
+
+  switch (options.stock) {
+    case "in-stock":
+      and.push({ quantity: { $gt: 5 } });
+      break;
+    case "low-stock":
+      and.push({ quantity: { $gt: 0, $lte: 5 } });
+      break;
+    case "out-of-stock":
+      and.push({ quantity: { $lte: 0 } });
+      break;
+  }
+
+  if (and.length === 1) Object.assign(filter, and[0]);
+  else if (and.length > 1) filter.$and = and;
+
+  return filter;
+}
+
+function productSort(sortBy?: string): Record<string, 1 | -1> {
+  switch (sortBy) {
+    case "price-asc":
+      return { price: 1 };
+    case "price-desc":
+      return { price: -1 };
+    case "rating-desc":
+      return { rating: -1 };
+    case "name-asc":
+      return { name: 1 };
+    default:
+      return { created_at: -1 };
+  }
+}
+
+export const fetchProductsPaginated = async (options: ProductQueryOptions = {}) => {
+  try {
+    const db = await getDb();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(48, Math.max(1, options.limit || 9));
+    const skip = (page - 1) * limit;
+    const filter = buildProductFilter(options);
+    const sort = productSort(options.sortBy);
+
+    const [products, total, categoryAgg, inStockCount, lowStockCount, outOfStockCount] = await Promise.all([
+      db.collection("products").find(filter).sort(sort).skip(skip).limit(limit).toArray(),
+      db.collection("products").countDocuments(filter),
+      db.collection("products").aggregate([{ $group: { _id: "$category", count: { $sum: 1 } } }]).toArray(),
+      db.collection("products").countDocuments({ quantity: { $gt: 5 } }),
+      db.collection("products").countDocuments({ quantity: { $gt: 0, $lte: 5 } }),
+      db.collection("products").countDocuments({ quantity: { $lte: 0 } }),
+    ]);
+
+    const categoryCounts: Record<string, number> = { all: 0 };
+    categoryAgg.forEach((row) => {
+      const cat = String(row._id || "Uncategorized");
+      categoryCounts[cat] = row.count as number;
+      categoryCounts.all += row.count as number;
+    });
+
+    return {
+      success: true,
+      products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+        hasMore: page * limit < total,
+      },
+      categoryCounts,
+      stockCounts: { inStock: inStockCount, lowStock: lowStockCount, outOfStock: outOfStockCount },
+    };
+  } catch (error) {
+    console.error("Error fetching paginated products:", error);
+    return { success: false, message: "Failed to fetch products" };
+  }
+};
+
 export const getTopRatedProducts = async (limit: number = 8) => {
   try {
     const db = await getDb();

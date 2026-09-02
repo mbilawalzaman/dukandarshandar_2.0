@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Grid,
   Typography,
@@ -51,35 +51,59 @@ export default function ProductList({
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({ all: 0 });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const perPage = productsPerPage > 0 ? productsPerPage : 9;
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/products");
-        const data = await res.json();
-        if (data.success) {
-          setProducts(
-            (data.products || []).map((product: ProductCardData) => ({
-              ...product,
-              price: Number(product.price) || 0,
-              quantity: Number(product.quantity) || 0,
-              rating: Number(product.rating) || 0,
-              description: product.description || "",
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
+    const timer = setTimeout(() => setDebouncedSearch(filters.searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [filters.searchInput]);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(perPage),
+      });
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+      if (filters.category !== "all") params.set("category", filters.category);
+      if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
+      if (filters.maxPrice !== "") params.set("maxPrice", filters.maxPrice);
+      if (filters.inStockOnly) params.set("inStockOnly", "true");
+      if (filters.sortBy !== "default") params.set("sortBy", filters.sortBy);
+
+      const res = await fetch(`/api/products?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(
+          (data.products || []).map((product: ProductCardData) => ({
+            ...product,
+            price: Number(product.price) || 0,
+            quantity: Number(product.quantity) || 0,
+            rating: Number(product.rating) || 0,
+            description: product.description || "",
+          }))
+        );
+        setTotal(data.pagination?.total ?? 0);
+        setTotalPages(data.pagination?.totalPages ?? 1);
+        if (data.categoryCounts) setCategoryCounts(data.categoryCounts);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, perPage, debouncedSearch, filters]);
+
+  useEffect(() => {
     fetchProducts();
-  }, [refreshTrigger]);
+  }, [fetchProducts, refreshTrigger]);
 
   const handleFilterChange = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -91,74 +115,6 @@ export default function ProductList({
     setPage(1);
   };
 
-  // Dynamic category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: products.length };
-    products.forEach((p) => {
-      const cat = p.category || "Uncategorized";
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [products]);
-
-  // Filter & Sort Logic
-  const filteredProducts = useMemo(() => {
-    let list = [...products];
-    const { searchInput, category, minPrice, maxPrice, inStockOnly, sortBy } = filters;
-
-    if (searchInput.trim()) {
-      const q = searchInput.toLowerCase().trim();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.category?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q)
-      );
-    }
-
-    if (category !== "all") {
-      list = list.filter((p) => p.category?.toLowerCase() === category.toLowerCase());
-    }
-
-    const min = Number(minPrice);
-    const max = Number(maxPrice);
-    if (minPrice !== "" && !isNaN(min)) {
-      list = list.filter((p) => p.price >= min);
-    }
-    if (maxPrice !== "" && !isNaN(max)) {
-      list = list.filter((p) => p.price <= max);
-    }
-
-    if (inStockOnly) {
-      list = list.filter((p) => Number(p.quantity) > 0);
-    }
-
-    switch (sortBy) {
-      case "price-asc":
-        list.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        list.sort((a, b) => b.price - a.price);
-        break;
-      case "rating-desc":
-        list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "name-asc":
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
-    }
-
-    return list;
-  }, [products, filters]);
-
-  const totalPages = Math.ceil(filteredProducts.length / perPage) || 1;
-  const paginatedProducts = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return filteredProducts.slice(start, start + perPage);
-  }, [filteredProducts, page, perPage]);
-
   const hasActiveFilters =
     Boolean(filters.searchInput) ||
     filters.category !== "all" ||
@@ -166,6 +122,9 @@ export default function ProductList({
     filters.maxPrice !== "" ||
     filters.inStockOnly ||
     filters.sortBy !== "default";
+
+  const showingFrom = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const showingTo = Math.min(page * perPage, total);
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
@@ -182,7 +141,6 @@ export default function ProductList({
         </Box>
       )}
 
-      {/* Mobile Trigger */}
       <Box
         sx={{
           display: { xs: "flex", md: "none" },
@@ -205,11 +163,10 @@ export default function ProductList({
           Filters {hasActiveFilters && "• Active"}
         </Button>
         <Typography variant="body2" color="text.secondary">
-          {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"}
+          {total} {total === 1 ? "product" : "products"}
         </Typography>
       </Box>
 
-      {/* Mobile Drawer */}
       <Drawer
         anchor="left"
         open={mobileDrawerOpen}
@@ -234,13 +191,11 @@ export default function ProductList({
           onClick={() => setMobileDrawerOpen(false)}
           sx={{ mt: 3, fontWeight: 700 }}
         >
-          View {filteredProducts.length} Results
+          View {total} Results
         </Button>
       </Drawer>
 
-      {/* Main Grid: Sidebar + Products */}
       <Grid container spacing={4}>
-        {/* Left Sidebar on Desktop */}
         <Grid item xs={12} md={3.5} lg={3} sx={{ display: { xs: "none", md: "block" } }}>
           <Paper
             elevation={0}
@@ -264,9 +219,7 @@ export default function ProductList({
           </Paper>
         </Grid>
 
-        {/* Products Listing Area */}
         <Grid item xs={12} md={8.5} lg={9}>
-          {/* Toolbar */}
           <Box
             sx={{
               display: "flex",
@@ -284,8 +237,7 @@ export default function ProductList({
                 {filters.category === "all" ? "All Products" : filters.category}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Showing {paginatedProducts.length > 0 ? (page - 1) * perPage + 1 : 0}–
-                {Math.min(page * perPage, filteredProducts.length)} of {filteredProducts.length} items
+                Showing {showingFrom}–{showingTo} of {total} items
               </Typography>
             </Box>
 
@@ -305,7 +257,6 @@ export default function ProductList({
             </FormControl>
           </Box>
 
-          {/* Active Chips */}
           {hasActiveFilters && (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
               {filters.searchInput && (
@@ -359,7 +310,6 @@ export default function ProductList({
             </Box>
           )}
 
-          {/* Cards Grid */}
           <Grid container spacing={3}>
             {loading ? (
               [...Array(6)].map((_, index) => (
@@ -367,7 +317,7 @@ export default function ProductList({
                   <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 3 }} />
                 </Grid>
               ))
-            ) : paginatedProducts.length === 0 ? (
+            ) : products.length === 0 ? (
               <Grid item xs={12}>
                 <Paper
                   sx={{
@@ -390,7 +340,7 @@ export default function ProductList({
                 </Paper>
               </Grid>
             ) : (
-              paginatedProducts.map((product) => (
+              products.map((product) => (
                 <Grid item xs={12} sm={6} md={6} lg={4} key={product._id}>
                   <ProductCard product={product} />
                 </Grid>
@@ -398,7 +348,6 @@ export default function ProductList({
             )}
           </Grid>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
               <Pagination

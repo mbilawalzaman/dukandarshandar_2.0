@@ -21,6 +21,7 @@ import {
   CardContent,
   Tooltip,
   Snackbar,
+  Pagination,
 } from "@mui/material";
 import TuneIcon from "@mui/icons-material/Tune";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
@@ -85,12 +86,29 @@ function OrdersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<OrderFilterState>(INITIAL_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [summary, setSummary] = useState({
+    totalOrders: 0,
+    totalSpent: 0,
+    activeCount: 0,
+    deliveredCount: 0,
+    statusCounts: {} as Record<string, number>,
+  });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const perPage = 10;
 
   const params = useSearchParams();
   const router = useRouter();
   const placed = params.get("placed");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -102,10 +120,22 @@ function OrdersContent() {
     const loadOrders = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/orders", { headers: authHeaders() });
+        const query = new URLSearchParams({
+          page: String(page),
+          limit: String(perPage),
+        });
+        if (debouncedSearch.trim()) query.set("search", debouncedSearch.trim());
+        if (filters.status !== "all") query.set("status", filters.status);
+        if (filters.timeframe !== "all") query.set("timeframe", filters.timeframe);
+        if (filters.sortBy !== "newest") query.set("sortBy", filters.sortBy);
+
+        const res = await fetch(`/api/orders?${query.toString()}`, { headers: authHeaders() });
         const data = await res.json();
         if (data.success) {
           setOrders(data.orders || []);
+          setTotal(data.pagination?.total ?? 0);
+          setTotalPages(data.pagination?.totalPages ?? 1);
+          if (data.summary) setSummary(data.summary);
         } else {
           setError(data.message || "Could not load orders");
         }
@@ -116,14 +146,16 @@ function OrdersContent() {
       }
     };
     loadOrders();
-  }, [router]);
+  }, [router, page, debouncedSearch, filters.status, filters.timeframe, filters.sortBy]);
 
   const handleFilterChange = <K extends keyof OrderFilterState>(key: K, value: OrderFilterState[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
   };
 
   const handleResetFilters = () => {
     setFilters(INITIAL_FILTERS);
+    setPage(1);
   };
 
   const hasActiveFilters = useMemo(() => {
@@ -135,91 +167,20 @@ function OrdersContent() {
     );
   }, [filters]);
 
-  // Status counts
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      pending: 0,
-      processing: 0,
-      shipped: 0,
-      delivered: 0,
-      cancelled: 0,
-    };
-    orders.forEach((o) => {
-      const s = o.status?.toLowerCase() || "pending";
-      if (counts[s] !== undefined) counts[s]++;
-    });
-    return counts;
-  }, [orders]);
+  const statusCounts = summary.statusCounts || {
+    pending: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+  };
 
-  // Overall KPIs
-  const stats = useMemo(() => {
-    const totalSpent = orders
-      .filter((o) => o.status !== "cancelled")
-      .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-    const activeCount = orders.filter((o) => ["pending", "processing", "shipped"].includes(o.status?.toLowerCase())).length;
-    const deliveredCount = orders.filter((o) => o.status?.toLowerCase() === "delivered").length;
-
-    return {
-      totalOrders: orders.length,
-      totalSpent,
-      activeCount,
-      deliveredCount,
-    };
-  }, [orders]);
-
-  // Filtered & Sorted Orders
-  const filteredOrders = useMemo(() => {
-    let list = [...orders];
-
-    // 1. Search filter
-    if (filters.search.trim()) {
-      const query = filters.search.toLowerCase().trim();
-      list = list.filter((order) => {
-        const orderIdMatch = String(order._id).toLowerCase().includes(query);
-        const itemMatch = order.items?.some((it) => it.name.toLowerCase().includes(query));
-        const cityMatch = order.city?.toLowerCase().includes(query);
-        return orderIdMatch || itemMatch || cityMatch;
-      });
-    }
-
-    // 2. Status filter
-    if (filters.status !== "all") {
-      list = list.filter((order) => (order.status?.toLowerCase() || "pending") === filters.status);
-    }
-
-    // 3. Timeframe filter
-    if (filters.timeframe !== "all") {
-      const now = new Date().getTime();
-      list = list.filter((order) => {
-        if (!order.created_at) return true;
-        const orderTime = new Date(order.created_at).getTime();
-        const diffDays = (now - orderTime) / (1000 * 3600 * 24);
-
-        if (filters.timeframe === "30days") return diffDays <= 30;
-        if (filters.timeframe === "3months") return diffDays <= 90;
-        if (filters.timeframe === "6months") return diffDays <= 180;
-        if (filters.timeframe === "thisYear") {
-          return new Date(order.created_at).getFullYear() === new Date().getFullYear();
-        }
-        return true;
-      });
-    }
-
-    // 4. Sort
-    list.sort((a, b) => {
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-      const amountA = Number(a.total_amount) || 0;
-      const amountB = Number(b.total_amount) || 0;
-
-      if (filters.sortBy === "oldest") return dateA - dateB;
-      if (filters.sortBy === "amount_desc") return amountB - amountA;
-      if (filters.sortBy === "amount_asc") return amountA - amountB;
-      return dateB - dateA; // Default newest
-    });
-
-    return list;
-  }, [orders, filters]);
+  const stats = {
+    totalOrders: summary.totalOrders,
+    totalSpent: summary.totalSpent,
+    activeCount: summary.activeCount,
+    deliveredCount: summary.deliveredCount,
+  };
 
   const copyOrderId = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -239,7 +200,7 @@ function OrdersContent() {
         )}
 
         {/* TOP SUMMARY STATS */}
-        {!loading && orders.length > 0 && (
+        {!loading && summary.totalOrders > 0 && (
           <Grid container spacing={2.5} sx={{ mb: 4 }}>
             <Grid item xs={6} sm={3}>
               <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
@@ -327,7 +288,7 @@ function OrdersContent() {
                 onReset={handleResetFilters}
                 hasActiveFilters={hasActiveFilters}
                 statusCounts={statusCounts}
-                totalOrders={orders.length}
+                totalOrders={summary.totalOrders}
               />
             </Paper>
           </Grid>
@@ -337,7 +298,7 @@ function OrdersContent() {
             {/* Mobile Filter Button & Results Count Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5, flexWrap: "wrap", gap: 1 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: BRAND.navy }}>
-                {filteredOrders.length} {filteredOrders.length === 1 ? "Order" : "Orders"} Found
+                {total} {total === 1 ? "Order" : "Orders"} Found
               </Typography>
 
               <Button
@@ -365,7 +326,7 @@ function OrdersContent() {
               <Alert severity="error" sx={{ borderRadius: 3 }}>
                 {error}
               </Alert>
-            ) : orders.length === 0 ? (
+            ) : summary.totalOrders === 0 ? (
               /* EMPTY STATE: NO ORDERS EVER */
               <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px solid #e2e8f0" }}>
                 <ShoppingBagOutlinedIcon sx={{ fontSize: 64, color: "#cbd5e1", mb: 2 }} />
@@ -393,7 +354,7 @@ function OrdersContent() {
                   Start Shopping
                 </Button>
               </Paper>
-            ) : filteredOrders.length === 0 ? (
+            ) : orders.length === 0 ? (
               /* EMPTY STATE: NO FILTER MATCHES */
               <Paper sx={{ p: 5, textAlign: "center", borderRadius: 3, border: "1px solid #e2e8f0" }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND.navy, mb: 1 }}>
@@ -409,7 +370,7 @@ function OrdersContent() {
             ) : (
               /* ORDER CARDS LIST */
               <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                {filteredOrders.map((order) => {
+                {orders.map((order) => {
                   const statusKey = order.status?.toLowerCase() || "pending";
                   const statusInfo = STATUS_CONFIG[statusKey] || STATUS_CONFIG.pending;
                   const displayId = String(order._id).slice(-8).toUpperCase();
@@ -601,7 +562,7 @@ function OrdersContent() {
                                 </Button>
                                 <Button
                                   component={Link}
-                                  href="/contact"
+                                  href={`/support?orderId=${order._id}`}
                                   size="small"
                                   color="inherit"
                                   startIcon={<SupportAgentIcon fontSize="small" />}
@@ -621,6 +582,21 @@ function OrdersContent() {
                     </Card>
                   );
                 })}
+              </Box>
+            )}
+
+            {totalPages > 1 && !loading && orders.length > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_, val) => {
+                    setPage(val);
+                    window.scrollTo({ top: 200, behavior: "smooth" });
+                  }}
+                  color="primary"
+                  shape="rounded"
+                />
               </Box>
             )}
           </Grid>

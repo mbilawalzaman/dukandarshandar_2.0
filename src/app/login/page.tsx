@@ -2,13 +2,16 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { TextField, Button, Typography, Container, Box, Card, CardContent, Link } from "@mui/material";
+import { TextField, Button, Typography, Container, Box, Card, CardContent, Link, InputAdornment, IconButton } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") || "/";
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +68,29 @@ function LoginForm() {
           <form onSubmit={handleSubmit}>
             <Box display="flex" flexDirection="column" gap={2}>
               <TextField label="Email" type="email" name="email" variant="outlined" fullWidth required onChange={handleChange} />
-              <TextField label="Password" type="password" name="password" variant="outlined" fullWidth required onChange={handleChange} />
+              <TextField
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                variant="outlined"
+                fullWidth
+                required
+                onChange={handleChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((v) => !v)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
               {error && (
                 <Typography color="error" align="center">
                   {error}
