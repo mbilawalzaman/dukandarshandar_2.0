@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import type { ProductImage } from "@/lib/productImages";
 
 export interface IProduct extends Document {
   name: string;
@@ -7,6 +8,8 @@ export interface IProduct extends Document {
   quantity: number;
   rating: number;
   image: string;
+  images?: ProductImage[];
+  image_public_id?: string;
   status: string;
   created_at: Date;
   updated_at: Date;
@@ -25,6 +28,11 @@ const ProductSchema: Schema = new Schema(
     rating: { type: Number, default: 0 },
     description: {type: String, required: true},
     image: { type: String, required: true },
+    images: [{
+      url: { type: String, required: true },
+      publicId: { type: String, default: "" },
+    }],
+    image_public_id: { type: String, default: "" },
 
     status: { type: String, default: "active" },
     created_at: { type: Date, default: Date.now },

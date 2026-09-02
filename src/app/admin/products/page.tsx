@@ -11,6 +11,7 @@ import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable
 import ProductFormModal, { ProductFormData } from "../../components/admin/ProductFormModal";
 import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
 import Image from "next/image";
+import { getProductThumbnail } from "@/lib/productImages";
 
 interface Product {
   _id: string;
@@ -21,6 +22,7 @@ interface Product {
   rating: number;
   description: string;
   image: string;
+  images?: { url: string; publicId?: string }[];
   featured?: boolean;
 }
 
@@ -128,9 +130,9 @@ export default function AdminProductsPage() {
       id: "image",
       label: "Image",
       minWidth: 80,
-      format: (val) => (
+      format: (_val, row) => (
         <Box sx={{ width: 48, height: 48, position: "relative", borderRadius: 1, overflow: "hidden" }}>
-          <Image src={String(val || "/images/logo.jpg")} alt="Product" fill style={{ objectFit: "cover" }} unoptimized />
+          <Image src={getProductThumbnail(row)} alt="Product" fill style={{ objectFit: "cover" }} unoptimized />
         </Box>
       ),
     },

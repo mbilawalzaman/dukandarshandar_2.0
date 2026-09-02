@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/providers/CartProvider";
+import { getProductThumbnail } from "@/lib/productImages";
 
 export type ProductCardData = {
   _id: string;
@@ -20,6 +21,7 @@ export type ProductCardData = {
   price: number;
   rating?: number;
   image?: string;
+  images?: { url: string; publicId?: string }[];
   quantity?: number;
   description?: string;
 };
@@ -69,7 +71,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <Box
           component="img"
           className="product-img"
-          src={product.image || "/images/ds-icon.png"}
+          src={getProductThumbnail(product)}
           alt={product.name}
           sx={{
             maxHeight: "100%",
@@ -176,7 +178,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 _id: product._id,
                 name: product.name,
                 price: product.price,
-                image: product.image,
+                image: getProductThumbnail(product),
               },
               1
             )
