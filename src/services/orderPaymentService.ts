@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { SHIPPING_FEE } from "@/lib/constants";
+import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail } from "@/lib/emailTemplates";
 import type { CreatePaymentSessionBody } from "@/types/safepay";
@@ -28,7 +29,7 @@ function buildCartFingerprint(items: CartItem[], totalAmount: number): string {
 }
 
 /**
- * Order payment lifecycle — pending order creation and post-payment fulfillment.
+ * Order payment lifecycle pending order creation and post-payment fulfillment.
  */
 export class OrderPaymentService {
   static async validateCartItems(items: CartItem[]): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -70,9 +71,10 @@ export class OrderPaymentService {
     }
 
     const db = await getDb();
+    const deliverySettings = await getDeliverySettings();
     const subtotal = body.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
-    const totalAmount = body.total_amount || subtotal + shipping;
+    const shipping = computeShipping(subtotal, deliverySettings);
+    const totalAmount = subtotal + shipping;
     const customerEmail = body.customer_email || user?.email || "guest@example.com";
     const cartFingerprint = buildCartFingerprint(body.items, totalAmount);
     const reuseCutoff = new Date(Date.now() - 30 * 60 * 1000);
@@ -137,9 +139,11 @@ export class OrderPaymentService {
     }
 
     const db = await getDb();
+    const deliverySettings = await getDeliverySettings();
     const subtotal = body.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
-    const totalAmount = body.total_amount || subtotal + shipping;
+    const shipping = computeShipping(subtotal, deliverySettings);
+    const delivery_promo = isDeliveryPromoActive(deliverySettings, subtotal);
+    const totalAmount = subtotal + shipping;
     const fingerprint = cartFingerprint || buildCartFingerprint(body.items, totalAmount);
 
     const enrichedItems = [];
@@ -177,6 +181,7 @@ export class OrderPaymentService {
       items: enrichedItems,
       subtotal,
       shipping,
+      delivery_promo,
       total_amount: totalAmount,
       cart_fingerprint: fingerprint,
       status: "pending_payment",
@@ -217,7 +222,7 @@ export class OrderPaymentService {
     return order ? String(order._id) : null;
   }
 
-  /** Resolve order for webhook — tracker is authoritative over metadata order_id. */
+  /** Resolve order for webhook tracker is authoritative over metadata order_id. */
   static async resolveOrderIdForWebhook(
     tracker: string | null,
     orderIdHint: string | null
@@ -305,14 +310,14 @@ export class OrderPaymentService {
       order.customer_email
         ? sendMail({
             to: order.customer_email,
-            subject: `Order #${displayOrderId} confirmed — Dukandar Shandar`,
+            subject: `Order #${displayOrderId} confirmed Dukandar Shandar`,
             html: confirmationHtml,
           })
         : Promise.resolve(),
       getShopInbox()
         ? sendMail({
             to: getShopInbox(),
-            subject: `New paid order #${displayOrderId} — PKR ${Number(order.total_amount).toLocaleString()}`,
+            subject: `New paid order #${displayOrderId} PKR ${Number(order.total_amount).toLocaleString()}`,
             html: confirmationHtml,
           })
         : Promise.resolve(),

@@ -26,7 +26,7 @@ interface SafepayPaymentFormProps {
   onError: (message: string) => void;
 }
 
-/** Safepay CardCapture renders an iframe that fills its parent — fixed height is required. */
+/** Safepay CardCapture renders an iframe that fills its parent fixed height is required. */
 const CARD_CAPTURE_HEIGHT = "2.75rem";
 
 const CARD_INPUT_STYLE = {

@@ -158,7 +158,7 @@ export function useConversationList(userId: string | null, isAdmin: boolean, fir
           // Keep API-loaded data; poll instead of blocking the inbox.
           setError((prev) =>
             prev ||
-            "Live sync unavailable — showing saved conversations. Deploy Firestore rules if this persists."
+            "Live sync unavailable showing saved conversations. Deploy Firestore rules if this persists."
           );
         } else {
           setError(err.message);

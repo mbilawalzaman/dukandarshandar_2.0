@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         : Promise.resolve(),
       sendMail({
         to: email,
-        subject: "We received your message — Dukandar Shandar",
+        subject: "We received your message, Dukandar Shandar",
         html: contactCustomerEmail(name),
       }),
     ]);

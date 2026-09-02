@@ -27,7 +27,7 @@ const highlights = [
   {
     icon: <AccessTimeIcon />,
     title: "Welcome to Dukandar Shandar",
-    text: "Explore a world of creativity at our stationery and craft shop — whether you are a seasoned crafter or just starting out.",
+    text: "Explore a world of creativity at our stationery and craft shop whether you are a seasoned crafter or just starting out.",
   },
   {
     icon: <ColorLensIcon />,
@@ -112,7 +112,7 @@ export default function AboutPage() {
               Our story
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3, lineHeight: 1.8 }}>
-              Welcome to Dukandar Shandar — your one-stop destination for stationery and craft. We offer a curated
+              Welcome to Dukandar Shandar, your one-stop destination for stationery and craft. We offer a curated
               selection of high-quality supplies that spark creativity and innovation. With a commitment to excellence,
               we bring you products that cater to your artistic needs. Explore our range and elevate your crafting
               experience.

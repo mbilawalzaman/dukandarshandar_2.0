@@ -30,7 +30,7 @@ const PAYMENT_METHODS: PaymentMethodOption[] = [
     description: "Pay securely on this page",
     icon: <CreditCardOutlinedIcon />,
   },
-  // Raast & wallet require additional Safepay merchant authentication — enable when configured.
+  // Raast & wallet require additional Safepay merchant authentication enable when configured.
   // {
   //   id: "raast",
   //   label: "Raast",

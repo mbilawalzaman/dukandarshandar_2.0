@@ -86,7 +86,7 @@ function SupportContent() {
 
   return (
     <Box>
-      <PageBanner title="Support" subtitle="Chat with Dukandar Shandar — order help and questions" />
+      <PageBanner title="Support" subtitle="Chat with Dukandar Shandar order help and questions" />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Send a message to our support team for order help, product questions, or account issues.

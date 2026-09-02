@@ -7,7 +7,7 @@ export const firebasePublicConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
 };
 
-/** Public web config — safe to check in the browser */
+/** Public web config safe to check in the browser */
 export function isFirebaseClientConfigured() {
   return Boolean(
     firebasePublicConfig.apiKey &&
@@ -16,7 +16,7 @@ export function isFirebaseClientConfigured() {
   );
 }
 
-/** Admin SDK credentials — server only (API routes) */
+/** Admin SDK credentials server only (API routes) */
 export function isFirebaseServerConfigured() {
   return Boolean(
     isFirebaseClientConfigured() &&

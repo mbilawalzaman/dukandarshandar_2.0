@@ -36,7 +36,7 @@ function AdminSupportContent() {
   const { conversations, loading, error: listError } = useConversationList(userId, true, ready);
 
   const error = listError?.includes("index")
-    ? `${listError} — open the Firestore index link in your terminal/server logs, click Create Index, wait 2–5 min, then refresh.`
+    ? `${listError} open the Firestore index link in your terminal/server logs, click Create Index, wait 2–5 min, then refresh.`
     : listError;
 
   useEffect(() => {
