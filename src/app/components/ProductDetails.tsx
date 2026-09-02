@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, Button, CircularProgress, Rating } from "@mui/material";
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/constants";
+import ProductImageGallery from "@/app/components/ProductImageGallery";
+import { getProductImageUrls, getProductThumbnail } from "@/lib/productImages";
 
 interface Product {
   _id: string;
@@ -15,6 +17,7 @@ interface Product {
   rating: number;
   ratings: number[];
   image: string;
+  images?: { url: string; publicId?: string }[];
   description: string;
 }
 
@@ -72,12 +75,28 @@ const ProductDetails = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    add({ _id: product._id, name: product.name, price: product.price, image: product.image }, quantity);
+    add(
+      {
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        image: getProductThumbnail(product),
+      },
+      quantity
+    );
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    add({ _id: product._id, name: product.name, price: product.price, image: product.image }, quantity);
+    add(
+      {
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        image: getProductThumbnail(product),
+      },
+      quantity
+    );
     router.push("/checkout");
   };
 
@@ -99,6 +118,7 @@ const ProductDetails = () => {
 
   const maxQty = Math.max(1, Number(product.quantity) || 1);
   const outOfStock = Number(product.quantity) <= 0;
+  const galleryImages = getProductImageUrls(product);
 
   return (
     <Box
@@ -114,13 +134,8 @@ const ProductDetails = () => {
         boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
       }}
     >
-      <Box sx={{ textAlign: "center" }}>
-        <Box
-          component="img"
-          src={product.image || "/images/logo.jpg"}
-          alt={product.name}
-          sx={{ width: "100%", maxWidth: 480, height: "auto", borderRadius: 2, objectFit: "cover" }}
-        />
+      <Box>
+        <ProductImageGallery images={galleryImages} alt={product.name} />
       </Box>
 
       <Box>

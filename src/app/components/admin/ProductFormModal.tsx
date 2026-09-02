@@ -18,10 +18,14 @@ import {
   FormControlLabel,
   Checkbox,
   IconButton,
+  Chip,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
+import { getProductImageUrls, MAX_PRODUCT_IMAGES, type ProductImage } from "@/lib/productImages";
 
 export interface ProductFormData {
   _id?: string;
@@ -32,6 +36,8 @@ export interface ProductFormData {
   rating: number | string;
   description: string;
   image: string;
+  images?: ProductImage[];
+  image_public_id?: string;
   featured?: boolean;
 }
 
@@ -50,6 +56,7 @@ const initialFormState: ProductFormData = {
   rating: 5,
   description: "",
   image: "",
+  images: [],
   featured: false,
 };
 
@@ -60,7 +67,7 @@ export default function ProductFormModal({
   productToEdit,
 }: ProductFormModalProps) {
   const [formData, setFormData] = useState<ProductFormData>(initialFormState);
-  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -68,6 +75,7 @@ export default function ProductFormModal({
 
   useEffect(() => {
     if (productToEdit) {
+      const existingImages = getProductImageUrls(productToEdit);
       setFormData({
         _id: productToEdit._id,
         name: productToEdit.name || "",
@@ -76,13 +84,14 @@ export default function ProductFormModal({
         quantity: productToEdit.quantity !== undefined && productToEdit.quantity !== null ? productToEdit.quantity : "",
         rating: productToEdit.rating !== undefined && productToEdit.rating !== null ? productToEdit.rating : 5,
         description: productToEdit.description || "",
-        image: productToEdit.image || "",
+        image: existingImages[0] || productToEdit.image || "",
+        images: productToEdit.images,
         featured: Boolean(productToEdit.featured),
       });
-      setSelectedImage(productToEdit.image || "");
+      setSelectedImages(existingImages);
     } else {
       setFormData(initialFormState);
-      setSelectedImage("");
+      setSelectedImages([]);
     }
     setErrorMsg("");
     setIsDragging(false);
@@ -96,35 +105,53 @@ export default function ProductFormModal({
     }));
   };
 
-  const processFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg("Please upload a valid image file (JPEG, PNG, WebP).");
+  const processFiles = (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const remaining = MAX_PRODUCT_IMAGES - selectedImages.length;
+
+    if (remaining <= 0) {
+      setErrorMsg(`You can upload up to ${MAX_PRODUCT_IMAGES} images.`);
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg("Image must be under 5MB.");
-      return;
-    }
+    const toAdd = fileArray.slice(0, remaining);
+    let pending = toAdd.length;
+    const newImages: string[] = [];
 
-    setErrorMsg("");
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const result = reader.result as string;
-      setSelectedImage(result);
-      setFormData((prev) => ({ ...prev, image: result }));
-    };
-    reader.onerror = (error) => {
-      console.error("Error reading image:", error);
-      setErrorMsg("Failed to read image file.");
-    };
+    toAdd.forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        setErrorMsg("Please upload valid image files (JPEG, PNG, WebP).");
+        pending -= 1;
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMsg("Each image must be under 5MB.");
+        pending -= 1;
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        newImages.push(reader.result as string);
+        pending -= 1;
+        if (pending === 0) {
+          setErrorMsg("");
+          setSelectedImages((prev) => [...prev, ...newImages].slice(0, MAX_PRODUCT_IMAGES));
+        }
+      };
+      reader.onerror = () => {
+        pending -= 1;
+        setErrorMsg("Failed to read one or more image files.");
+      };
+    });
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
+    if (e.target.files?.length) {
+      processFiles(e.target.files);
+      e.target.value = "";
     }
   };
 
@@ -145,19 +172,24 @@ export default function ProductFormModal({
     e.stopPropagation();
     setIsDragging(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      processFile(file);
+    if (e.dataTransfer.files?.length) {
+      processFiles(e.dataTransfer.files);
     }
   };
 
-  const handleRemoveImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedImage("");
-    setFormData((prev) => ({ ...prev, image: "" }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= selectedImages.length) return;
+    setSelectedImages((prev) => {
+      const next = [...prev];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,8 +205,8 @@ export default function ProductFormModal({
       return;
     }
 
-    if (!selectedImage && !formData.image) {
-      setErrorMsg("Please upload a product image.");
+    if (!selectedImages.length) {
+      setErrorMsg("Please upload at least one product image.");
       return;
     }
 
@@ -199,7 +231,8 @@ export default function ProductFormModal({
           quantity: isNaN(qtyNum) || qtyNum < 0 ? 0 : qtyNum,
           rating: isNaN(ratingNum) ? 5 : ratingNum,
           description: formData.description.trim(),
-          image: selectedImage || formData.image,
+          images: selectedImages,
+          image: selectedImages[0],
           created_by: "admin",
         }),
       });
@@ -318,8 +351,105 @@ export default function ProductFormModal({
               />
             </Grid>
 
-            {/* Enhanced Drag & Drop Area */}
             <Grid item xs={12}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Product Images ({selectedImages.length}/{MAX_PRODUCT_IMAGES})
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+                The first image is used as the listing thumbnail. Drag order with arrows to reorder.
+              </Typography>
+
+              {selectedImages.length > 0 && (
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+                    gap: 1.5,
+                    mb: 2,
+                  }}
+                >
+                  {selectedImages.map((src, index) => (
+                    <Box
+                      key={`${src.slice(0, 32)}-${index}`}
+                      sx={{
+                        position: "relative",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        border: index === 0 ? "2px solid #febe4c" : "1px solid #e2e8f0",
+                        backgroundColor: "#fff",
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={src}
+                        alt={`Product image ${index + 1}`}
+                        sx={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+                      />
+                      {index === 0 && (
+                        <Chip
+                          label="Thumbnail"
+                          size="small"
+                          sx={{
+                            position: "absolute",
+                            top: 6,
+                            left: 6,
+                            height: 22,
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            backgroundColor: "#febe4c",
+                            color: "#1e293b",
+                          }}
+                        />
+                      )}
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          top: 4,
+                          right: 4,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5,
+                        }}
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveImage(index);
+                          }}
+                          sx={{
+                            backgroundColor: "rgba(0,0,0,0.6)",
+                            color: "#fff",
+                            "&:hover": { backgroundColor: "rgba(239, 68, 68, 0.9)" },
+                          }}
+                          title="Remove image"
+                        >
+                          <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, p: 0.5, bgcolor: "#f8fafc" }}>
+                        <IconButton
+                          size="small"
+                          disabled={index === 0}
+                          onClick={() => moveImage(index, -1)}
+                          title="Move earlier (toward thumbnail)"
+                        >
+                          <ArrowBackIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          disabled={index === selectedImages.length - 1}
+                          onClick={() => moveImage(index, 1)}
+                          title="Move later"
+                        >
+                          <ArrowForwardIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
               <Box
                 onDragOver={handleDragOver}
                 onDragEnter={handleDragOver}
@@ -344,65 +474,22 @@ export default function ProductFormModal({
                   ref={fileInputRef}
                   accept="image/*"
                   type="file"
+                  multiple
                   onChange={handleFileInputChange}
                   style={{ display: "none" }}
                 />
 
-                {selectedImage ? (
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-                    <Box
-                      sx={{
-                        position: "relative",
-                        display: "inline-block",
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        border: "1px solid #e2e8f0",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={selectedImage}
-                        alt="Preview"
-                        sx={{
-                          width: 140,
-                          height: 140,
-                          objectFit: "contain",
-                          backgroundColor: "#ffffff",
-                          display: "block",
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={handleRemoveImage}
-                        sx={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          backgroundColor: "rgba(0,0,0,0.6)",
-                          color: "#fff",
-                          "&:hover": { backgroundColor: "rgba(239, 68, 68, 0.9)" },
-                        }}
-                        title="Remove image"
-                      >
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Click or drop another image to replace
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ py: 1 }}>
-                    <CloudUploadIcon sx={{ fontSize: 44, color: isDragging ? "primary.main" : "#94a3b8", mb: 1 }} />
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                      {isDragging ? "Drop image here" : "Drag & drop an image here"}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      or <Box component="span" sx={{ color: "primary.main", fontWeight: 600, textDecoration: "underline" }}>browse</Box> from your computer (max 5MB)
-                    </Typography>
-                  </Box>
-                )}
+                <CloudUploadIcon sx={{ fontSize: 44, color: isDragging ? "primary.main" : "#94a3b8", mb: 1 }} />
+                <Typography variant="body1" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                  {isDragging ? "Drop images here" : "Drag & drop images here"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  or{" "}
+                  <Box component="span" sx={{ color: "primary.main", fontWeight: 600, textDecoration: "underline" }}>
+                    browse
+                  </Box>{" "}
+                  from your computer (max 5MB each, up to {MAX_PRODUCT_IMAGES} images)
+                </Typography>
               </Box>
             </Grid>
           </Grid>

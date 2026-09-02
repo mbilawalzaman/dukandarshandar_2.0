@@ -4,6 +4,59 @@ import { getDb } from "@/lib/db";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { getAuthUser } from "@/lib/auth";
 import type { PaymentBreakdownPoint } from "@/types/admin";
+import type { ProductImage } from "@/lib/productImages";
+import { MAX_PRODUCT_IMAGES } from "@/lib/productImages";
+
+type StoredProductImage = { url: string; publicId: string };
+
+function getStoredImages(product: Record<string, unknown>): StoredProductImage[] {
+  const images = product.images as ProductImage[] | undefined;
+  if (Array.isArray(images) && images.length > 0) {
+    return images.map((img) => ({ url: img.url, publicId: img.publicId || "" }));
+  }
+  const url = product.image as string | undefined;
+  const publicId = product.image_public_id as string | undefined;
+  if (url) return [{ url, publicId: publicId || "" }];
+  return [];
+}
+
+async function resolveImagesInput(
+  input: string[],
+  existing: StoredProductImage[] = []
+): Promise<StoredProductImage[]> {
+  const existingByUrl = new Map(existing.map((img) => [img.url, img]));
+  const result: StoredProductImage[] = [];
+
+  for (const item of input.slice(0, MAX_PRODUCT_IMAGES)) {
+    if (!item?.trim()) continue;
+    if (item.startsWith("data:")) {
+      const uploaded = await uploadImage(item);
+      result.push({ url: uploaded.url, publicId: uploaded.publicId });
+    } else if (item.startsWith("http")) {
+      const prev = existingByUrl.get(item);
+      result.push(prev ?? { url: item, publicId: "" });
+    }
+  }
+
+  return result;
+}
+
+async function deleteRemovedImages(previous: StoredProductImage[], next: StoredProductImage[]) {
+  const nextUrls = new Set(next.map((img) => img.url));
+  for (const img of previous) {
+    if (!nextUrls.has(img.url) && img.publicId) {
+      await deleteImage(img.publicId);
+    }
+  }
+}
+
+function syncPrimaryImageFields(images: StoredProductImage[]) {
+  return {
+    images,
+    image: images[0]?.url ?? "",
+    image_public_id: images[0]?.publicId ?? "",
+  };
+}
 
 export const createProduct = async (req: Request) => {
   try {
@@ -12,14 +65,20 @@ export const createProduct = async (req: Request) => {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, category, price, quantity, description, rating, image, featured, created_by } = await req.json();
+    const { name, category, price, quantity, description, rating, image, images, featured, created_by } =
+      await req.json();
 
-    if (!name || !category || !price || quantity === undefined || !image || !description) {
+    const imageInputs: string[] = Array.isArray(images) && images.length > 0 ? images : image ? [image] : [];
+
+    if (!name || !category || !price || quantity === undefined || !imageInputs.length || !description) {
       return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 });
     }
 
     const db = await getDb();
-    const uploaded = await uploadImage(image);
+    const storedImages = await resolveImagesInput(imageInputs);
+    if (!storedImages.length) {
+      return NextResponse.json({ success: false, message: "At least one valid image is required" }, { status: 400 });
+    }
 
     const newProduct = {
       name,
@@ -29,8 +88,7 @@ export const createProduct = async (req: Request) => {
       rating: rating || 0,
       ratings: rating ? [rating] : [],
       description,
-      image: uploaded.url,
-      image_public_id: uploaded.publicId,
+      ...syncPrimaryImageFields(storedImages),
       featured: Boolean(featured),
       status: "active",
       created_by: created_by || user.userName,
@@ -56,7 +114,7 @@ export const createProduct = async (req: Request) => {
 
 export const updateProduct = async (req: Request) => {
   try {
-    const { _id, rating, image, ...updateFields } = await req.json();
+    const { _id, rating, image, images, ...updateFields } = await req.json();
 
     if (!_id) {
       return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
@@ -74,14 +132,19 @@ export const updateProduct = async (req: Request) => {
     }
 
     const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields, updated_at: new Date() } };
+    const existingImages = getStoredImages(product);
 
-    if (image && (image.startsWith("data:") || (image.startsWith("http") && image !== product.image))) {
-      const uploaded = await uploadImage(image);
-      updateQuery.$set.image = uploaded.url;
-      updateQuery.$set.image_public_id = uploaded.publicId;
-      if (product.image_public_id && uploaded.publicId) {
-        await deleteImage(product.image_public_id);
+    if (Array.isArray(images)) {
+      const storedImages = await resolveImagesInput(images, existingImages);
+      if (!storedImages.length) {
+        return NextResponse.json({ success: false, message: "At least one product image is required" }, { status: 400 });
       }
+      await deleteRemovedImages(existingImages, storedImages);
+      Object.assign(updateQuery.$set, syncPrimaryImageFields(storedImages));
+    } else if (image && (image.startsWith("data:") || (image.startsWith("http") && image !== product.image))) {
+      const storedImages = await resolveImagesInput([image], existingImages);
+      await deleteRemovedImages(existingImages, storedImages);
+      Object.assign(updateQuery.$set, syncPrimaryImageFields(storedImages));
     }
 
     if (rating !== undefined) {
@@ -285,7 +348,10 @@ export const deleteProduct = async (id: string) => {
       return { success: false, message: "Product not found", status: 404 };
     }
 
-    await deleteImage(product.image_public_id);
+    const storedImages = getStoredImages(product);
+    for (const img of storedImages) {
+      await deleteImage(img.publicId);
+    }
 
     return { success: true, message: "Product deleted successfully", status: 200 };
   } catch (error) {
