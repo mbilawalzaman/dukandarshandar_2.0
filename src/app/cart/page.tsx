@@ -18,12 +18,16 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Link from "next/link";
 import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
-import { SHIPPING_FEE } from "@/lib/constants";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
+import DeliveryShippingLine from "../components/DeliveryShippingLine";
 
 export default function CartPage() {
   const { items, updateQuantity, remove } = useCart();
+  const { settings, getShipping, isPromoActive } = useDeliverySettings();
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
+  const shipping = getShipping(subtotal);
+  const promoActive = isPromoActive(subtotal);
   const grandTotal = subtotal + shipping;
 
   return (
@@ -83,6 +87,7 @@ export default function CartPage() {
 
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 4, borderRadius: 4 }}>
+                {promoActive && <FreeDeliveryPromoBanner savedAmount={settings.fee} compact />}
                 <Typography variant="h6" sx={{ mb: 3 }}>
                   Order Summary
                 </Typography>
@@ -90,10 +95,11 @@ export default function CartPage() {
                   <Typography color="text.secondary">Subtotal</Typography>
                   <Typography sx={{ fontWeight: 600 }}>PKR {subtotal.toLocaleString()}</Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                  <Typography color="text.secondary">Shipping Fee</Typography>
-                  <Typography sx={{ fontWeight: 600 }}>PKR {shipping.toLocaleString()}</Typography>
-                </Box>
+                <DeliveryShippingLine
+                  shipping={shipping}
+                  isPromo={promoActive}
+                  standardFee={settings.fee}
+                />
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
                   <Typography variant="h6">Total Amount</Typography>

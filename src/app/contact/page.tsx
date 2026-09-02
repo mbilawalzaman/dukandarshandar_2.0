@@ -100,7 +100,7 @@ export default function ContactPage() {
                 <Box>
                   <Typography fontWeight={700}>Location</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Pakistan — nationwide shipping
+                    Pakistan nationwide shipping
                   </Typography>
                 </Box>
               </CardContent>

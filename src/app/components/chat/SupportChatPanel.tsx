@@ -358,7 +358,7 @@ export default function SupportChatPanel({
             </Box>
           ) : (
             <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
-              Start the conversation — we typically reply within a few hours.
+              Start the conversation, we typically reply within a few hours.
             </Typography>
           )
         ) : (

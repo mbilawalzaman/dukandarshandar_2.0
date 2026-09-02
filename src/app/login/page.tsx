@@ -40,7 +40,7 @@ function LoginForm() {
     } catch {
       setError(
         res.status >= 500
-          ? "Server error — check that DATABASE_URL and JWT_SECRET are set on Vercel."
+          ? "Server error check that DATABASE_URL and JWT_SECRET are set on Vercel."
           : "Unexpected server response. Please try again."
       );
       return;
@@ -66,7 +66,7 @@ function LoginForm() {
     try {
       data = JSON.parse(raw);
     } catch {
-      setError("Server error — check Vercel environment variables.");
+      setError("Server error check that Vercel environment variables.");
       return;
     }
 

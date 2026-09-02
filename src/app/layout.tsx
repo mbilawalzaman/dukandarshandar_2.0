@@ -12,7 +12,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Dukandar Shandar",
-  description: "Stationery and craft ecommerce — quality supplies for every project.",
+  description: "Stationery and craft ecommerce quality supplies for every project.",
   icons: {
     icon: "/images/ds-icon.png",
     shortcut: "/images/ds-icon.png",

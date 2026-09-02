@@ -58,6 +58,7 @@ interface Order {
   total_amount: number;
   subtotal?: number;
   shipping?: number;
+  delivery_promo?: boolean;
   status: string;
   payment_status?: string;
   payment_method?: string;
@@ -564,6 +565,20 @@ function OrdersContent() {
                               <Typography variant="caption" color="text.secondary">
                                 Total Amount Paid
                               </Typography>
+                              {order.delivery_promo && (
+                                <Chip
+                                  label="Free delivery on us"
+                                  size="small"
+                                  sx={{
+                                    mb: 0.5,
+                                    height: 22,
+                                    fontSize: "0.7rem",
+                                    fontWeight: 700,
+                                    backgroundColor: "rgba(254, 190, 76, 0.2)",
+                                    color: BRAND.navy,
+                                  }}
+                                />
+                              )}
                               <Typography variant="h5" sx={{ fontWeight: 800, color: BRAND.navy }}>
                                 PKR {Number(order.total_amount).toLocaleString()}
                               </Typography>

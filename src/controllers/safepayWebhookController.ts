@@ -6,7 +6,7 @@ import type { SafepayWebhookPayload } from "@/types/safepay";
 
 /**
  * HTTP controller for Safepay webhook endpoints.
- * Handles request parsing/response only — logic lives in SafepayWebhookService.
+ * Handles request parsing/response only logic lives in SafepayWebhookService.
  */
 export class SafepayWebhookController {
   static async handleWebhook(req: NextRequest): Promise<NextResponse> {

@@ -204,7 +204,7 @@ export default function DashboardCharts({
         </Grid>
       </Grid>
 
-      {/* Row 2: Order Fulfillment & Payments — 50/50 */}
+      {/* Row 2: Order Fulfillment & Payments 50/50 */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={6}>
           <Paper

@@ -48,7 +48,7 @@ export function contactCustomerEmail(name: string) {
 export function newsletterWelcomeEmail() {
   return layout(
     "Welcome to the list",
-    `<p>You are subscribed to Dukandar Shandar updates — new stationery, craft finds, and shop news.</p>
+    `<p>You are subscribed to Dukandar Shandar updates, new stationery, craft finds, and shop news.</p>
      <p>We will only send useful notes, never spam.</p>`
   );
 }

@@ -10,7 +10,7 @@ import {
 import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/safepay";
 
 /**
- * Safepay webhook business logic — parse events and update order payment state.
+ * Safepay webhook business logic parse events and update order payment state.
  */
 export class SafepayWebhookService {
   static async handleVerifiedEvent(

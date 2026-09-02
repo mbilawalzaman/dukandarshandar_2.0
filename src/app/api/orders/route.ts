@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { getAuthUser, requireAdmin } from "@/lib/auth";
-import { SHIPPING_FEE } from "@/lib/constants";
+import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail, orderStatusEmail } from "@/lib/emailTemplates";
 import { safeNotify } from "@/lib/safeNotify";
@@ -205,7 +206,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customer_name, customer_email, phone, address, city, items, total_amount, payment_method } = body;
+    const { customer_name, customer_email, phone, address, city, items, payment_method } = body;
     const user = getAuthUser(req);
 
     if (!items || items.length === 0) {
@@ -256,8 +257,10 @@ export async function POST(req: NextRequest) {
     }
 
     const subtotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
-    const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
-    const computedTotal = total_amount || subtotal + shipping;
+    const deliverySettings = await getDeliverySettings();
+    const shipping = computeShipping(subtotal, deliverySettings);
+    const delivery_promo = isDeliveryPromoActive(deliverySettings, subtotal);
+    const computedTotal = subtotal + shipping;
 
     const enrichedItems = [];
     for (const item of items) {
@@ -278,6 +281,7 @@ export async function POST(req: NextRequest) {
       items: enrichedItems,
       subtotal,
       shipping,
+      delivery_promo,
       total_amount: computedTotal,
       payment_method: payment_method || "cod",
       payment_status: payment_method === "cod" ? "unpaid" : "unpaid",
@@ -293,7 +297,7 @@ export async function POST(req: NextRequest) {
       notifyAdmins({
         type: "order_placed",
         title: "New order placed",
-        body: `Order #${orderId} — PKR ${computedTotal.toLocaleString()}`,
+        body: `Order #${orderId} PKR ${computedTotal.toLocaleString()}`,
         entityType: "order",
         entityId: String(result.insertedId),
         actorId: user?.userId || null,
@@ -315,13 +319,13 @@ export async function POST(req: NextRequest) {
     await Promise.all([
       sendMail({
         to: newOrder.customer_email,
-        subject: `Order #${orderId} confirmed — Dukandar Shandar`,
+        subject: `Order #${orderId} confirmed Dukandar Shandar`,
         html: confirmationHtml,
       }),
       getShopInbox()
         ? sendMail({
             to: getShopInbox(),
-            subject: `New order #${orderId} — PKR ${computedTotal.toLocaleString()}`,
+            subject: `New order #${orderId} PKR ${computedTotal.toLocaleString()}`,
             html: confirmationHtml,
           })
         : Promise.resolve(),
@@ -401,7 +405,7 @@ export async function PUT(req: NextRequest) {
       const orderId = String(existingOrder._id).slice(-8).toUpperCase();
       await sendMail({
         to: existingOrder.customer_email,
-        subject: `Order #${orderId} is ${status} — Dukandar Shandar`,
+        subject: `Order #${orderId} is ${status} Dukandar Shandar`,
         html: orderStatusEmail({
           name: existingOrder.customer_name || "Customer",
           orderId,

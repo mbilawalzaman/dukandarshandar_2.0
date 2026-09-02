@@ -19,7 +19,10 @@ import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
 import PaymentMethodSelector, { PaymentMethod } from "../components/checkout/PaymentMethodSelector";
 import { useCart } from "@/app/providers/CartProvider";
 import { authHeaders } from "@/lib/cart";
-import { SHIPPING_FEE, BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/constants";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
+import DeliveryShippingLine from "../components/DeliveryShippingLine";
 
 type TokenUser = { userName?: string; email?: string };
 
@@ -35,6 +38,7 @@ interface SafepaySession {
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, clear, toast } = useCart();
+  const { settings, getShipping, isPromoActive } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
@@ -66,7 +70,8 @@ export default function CheckoutPage() {
   }, []);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
+  const shipping = getShipping(subtotal);
+  const promoActive = isPromoActive(subtotal);
   const grandTotal = subtotal + shipping;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,7 +158,7 @@ export default function CheckoutPage() {
         toast("Enter your card details below to complete payment.");
       }
 
-      // Raast & wallet redirect — disabled until Safepay merchant auth is configured.
+      // Raast & wallet redirect disabled until Safepay merchant auth is configured.
       // if ((paymentMethod === "raast" || paymentMethod === "wallet") && session.checkoutUrl) {
       //   window.location.href = session.checkoutUrl;
       //   return;
@@ -284,7 +289,7 @@ export default function CheckoutPage() {
                       You will pay PKR {grandTotal.toLocaleString()} in cash when your order is delivered.
                     </Alert>
                   )}
-                  {/* Raast & wallet — disabled until Safepay merchant auth is configured.
+                  {/* Raast & wallet disabled until Safepay merchant auth is configured.
                   {(paymentMethod === "raast" || paymentMethod === "wallet") && (
                     <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
                       You will be redirected to Safepay to complete payment via{" "}
@@ -328,6 +333,7 @@ export default function CheckoutPage() {
 
             <Grid item xs={12} md={5}>
               <Paper sx={{ p: 4, borderRadius: 4, position: "sticky", top: 90 }}>
+                {promoActive && <FreeDeliveryPromoBanner savedAmount={settings.fee} compact />}
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                   Order summary
                 </Typography>
@@ -340,10 +346,12 @@ export default function CheckoutPage() {
                   </Box>
                 ))}
                 <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                  <Typography color="text.secondary">Shipping</Typography>
-                  <Typography>PKR {shipping.toLocaleString()}</Typography>
-                </Box>
+                <DeliveryShippingLine
+                  shipping={shipping}
+                  isPromo={promoActive}
+                  standardFee={settings.fee}
+                  label="Shipping"
+                />
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                   <Typography fontWeight={800}>Total</Typography>
                   <Typography fontWeight={800} color="primary">

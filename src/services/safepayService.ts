@@ -46,7 +46,7 @@ function splitCustomerName(fullName: string): { firstName: string; lastName: str
 }
 
 /**
- * Safepay API integration — external API calls and signature verification only.
+ * Safepay API integration external API calls and signature verification only.
  */
 export class SafepayService {
   static async createGuestCustomer(params: {
