@@ -35,6 +35,7 @@ import NotificationBell from "@/app/components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
+import { clearChatSessionState } from "@/lib/chatSync";
 import { signOut } from "firebase/auth";
 
 type DecodedToken = { userName?: string; role?: string };
@@ -105,6 +106,7 @@ export default function Navbar() {
         /* ignore */
       }
     }
+    clearChatSessionState();
     localStorage.removeItem("token");
     document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
     await fetch("/api/auth", {

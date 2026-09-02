@@ -13,6 +13,15 @@ export function setSyncedSelectedConversation(id: string | null) {
   window.dispatchEvent(new Event("chatSelectionChange"));
 }
 
+/** Clear conversation selection + close floating widget (call on logout). */
+export function clearChatSessionState() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(SELECTED_CONVERSATION_KEY);
+  localStorage.setItem(WIDGET_OPEN_KEY, "false");
+  window.dispatchEvent(new Event("chatSelectionChange"));
+  window.dispatchEvent(new Event("chatWidgetChange"));
+}
+
 export function subscribeSelectedConversation(onChange: (id: string | null) => void) {
   if (typeof window === "undefined") return () => undefined;
 

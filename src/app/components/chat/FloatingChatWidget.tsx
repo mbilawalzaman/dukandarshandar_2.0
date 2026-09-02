@@ -59,6 +59,7 @@ export default function FloatingChatWidget() {
   const [position, setPosition] = useState<Position>(defaultPosition);
   const [mounted, setMounted] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const positionRef = useRef(position);
 
   const dragRef = useRef({
@@ -70,6 +71,23 @@ export default function FloatingChatWidget() {
     originY: 0,
   });
 
+  const syncRoleFromToken = useCallback(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setRole(null);
+        setUserId(null);
+        return;
+      }
+      const decoded = jwtDecode<{ role?: string; userId?: string }>(token);
+      setRole(decoded.role || null);
+      setUserId(decoded.userId || null);
+    } catch {
+      setRole(null);
+      setUserId(null);
+    }
+  }, []);
+
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
@@ -80,17 +98,18 @@ export default function FloatingChatWidget() {
     setPosition(initial);
     positionRef.current = initial;
     setMounted(true);
+    syncRoleFromToken();
+  }, [syncRoleFromToken]);
 
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const decoded = jwtDecode<{ role?: string }>(token);
-        setRole(decoded.role || null);
-      }
-    } catch {
-      setRole(null);
-    }
-  }, []);
+  useEffect(() => {
+    const onAuthChange = () => syncRoleFromToken();
+    window.addEventListener("authChange", onAuthChange);
+    window.addEventListener("storage", onAuthChange);
+    return () => {
+      window.removeEventListener("authChange", onAuthChange);
+      window.removeEventListener("storage", onAuthChange);
+    };
+  }, [syncRoleFromToken]);
 
   useEffect(() => {
     const onResize = () => setPosition((p) => clampPosition(p));
@@ -191,7 +210,12 @@ export default function FloatingChatWidget() {
             border: "1px solid rgba(0,0,0,0.06)",
           }}
         >
-          <MessagesWorkspace variant="popup" isAdmin={isAdmin} onClose={closeWidget} />
+          <MessagesWorkspace
+            key={userId || "anonymous"}
+            variant="popup"
+            isAdmin={isAdmin}
+            onClose={closeWidget}
+          />
         </Paper>
       </Slide>
 

@@ -27,6 +27,7 @@ import { isChatEnabled } from "@/lib/firebaseConfig";
 import { BRAND, TOKEN_COOKIE } from "@/lib/constants";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
+import { clearChatSessionState } from "@/lib/chatSync";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
@@ -66,6 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         /* ignore */
       }
     }
+    clearChatSessionState();
     localStorage.removeItem("token");
     document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
     await fetch("/api/auth", {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -102,6 +102,7 @@ export default function MessagesWorkspace({
   const { firebaseUser, ready } = useFirebase();
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(
     initialSelectedId || getSyncedSelectedConversation()
   );
@@ -117,16 +118,41 @@ export default function MessagesWorkspace({
   const error = localError || listError;
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const decoded = jwtDecode<{ userId?: string; role?: string }>(token);
-      setUserId(decoded.userId || null);
-      setRole(decoded.role || null);
-    } catch {
-      setUserId(null);
-      setRole(null);
-    }
+    const syncIdentity = () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          userIdRef.current = null;
+          setUserId(null);
+          setRole(null);
+          setSelectedId(null);
+          return;
+        }
+        const decoded = jwtDecode<{ userId?: string; role?: string }>(token);
+        const nextUserId = decoded.userId || null;
+        const nextRole = decoded.role || null;
+        if (userIdRef.current && nextUserId && userIdRef.current !== nextUserId) {
+          setSelectedId(null);
+          setSyncedSelectedConversation(null);
+        }
+        userIdRef.current = nextUserId;
+        setUserId(nextUserId);
+        setRole(nextRole);
+      } catch {
+        userIdRef.current = null;
+        setUserId(null);
+        setRole(null);
+        setSelectedId(null);
+      }
+    };
+
+    syncIdentity();
+    window.addEventListener("authChange", syncIdentity);
+    window.addEventListener("storage", syncIdentity);
+    return () => {
+      window.removeEventListener("authChange", syncIdentity);
+      window.removeEventListener("storage", syncIdentity);
+    };
   }, []);
 
   useEffect(() => {
