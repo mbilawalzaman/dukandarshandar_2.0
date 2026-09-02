@@ -137,7 +137,7 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
       .toArray(),
     db.collection("orders").countDocuments({
       ...baseQuery,
-      status: { $in: ["pending", "processing", "shipped"] },
+      status: { $in: ["pending", "processing", "shipped", "pending_payment"] },
     }),
     db.collection("orders").countDocuments({ ...baseQuery, status: "delivered" }),
   ]);
@@ -148,10 +148,12 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
     shipped: 0,
     delivered: 0,
     cancelled: 0,
+    pending_payment: 0,
+    payment_failed: 0,
   };
   statusAgg.forEach((row) => {
     const key = String(row._id || "pending").toLowerCase();
-    if (statusCounts[key] !== undefined) statusCounts[key] = row.count as number;
+    statusCounts[key] = (statusCounts[key] || 0) + (row.count as number);
   });
 
   return {
@@ -203,7 +205,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customer_name, customer_email, phone, address, city, items, total_amount } = body;
+    const { customer_name, customer_email, phone, address, city, items, total_amount, payment_method } = body;
     const user = getAuthUser(req);
 
     if (!items || items.length === 0) {
@@ -277,6 +279,8 @@ export async function POST(req: NextRequest) {
       subtotal,
       shipping,
       total_amount: computedTotal,
+      payment_method: payment_method || "cod",
+      payment_status: payment_method === "cod" ? "unpaid" : "unpaid",
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),

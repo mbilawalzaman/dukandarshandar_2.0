@@ -25,6 +25,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import ChatIcon from "@mui/icons-material/Chat";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import PaymentsIcon from "@mui/icons-material/Payments";
 import AutoAwesomeMosaicIcon from "@mui/icons-material/AutoAwesomeMosaic";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -48,6 +49,7 @@ const navItems = [
   { label: "Messages", path: "/admin/messages", icon: <ChatIcon /> },
   { label: "Notifications", path: "/admin/notifications", icon: <NotificationsIcon /> },
   { label: "Support", path: "/admin/support", icon: <SupportAgentIcon /> },
+  { label: "Payments", path: "/admin/payments", icon: <PaymentsIcon /> },
 ];
 
 export default function AdminSidebar({

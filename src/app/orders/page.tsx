@@ -59,6 +59,8 @@ interface Order {
   subtotal?: number;
   shipping?: number;
   status: string;
+  payment_status?: string;
+  payment_method?: string;
   created_at?: string;
   items: OrderItem[];
 }
@@ -74,12 +76,32 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: "warning" | "info" | "primary" | "success" | "error" | "default"; icon: React.ReactNode; step: number }
 > = {
-  pending: { label: "Pending", color: "warning", icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />, step: 1 },
+  pending_payment: { label: "Awaiting Payment", color: "warning", icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />, step: 0 },
+  payment_failed: { label: "Payment Failed", color: "error", icon: <CancelOutlinedIcon sx={{ fontSize: 16 }} />, step: 0 },
+  pending: { label: "Confirmed", color: "success", icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />, step: 1 },
   processing: { label: "Processing", color: "info", icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />, step: 2 },
   shipped: { label: "Shipped", color: "primary", icon: <LocalShippingOutlinedIcon sx={{ fontSize: 16 }} />, step: 3 },
   delivered: { label: "Delivered", color: "success", icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />, step: 4 },
   cancelled: { label: "Cancelled", color: "error", icon: <CancelOutlinedIcon sx={{ fontSize: 16 }} />, step: 0 },
 };
+
+function getOrderStatusInfo(order: Order) {
+  const statusKey = order.status?.toLowerCase() || "pending";
+
+  if (statusKey === "pending_payment") {
+    return STATUS_CONFIG.pending_payment;
+  }
+
+  if (order.payment_status === "paid" && statusKey === "pending") {
+    return STATUS_CONFIG.pending;
+  }
+
+  if (order.payment_status === "unpaid" && statusKey === "pending") {
+    return { label: "Pending", color: "warning" as const, icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />, step: 1 };
+  }
+
+  return STATUS_CONFIG[statusKey] || STATUS_CONFIG.pending;
+}
 
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -173,6 +195,8 @@ function OrdersContent() {
     shipped: 0,
     delivered: 0,
     cancelled: 0,
+    pending_payment: 0,
+    payment_failed: 0,
   };
 
   const stats = {
@@ -371,8 +395,7 @@ function OrdersContent() {
               /* ORDER CARDS LIST */
               <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {orders.map((order) => {
-                  const statusKey = order.status?.toLowerCase() || "pending";
-                  const statusInfo = STATUS_CONFIG[statusKey] || STATUS_CONFIG.pending;
+                  const statusInfo = getOrderStatusInfo(order);
                   const displayId = String(order._id).slice(-8).toUpperCase();
                   const fullId = String(order._id);
                   const orderDate = order.created_at ? new Date(order.created_at) : null;

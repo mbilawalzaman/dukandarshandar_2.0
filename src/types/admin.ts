@@ -28,6 +28,12 @@ export interface OrderStatusPoint {
   value: number;
 }
 
+export interface PaymentBreakdownPoint {
+  status: string;
+  count: number;
+  value: number;
+}
+
 export interface RecentOrder {
   _id: string;
   customer_name?: string;
@@ -56,6 +62,7 @@ export interface AdminDashboardStats {
   salesTrend?: SalesTrendPoint[];
   categoryDistribution?: CategoryDistPoint[];
   orderStatusBreakdown?: OrderStatusPoint[];
+  paymentBreakdown?: PaymentBreakdownPoint[];
   recentOrders?: RecentOrder[];
   recentUsers?: RecentUser[];
 }
@@ -68,3 +75,34 @@ export const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",
   cancelled: "#ef4444",
 };
+
+export const PAYMENT_COLORS: Record<string, string> = {
+  "paid online": "#10b981",
+  cod: "#64748b",
+  awaiting: "#f59e0b",
+  failed: "#ef4444",
+};
+
+export interface AdminPaymentRecord {
+  _id: string;
+  customer_name: string;
+  customer_email: string;
+  total_amount: number;
+  payment_method: string;
+  payment_status: string;
+  order_status: string;
+  safepay_tracker?: string | null;
+  paid_at?: string;
+  created_at?: string;
+}
+
+export interface AdminPaymentStats {
+  onlineRevenue: number;
+  paidOnlineCount: number;
+  failedCount: number;
+  awaitingCount: number;
+  codRevenue: number;
+  codCount: number;
+  successRate: number;
+  onlineAttempts: number;
+}
