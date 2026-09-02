@@ -7,6 +7,10 @@ import { CacheProvider } from "@emotion/react";
 import createCache, { Options as OptionsOfCreateCache } from "@emotion/cache";
 import { BRAND } from "@/lib/constants";
 import { CartProvider } from "./providers/CartProvider";
+import { FirebaseProvider } from "./providers/FirebaseProvider";
+import { NotificationProvider } from "./providers/NotificationProvider";
+import { ChatWidgetProvider } from "./providers/ChatWidgetProvider";
+import FloatingChatWidget from "./components/chat/FloatingChatWidget";
 
 const theme = createTheme({
   palette: {
@@ -101,7 +105,16 @@ export default function ThemeRegistry({
     <CacheProvider value={cache}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <FirebaseProvider>
+            <NotificationProvider>
+              <ChatWidgetProvider>
+                {children}
+                <FloatingChatWidget />
+              </ChatWidgetProvider>
+            </NotificationProvider>
+          </FirebaseProvider>
+        </CartProvider>
       </ThemeProvider>
     </CacheProvider>
   );

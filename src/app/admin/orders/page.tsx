@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Box, Typography, Chip, Button, MenuItem, Select, FormControl } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable";
@@ -21,31 +21,55 @@ interface Order {
   created_at?: string;
 }
 
+interface OrderSummary {
+  totalOrders: number;
+  statusCounts: Record<string, number>;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<OrderSummary>({ totalOrders: 0, statusCounts: {} });
 
-  const fetchOrders = async () => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      const res = await fetch("/api/orders", {
+      const params = new URLSearchParams({
+        page: String(page + 1),
+        limit: String(rowsPerPage),
+      });
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+
+      const res = await fetch(`/api/orders?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders || []);
+        setTotal(data.pagination?.total ?? 0);
+        if (data.summary) setSummary(data.summary);
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, debouncedSearch]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -111,8 +135,8 @@ export default function AdminOrdersPage() {
     },
   ];
 
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
-  const deliveredCount = orders.filter((o) => o.status === "delivered").length;
+  const pendingCount = summary.statusCounts?.pending ?? 0;
+  const deliveredCount = summary.statusCounts?.delivered ?? 0;
 
   return (
     <Box>
@@ -125,7 +149,7 @@ export default function AdminOrdersPage() {
             Track customer purchases, update fulfillment statuses, and manage order history.
           </Typography>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Chip label={`Total Orders: ${orders.length}`} color="primary" variant="outlined" size="small" />
+            <Chip label={`Total Orders: ${summary.totalOrders}`} color="primary" variant="outlined" size="small" />
             <Chip label={`Pending: ${pendingCount}`} color="warning" size="small" />
             <Chip label={`Delivered: ${deliveredCount}`} color="success" size="small" />
           </Box>
@@ -140,11 +164,24 @@ export default function AdminOrdersPage() {
         title="Orders History"
         columns={columns}
         data={orders}
-        searchField="customer_name"
         searchPlaceholder="Search by customer name..."
         loading={loading}
+        serverPagination={{
+          total,
+          page,
+          rowsPerPage,
+          searchTerm,
+          onPageChange: setPage,
+          onRowsPerPageChange: (next) => {
+            setRowsPerPage(next);
+            setPage(0);
+          },
+          onSearchChange: (term) => {
+            setSearchTerm(term);
+            setPage(0);
+          },
+        }}
       />
     </Box>
   );
 }
-

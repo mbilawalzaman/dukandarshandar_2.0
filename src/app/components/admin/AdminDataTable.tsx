@@ -39,6 +39,15 @@ interface AdminDataTableProps<T> {
   onDelete?: (row: T) => void;
   onView?: (row: T) => void;
   loading?: boolean;
+  serverPagination?: {
+    total: number;
+    page: number;
+    rowsPerPage: number;
+    onPageChange: (page: number) => void;
+    onRowsPerPageChange: (rowsPerPage: number) => void;
+    onSearchChange?: (term: string) => void;
+    searchTerm?: string;
+  };
 }
 
 export default function AdminDataTable<T extends { _id?: string }>({
@@ -51,28 +60,47 @@ export default function AdminDataTable<T extends { _id?: string }>({
   onDelete,
   onView,
   loading = false,
+  serverPagination,
 }: AdminDataTableProps<T>) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredData = data.filter((row) => {
-    if (!searchTerm) return true;
-    if (searchField) {
-      const val = row[searchField];
-      return String(val ?? "").toLowerCase().includes(searchTerm.toLowerCase());
-    }
-    return JSON.stringify(row).toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const isServer = Boolean(serverPagination);
+  const activeSearch = isServer ? serverPagination!.searchTerm ?? "" : searchTerm;
+  const activePage = isServer ? serverPagination!.page : page;
+  const activeRowsPerPage = isServer ? serverPagination!.rowsPerPage : rowsPerPage;
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
+  const filteredData = isServer
+    ? data
+    : data.filter((row) => {
+        if (!searchTerm) return true;
+        if (searchField) {
+          const val = row[searchField];
+          return String(val ?? "").toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        return JSON.stringify(row).toLowerCase().includes(searchTerm.toLowerCase());
+      });
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    if (isServer) serverPagination!.onPageChange(newPage);
+    else setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
+    const next = +event.target.value;
+    if (isServer) serverPagination!.onRowsPerPageChange(next);
+    else {
+      setRowsPerPage(next);
+      setPage(0);
+    }
   };
+
+  const displayRows = isServer
+    ? filteredData
+    : filteredData.slice(activePage * activeRowsPerPage, activePage * activeRowsPerPage + activeRowsPerPage);
+
+  const totalCount = isServer ? serverPagination!.total : filteredData.length;
 
   return (
     <Paper
@@ -102,15 +130,19 @@ export default function AdminDataTable<T extends { _id?: string }>({
           >
             {title}
           </Typography>
-          <Chip label={`${filteredData.length} entries`} size="small" color="primary" variant="outlined" />
+          <Chip label={`${totalCount} entries`} size="small" color="primary" variant="outlined" />
         </Box>
         <TextField
           size="small"
           placeholder={searchPlaceholder}
-          value={searchTerm}
+          value={activeSearch}
           onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(0);
+            const value = e.target.value;
+            if (isServer) serverPagination!.onSearchChange?.(value);
+            else {
+              setSearchTerm(value);
+              setPage(0);
+            }
           }}
           sx={{ width: { xs: "100%", sm: 260 } }}
         />
@@ -147,16 +179,14 @@ export default function AdminDataTable<T extends { _id?: string }>({
                   <Typography color="text.secondary">Loading data...</Typography>
                 </TableCell>
               </TableRow>
-            ) : filteredData.length === 0 ? (
+            ) : displayRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">No records found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => (
+              displayRows.map((row, index) => (
                   <TableRow hover role="checkbox" tabIndex={-1} key={row._id || index}>
                     {columns.map((column) => {
                       if (column.id === "actions") {
@@ -212,9 +242,9 @@ export default function AdminDataTable<T extends { _id?: string }>({
       <TablePagination
         rowsPerPageOptions={[5, 10, 25, 50]}
         component="div"
-        count={filteredData.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
+        count={totalCount}
+        rowsPerPage={activeRowsPerPage}
+        page={activePage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />

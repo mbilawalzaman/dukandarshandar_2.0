@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Box, Button, Typography, Chip, Rating, Tabs, Tab, Paper } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -24,52 +24,65 @@ interface Product {
   featured?: boolean;
 }
 
+interface StockCounts {
+  inStock: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [stockFilter, setStockFilter] = useState<"all" | "in-stock" | "low-stock" | "out-of-stock">("all");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [stockCounts, setStockCounts] = useState<StockCounts>({ inStock: 0, lowStock: 0, outOfStock: 0 });
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductFormData | null>(null);
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchProducts = async () => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/products");
+      const params = new URLSearchParams({
+        page: String(page + 1),
+        limit: String(rowsPerPage),
+      });
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+      if (stockFilter !== "all") params.set("stock", stockFilter);
+
+      const res = await fetch(`/api/products?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setProducts(data.products || []);
+        setTotal(data.pagination?.total ?? 0);
+        if (data.stockCounts) setStockCounts(data.stockCounts);
       }
     } catch (err) {
       console.error("Failed to fetch products:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, debouncedSearch, stockFilter]);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
-  const inStockCount = useMemo(() => products.filter((p) => p.quantity > 5).length, [products]);
-  const lowStockCount = useMemo(() => products.filter((p) => p.quantity > 0 && p.quantity <= 5).length, [products]);
-  const outOfStockCount = useMemo(() => products.filter((p) => p.quantity <= 0).length, [products]);
-
-  const filteredProducts = useMemo(() => {
-    switch (stockFilter) {
-      case "in-stock":
-        return products.filter((p) => p.quantity > 5);
-      case "low-stock":
-        return products.filter((p) => p.quantity > 0 && p.quantity <= 5);
-      case "out-of-stock":
-        return products.filter((p) => p.quantity <= 0);
-      default:
-        return products;
-    }
-  }, [products, stockFilter]);
+  const handleStockFilterChange = (_: React.SyntheticEvent, val: typeof stockFilter) => {
+    setStockFilter(val);
+    setPage(0);
+  };
 
   const handleOpenAddModal = () => {
     setSelectedProduct(null);
@@ -165,6 +178,8 @@ export default function AdminProductsPage() {
     },
   ];
 
+  const totalAll = stockCounts.inStock + stockCounts.lowStock + stockCounts.outOfStock;
+
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
@@ -186,11 +201,10 @@ export default function AdminProductsPage() {
         </Button>
       </Box>
 
-      {/* Stock Health Tabs */}
       <Paper sx={{ mb: 3, borderRadius: 2.5, border: "1px solid #e2e8f0" }} elevation={0}>
         <Tabs
           value={stockFilter}
-          onChange={(_, val) => setStockFilter(val)}
+          onChange={handleStockFilterChange}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
@@ -207,25 +221,25 @@ export default function AdminProductsPage() {
             value="all"
             icon={<InventoryIcon fontSize="small" />}
             iconPosition="start"
-            label={`All Items (${products.length})`}
+            label={`All Items (${totalAll})`}
           />
           <Tab
             value="in-stock"
             icon={<CheckCircleOutlineIcon fontSize="small" color="success" />}
             iconPosition="start"
-            label={`Healthy Stock (${inStockCount})`}
+            label={`Healthy Stock (${stockCounts.inStock})`}
           />
           <Tab
             value="low-stock"
             icon={<WarningAmberIcon fontSize="small" color="warning" />}
             iconPosition="start"
-            label={`Low Stock ≤ 5 (${lowStockCount})`}
+            label={`Low Stock ≤ 5 (${stockCounts.lowStock})`}
           />
           <Tab
             value="out-of-stock"
             icon={<ErrorOutlineIcon fontSize="small" color="error" />}
             iconPosition="start"
-            label={`Out of Stock (${outOfStockCount})`}
+            label={`Out of Stock (${stockCounts.outOfStock})`}
           />
         </Tabs>
       </Paper>
@@ -241,12 +255,26 @@ export default function AdminProductsPage() {
             : "All Products Inventory"
         }
         columns={columns}
-        data={filteredProducts}
-        searchField="name"
+        data={products}
         searchPlaceholder="Search product by name..."
         onEdit={handleOpenEditModal}
         onDelete={handleOpenDeleteModal}
         loading={loading}
+        serverPagination={{
+          total,
+          page,
+          rowsPerPage,
+          searchTerm,
+          onPageChange: setPage,
+          onRowsPerPageChange: (next) => {
+            setRowsPerPage(next);
+            setPage(0);
+          },
+          onSearchChange: (term) => {
+            setSearchTerm(term);
+            setPage(0);
+          },
+        }}
       />
 
       <ProductFormModal

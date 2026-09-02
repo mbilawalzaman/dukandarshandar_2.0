@@ -31,6 +31,11 @@ import Image from "next/image";
 import { jwtDecode } from "jwt-decode";
 import { BRAND, TOKEN_COOKIE } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
+import NotificationBell from "@/app/components/notifications/NotificationBell";
+import { isChatEnabled } from "@/lib/firebaseConfig";
+import { unregisterWebPushToken } from "@/lib/fcmClient";
+import { getFirebaseAuth } from "@/lib/firebaseClient";
+import { signOut } from "firebase/auth";
 
 type DecodedToken = { userName?: string; role?: string };
 
@@ -87,10 +92,19 @@ export default function Navbar() {
 
   const pages = [
     ...storePages,
+    ...(isAuthenticated && role !== "guest" ? [{ label: "Support", path: "/support" }] : []),
     ...(role === "admin" ? [{ label: "Admin Portal", path: "/admin" }] : []),
   ];
 
   const handleLogout = async () => {
+    await unregisterWebPushToken().catch(() => undefined);
+    if (isChatEnabled()) {
+      try {
+        await signOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
+      }
+    }
     localStorage.removeItem("token");
     document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
     await fetch("/api/auth", {
@@ -244,6 +258,8 @@ export default function Navbar() {
                 </Badge>
               </IconButton>
 
+              {mounted && isAuthenticated && isChatEnabled() && <NotificationBell />}
+
               {/* User Account / Auth Actions */}
               {mounted && isAuthenticated ? (
                 <Box sx={{ flexGrow: 0 }}>
@@ -307,6 +323,16 @@ export default function Navbar() {
                     >
                       My Orders
                     </MenuItem>
+                    {isChatEnabled() && role !== "guest" && (
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorElUser(null);
+                          router.push("/messages");
+                        }}
+                      >
+                        Chat
+                      </MenuItem>
+                    )}
                     <MenuItem onClick={handleLogout}>
                       <Typography color="error">Logout</Typography>
                     </MenuItem>
@@ -479,6 +505,25 @@ export default function Navbar() {
             >
               My Orders
             </Button>
+            {isChatEnabled() && role !== "guest" && (
+              <Button
+                component={Link}
+                href="/messages"
+                variant="outlined"
+                fullWidth
+                onClick={() => setMobileDrawerOpen(false)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "#cbd5e1",
+                  color: BRAND.navy,
+                  py: 1,
+                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                }}
+              >
+                Chat
+              </Button>
+            )}
             <Button
               variant="text"
               color="error"
