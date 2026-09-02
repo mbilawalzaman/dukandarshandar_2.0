@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  // Avoid bundling firebase-admin (pulls jwks-rsa → jose ESM conflict on Vercel/Node 22)
+  serverExternalPackages: ["firebase-admin", "jose", "jwks-rsa"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "static-01.daraz.pk" },

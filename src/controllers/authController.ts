@@ -4,7 +4,6 @@ import { getJwtSecret } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
-import { notifyAdmins } from "@/services/notificationService";
 
 const JWT_SECRET = getJwtSecret();
 
@@ -32,8 +31,9 @@ export async function signupController(name: string, email: string, password: st
 
   const created = await usersCollection.findOne({ email });
   if (created && assignedRole !== UserRole.ADMIN) {
-    await safeNotify(() =>
-      notifyAdmins({
+    await safeNotify(async () => {
+      const { notifyAdmins } = await import("@/services/notificationService");
+      return notifyAdmins({
         type: "new_user",
         title: "New customer signup",
         body: `${name} (${email}) joined the store`,
@@ -42,8 +42,8 @@ export async function signupController(name: string, email: string, password: st
         idempotencyKey: `new_user:${created._id}`,
         sendPush: true,
         route: "/admin/users",
-      })
-    );
+      });
+    });
   }
 
   return { success: true, message: "User created successfully" };

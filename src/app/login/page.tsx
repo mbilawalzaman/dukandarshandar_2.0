@@ -33,12 +33,24 @@ function LoginForm() {
       body: JSON.stringify({ ...formData, type: "login" }),
     });
 
-    const data = await res.json();
-    if (data.success) {
+    const raw = await res.text();
+    let data: { success?: boolean; token?: string; user?: { role?: string }; error?: string };
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      setError(
+        res.status >= 500
+          ? "Server error — check that DATABASE_URL and JWT_SECRET are set on Vercel."
+          : "Unexpected server response. Please try again."
+      );
+      return;
+    }
+
+    if (data.success && data.token) {
       persistAuth(data.token);
       router.push(data.user?.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
     } else {
-      setError(data.error);
+      setError(data.error || "Login failed");
     }
   };
 
@@ -49,12 +61,20 @@ function LoginForm() {
       body: JSON.stringify({ type: "guest" }),
     });
 
-    const data = await res.json();
-    if (data.success) {
+    const raw = await res.text();
+    let data: { success?: boolean; token?: string; error?: string };
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      setError("Server error — check Vercel environment variables.");
+      return;
+    }
+
+    if (data.success && data.token) {
       persistAuth(data.token);
       router.push(nextPath);
     } else {
-      setError(data.error);
+      setError(data.error || "Guest login failed");
     }
   };
 

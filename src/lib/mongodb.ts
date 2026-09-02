@@ -1,33 +1,30 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.DATABASE_URL;
-if (!uri) {
-  throw new Error("Please add your MongoDB URI to .env");
-}
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-// Extend globalThis type
 declare global {
-  // Extend NodeJS.Global with _mongoClientPromise
-  interface Global {
-    _mongoClientPromise?: Promise<MongoClient>;
-  }
+  // eslint-disable-next-line no-var
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-// Use globalThis as a type-safe object
-const globalWithMongo = global as unknown as Global;
-
-if (process.env.NODE_ENV === "development") {
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri);
-    globalWithMongo._mongoClientPromise = client.connect();
+function createClientPromise(): Promise<MongoClient> {
+  const uri = process.env.DATABASE_URL;
+  if (!uri) {
+    return Promise.reject(
+      new Error("DATABASE_URL is not configured. Add it in Vercel → Project Settings → Environment Variables.")
+    );
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
+  const client = new MongoClient(uri);
+  return client.connect();
 }
+
+function getClientPromise(): Promise<MongoClient> {
+  if (!global._mongoClientPromise) {
+    global._mongoClientPromise = createClientPromise();
+  }
+  return global._mongoClientPromise;
+}
+
+const clientPromise: Promise<MongoClient> = new Promise((resolve, reject) => {
+  getClientPromise().then(resolve, reject);
+});
 
 export default clientPromise;
