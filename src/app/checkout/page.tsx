@@ -26,6 +26,11 @@ import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { isSyntheticEmail, isValidCustomerEmail } from "@/lib/userDisplay";
+import {
+  getGuestCheckoutInfo,
+  saveGuestCheckoutInfo,
+  isGuestUser,
+} from "@/lib/guestCheckout";
 import type { CheckoutShippingFormType } from "@/types/apps/orderTypes";
 import type { CheckoutSafepaySessionType, PaymentMethod } from "@/types/apps/paymentTypes";
 import type { UserTokenType } from "@/types/shared/authTypes";
@@ -83,6 +88,25 @@ export default function CheckoutPage() {
           return;
         }
 
+        const isGuest = isGuestUser(decoded);
+
+        if (isGuest) {
+          // Mount flow for guest:
+          // Do NOT set name/email from JWT placeholder token
+          // Load guestCheckoutInfo → prefill if present
+          const guestInfo = getGuestCheckoutInfo();
+          setForm({
+            customer_name: guestInfo.customer_name,
+            customer_email: guestInfo.customer_email,
+            phone: guestInfo.phone,
+            address: guestInfo.address,
+            city: guestInfo.city,
+          });
+          setEmailRequiredHint(true);
+          setCheckingAuth(false);
+          return;
+        }
+
         const tokenEmail = decoded.email || "";
         const needsRealEmail = isSyntheticEmail(tokenEmail);
 
@@ -93,8 +117,6 @@ export default function CheckoutPage() {
         }));
         setEmailRequiredHint(needsRealEmail);
         setCheckingAuth(false);
-
-        if (decoded.role === "guest" || !decoded.userId || decoded.userId === "guest") return;
 
         const res = await authFetch("/api/profile");
         if (!res.ok) return;
@@ -139,6 +161,19 @@ export default function CheckoutPage() {
     setPaymentSession(null);
   };
 
+  const persistGuestInfoIfApplicable = () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const decoded: TokenUser = jwtDecode(token);
+      if (isGuestUser(decoded)) {
+        saveGuestCheckoutInfo(form);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
   const validateForm = (): boolean => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -154,12 +189,17 @@ export default function CheckoutPage() {
       router.push("/login?next=/checkout");
       return false;
     }
-    if (!form.customer_name || !form.phone || !form.address || !form.city) {
-      toast("Please fill in all shipping fields", "error");
+
+    if (!form.customer_name || /^guest(\s*user)?$/i.test(form.customer_name.trim())) {
+      toast("Please enter your full name", "error");
       return false;
     }
-    if (!isValidCustomerEmail(form.customer_email)) {
+    if (!form.customer_email || !isValidCustomerEmail(form.customer_email)) {
       toast("Please enter a valid email address for order updates", "error");
+      return false;
+    }
+    if (!form.phone || !form.address || !form.city) {
+      toast("Please fill in all shipping fields", "error");
       return false;
     }
     if (items.length === 0) {
@@ -174,7 +214,7 @@ export default function CheckoutPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
       const decoded: TokenUser = jwtDecode(token);
-      if (!decoded.userId || decoded.userId === "guest" || decoded.role === "guest") return;
+      if (isGuestUser(decoded)) return;
 
       const res = await authFetch("/api/profile", {
         method: "PUT",
@@ -202,6 +242,8 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
       await syncShippingToProfile();
+      persistGuestInfoIfApplicable();
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: authHeaders(),
@@ -245,6 +287,8 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
       await syncShippingToProfile();
+      persistGuestInfoIfApplicable();
+
       const res = await fetch("/api/payments/safepay/session", {
         method: "POST",
         headers: authHeaders(),
@@ -274,12 +318,6 @@ export default function CheckoutPage() {
         setPaymentSession(session);
         toast("Enter your card details below to complete payment.");
       }
-
-      // Raast & wallet redirect disabled until Safepay merchant auth is configured.
-      // if ((paymentMethod === "raast" || paymentMethod === "wallet") && session.checkoutUrl) {
-      //   window.location.href = session.checkoutUrl;
-      //   return;
-      // }
     } catch {
       toast("Could not start payment session", "error");
     } finally {
@@ -297,6 +335,7 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentSuccess = () => {
+    persistGuestInfoIfApplicable();
     clear();
     toast("Payment submitted successfully!");
     router.push("/orders?placed=1");
