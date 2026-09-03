@@ -72,6 +72,7 @@ export default function ContactPage() {
         title={settings.contact.bannerTitle || "CONTACT"}
         subtitle={settings.contact.bannerSubtitle}
         bgImage={settings.contact.bannerImage}
+        bgMedia={settings.contact.bannerMedia}
       />
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Grid container spacing={4}>

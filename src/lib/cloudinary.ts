@@ -83,6 +83,8 @@ export async function deleteAsset(publicId?: string | null, resourceType: "image
   }
 }
 
+export { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
+
 /** Signed params for browser → Cloudinary direct upload (avoids Next.js body size limits). */
 export function getSignedUploadParams(options?: {
   folder?: string;

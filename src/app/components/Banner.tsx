@@ -3,7 +3,7 @@
 import React from "react";
 import Slider from "react-slick";
 import { Box } from "@mui/material";
-import { BannerItem } from "@/lib/pageSettings";
+import { BannerItem, HomeBannerMode } from "@/lib/pageSettings";
 import BannerMediaRenderer from "./ui/BannerMediaRenderer";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -11,21 +11,21 @@ import "slick-carousel/slick/slick-theme.css";
 interface BannerProps {
   banners?: BannerItem[];
   singleBanner?: BannerItem;
-  bannerMode?: "image_slider" | "single_lottie";
-  images?: string[]; // Legacy fallback prop
+  bannerMode?: HomeBannerMode | "single_lottie";
+  images?: string[];
 }
 
 const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: BannerProps) => {
-  // 1. Single Lottie / Video Banner Mode
-  if (bannerMode === "single_lottie") {
-    // If single banner has media URL, render it
-    // If not (e.g. video is currently in conversion queue), render the user's previous live image banner
+  const mode: HomeBannerMode =
+    bannerMode === "single_video" || bannerMode === "single_lottie" ? "single_video" : "image_slider";
+
+  if (mode === "single_video") {
     const mediaToRender =
       singleBanner?.activeMedia?.url
         ? singleBanner.activeMedia
         : banners?.[0]?.activeMedia?.url
-        ? banners[0].activeMedia
-        : null;
+          ? banners[0].activeMedia
+          : null;
 
     if (!mediaToRender?.url) {
       return null;
@@ -38,7 +38,7 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
           overflow: "hidden",
           position: "relative",
           minHeight: { xs: 240, sm: 380, md: 480 },
-          backgroundColor: "#f8fafc",
+          backgroundColor: "#0f172a",
         }}
       >
         <Box
@@ -59,7 +59,6 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
     );
   }
 
-  // 2. Multi-Image Slideshow Carousel Mode
   let activeBanners: BannerItem[] = [];
 
   if (Array.isArray(banners) && banners.length > 0) {
@@ -72,8 +71,8 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
         title: `Banner ${idx + 1}`,
         order: idx + 1,
         isActive: true,
-        activeMedia: { type: "image", url: img },
-        processingStatus: "idle",
+        activeMedia: { type: "image" as const, url: img },
+        processingStatus: "idle" as const,
       }));
   }
 

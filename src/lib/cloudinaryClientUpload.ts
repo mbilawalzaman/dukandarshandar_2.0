@@ -1,3 +1,5 @@
+import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
+
 /**
  * Upload a video file directly to Cloudinary (browser → Cloudinary).
  * Avoids Next.js / Vercel request body size limits (413).
@@ -43,7 +45,7 @@ export async function uploadVideoToCloudinary(file: File): Promise<{
   }
 
   return {
-    url: uploadData.secure_url as string,
+    url: toPlayableVideoUrl(uploadData.secure_url as string),
     publicId: uploadData.public_id as string,
     format: uploadData.format as string | undefined,
     bytes: uploadData.bytes as number | undefined,

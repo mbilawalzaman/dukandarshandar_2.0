@@ -13,8 +13,21 @@ export interface PageBannerProps {
 }
 
 export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBannerProps) {
-  const isLottie = bgMedia?.type === "lottie" || (bgImage && bgImage.endsWith(".json"));
-  const mediaToRender = bgMedia || (bgImage ? { type: isLottie ? "lottie" : "image", url: bgImage } : null);
+  const mediaToRender: MediaAsset | null =
+    bgMedia?.url
+      ? bgMedia
+      : bgImage
+        ? {
+            type:
+              bgImage.toLowerCase().includes("/video/upload/") || /\.(mp4|webm|mov)(\?|$)/i.test(bgImage)
+                ? "video"
+                : "image",
+            url: bgImage,
+          }
+        : null;
+
+  const isVideo = mediaToRender?.type === "video";
+  const isPlainImage = mediaToRender?.type === "image" && Boolean(mediaToRender.url);
 
   return (
     <Box
@@ -25,8 +38,11 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: bgImage ? "transparent" : "#1e293b",
-        backgroundImage: !isLottie && bgImage ? `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${bgImage})` : "none",
+        backgroundColor: mediaToRender?.url ? "transparent" : "#1e293b",
+        backgroundImage:
+          isPlainImage
+            ? `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${mediaToRender.url})`
+            : "none",
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: "#ffffff",
@@ -35,8 +51,7 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
         overflow: "hidden",
       }}
     >
-      {/* Background Lottie Animation if present */}
-      {isLottie && mediaToRender && (
+      {isVideo && mediaToRender && (
         <Box
           sx={{
             position: "absolute",
@@ -45,7 +60,6 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
             width: "100%",
             height: "100%",
             zIndex: 0,
-            opacity: 0.85,
           }}
         >
           <BannerMediaRenderer media={mediaToRender} style={{ width: "100%", height: "100%" }} />
@@ -62,7 +76,6 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
         </Box>
       )}
 
-      {/* Text Overlay */}
       <Box sx={{ position: "relative", zIndex: 1 }}>
         <Typography
           variant="h3"

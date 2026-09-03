@@ -77,6 +77,7 @@ export default function AboutPage() {
         title={settings.about.bannerTitle || "ABOUT US"}
         subtitle={settings.about.bannerSubtitle}
         bgImage={settings.about.bannerImage}
+        bgMedia={settings.about.bannerMedia}
       />
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
