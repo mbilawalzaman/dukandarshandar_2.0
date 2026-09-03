@@ -117,6 +117,15 @@ export class OrderPaymentService {
         }
       );
 
+      const { syncCheckoutProfileToUser } = await import("@/lib/syncCheckoutProfile");
+      await syncCheckoutProfileToUser(user?.userId, {
+        customer_name: body.customer_name,
+        customer_email: body.customer_email || customerEmail,
+        phone: body.phone,
+        address: body.address,
+        city: body.city,
+      }).catch(() => undefined);
+
       return {
         orderId: String(existingOrder._id),
         orderObjectId: existingOrder._id,
@@ -193,6 +202,15 @@ export class OrderPaymentService {
     };
 
     const result = await db.collection("orders").insertOne(newOrder);
+
+    const { syncCheckoutProfileToUser } = await import("@/lib/syncCheckoutProfile");
+    await syncCheckoutProfileToUser(user?.userId, {
+      customer_name: body.customer_name,
+      customer_email: customerEmail,
+      phone: body.phone,
+      address: body.address,
+      city: body.city,
+    }).catch(() => undefined);
 
     return {
       orderId: String(result.insertedId),

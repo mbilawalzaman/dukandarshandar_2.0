@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { getAuthUser, requireAdmin } from "@/lib/auth";
+import { attachSessionCookies } from "@/lib/session";
+import { syncCheckoutProfileToUser } from "@/lib/syncCheckoutProfile";
 import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
@@ -331,10 +333,34 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(),
     ]);
 
+    let token: string | undefined;
+    // Persist checkout email + shipping onto the logged-in user profile
+    const synced = await syncCheckoutProfileToUser(user?.userId, {
+      customer_name,
+      customer_email,
+      phone,
+      address,
+      city,
+    });
+    if (synced.session) {
+      token = synced.session.accessToken;
+      const response = NextResponse.json({
+        success: true,
+        message: "Order placed successfully",
+        order: { _id: result.insertedId, ...newOrder },
+        token: synced.session.accessToken,
+        profileSynced: true,
+      });
+      attachSessionCookies(response, synced.session.accessToken, synced.session.refreshToken);
+      return response;
+    }
+
     return NextResponse.json({
       success: true,
       message: "Order placed successfully",
       order: { _id: result.insertedId, ...newOrder },
+      ...(token ? { token } : {}),
+      profileSynced: synced.updated,
     });
   } catch (error) {
     console.error("Error creating order:", error);

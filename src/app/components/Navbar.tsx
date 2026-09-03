@@ -11,7 +11,6 @@ import {
   Typography,
   Menu,
   Container,
-  Avatar,
   Button,
   Tooltip,
   MenuItem,
@@ -29,16 +28,19 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import Image from "next/image";
 import { jwtDecode } from "jwt-decode";
-import { BRAND, TOKEN_COOKIE } from "@/lib/constants";
+import { BRAND } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
 import NotificationBell from "@/app/components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { clearChatSessionState } from "@/lib/chatSync";
+import { ensureFreshAccessToken, logoutClientSession } from "@/lib/authFetch";
+import { getDisplayName } from "@/lib/userDisplay";
+import UserAvatar from "@/app/components/ui/UserAvatar";
 import { signOut } from "firebase/auth";
 
-type DecodedToken = { userName?: string; role?: string };
+type DecodedToken = { userName?: string; role?: string; email?: string; userId?: string };
 
 const storePages = [
   { label: "Home", path: "/" },
@@ -51,6 +53,8 @@ const storePages = [
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userImage, setUserImage] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -68,21 +72,33 @@ export default function Navbar() {
         if (token) {
           const decoded: DecodedToken = jwtDecode(token);
           setUserName(decoded.userName || null);
+          setUserEmail(decoded.email || null);
           setRole(decoded.role || null);
           setIsAuthenticated(true);
+          // Optional profile image cached after profile load
+          const cachedImage = localStorage.getItem("userImage");
+          setUserImage(cachedImage);
         } else {
           setUserName(null);
+          setUserEmail(null);
+          setUserImage(null);
           setRole(null);
           setIsAuthenticated(false);
         }
       } catch {
         setUserName(null);
+        setUserEmail(null);
+        setUserImage(null);
         setRole(null);
         setIsAuthenticated(false);
       }
     };
 
-    checkAuth();
+    void (async () => {
+      await ensureFreshAccessToken().catch(() => null);
+      checkAuth();
+    })();
+
     window.addEventListener("storage", checkAuth);
     window.addEventListener("authChange", checkAuth);
     return () => {
@@ -107,20 +123,18 @@ export default function Navbar() {
       }
     }
     clearChatSessionState();
-    localStorage.removeItem("token");
-    document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
-    await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "logout" }),
-    }).catch(() => undefined);
+    await logoutClientSession();
     setIsAuthenticated(false);
     setRole(null);
+    setUserName(null);
+    setUserEmail(null);
+    setUserImage(null);
     setAnchorElUser(null);
     setMobileDrawerOpen(false);
-    window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   };
+
+  const avatarUser = { name: userName, email: userEmail, image: userImage, role };
 
   return (
     <>
@@ -271,19 +285,7 @@ export default function Navbar() {
                       sx={{ p: 0.5 }}
                       aria-label="user profile"
                     >
-                      <Avatar
-                        style={{ width: 36, height: 36 }}
-                        sx={{
-                          bgcolor: BRAND.gold,
-                          color: BRAND.navy,
-                          width: { xs: 32, sm: 36 },
-                          height: { xs: 32, sm: 36 },
-                          fontWeight: 700,
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        {(userName || "U").charAt(0).toUpperCase()}
-                      </Avatar>
+                      <UserAvatar user={avatarUser} size={36} />
                     </IconButton>
                   </Tooltip>
                   <Menu
@@ -297,7 +299,7 @@ export default function Navbar() {
                     <MenuItem disabled sx={{ opacity: "1 !important" }}>
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
-                          {userName || "User"}
+                          {getDisplayName(avatarUser)}
                         </Typography>
                         {role === "admin" && (
                           <Typography variant="caption" sx={{ color: "#0284c7", fontWeight: 600 }}>
@@ -307,6 +309,16 @@ export default function Navbar() {
                       </Box>
                     </MenuItem>
                     <Divider />
+                    {role !== "guest" && (
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorElUser(null);
+                          router.push(role === "admin" ? "/admin/profile" : "/profile");
+                        }}
+                      >
+                        Profile
+                      </MenuItem>
+                    )}
                     {role === "admin" && (
                       <MenuItem
                         onClick={() => {
@@ -478,18 +490,35 @@ export default function Navbar() {
                 border: "1px solid #e2e8f0",
               }}
             >
-              <Avatar style={{ width: 38, height: 38 }} sx={{ bgcolor: BRAND.gold, color: BRAND.navy, width: 38, height: 38, fontWeight: 700 }}>
-                {(userName || "U").charAt(0).toUpperCase()}
-              </Avatar>
+              <UserAvatar user={avatarUser} size={38} />
               <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {userName}
+                  {getDisplayName(avatarUser)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {role === "admin" ? "Admin Account" : "Customer"}
                 </Typography>
               </Box>
             </Box>
+            {role !== "guest" && (
+              <Button
+                component={Link}
+                href={role === "admin" ? "/admin/profile" : "/profile"}
+                variant="outlined"
+                fullWidth
+                onClick={() => setMobileDrawerOpen(false)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "#cbd5e1",
+                  color: BRAND.navy,
+                  py: 1,
+                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                }}
+              >
+                Profile
+              </Button>
+            )}
             <Button
               component={Link}
               href="/orders"

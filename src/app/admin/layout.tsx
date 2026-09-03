@@ -10,7 +10,6 @@ import {
   Container,
   useTheme,
   useMediaQuery,
-  Avatar,
   Menu,
   MenuItem,
   Tooltip,
@@ -24,10 +23,13 @@ import { signOut } from "firebase/auth";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import NotificationBell from "../components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
-import { BRAND, TOKEN_COOKIE } from "@/lib/constants";
+import { BRAND } from "@/lib/constants";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
 import { clearChatSessionState } from "@/lib/chatSync";
+import { ensureFreshAccessToken, logoutClientSession } from "@/lib/authFetch";
+import { getDisplayName } from "@/lib/userDisplay";
+import UserAvatar from "@/app/components/ui/UserAvatar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
@@ -36,26 +38,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileOpen, setMobileOpen] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userImage, setUserImage] = useState<string | null>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+    void (async () => {
+      try {
+        await ensureFreshAccessToken();
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.replace("/login?next=/admin");
+          return;
+        }
+        const decoded = jwtDecode<{ role?: string; userName?: string; email?: string }>(token);
+        if (decoded.role !== "admin") {
+          router.replace("/");
+          return;
+        }
+        setUserName(decoded.userName || null);
+        setUserEmail(decoded.email || null);
+        setUserImage(localStorage.getItem("userImage"));
+        setAllowed(true);
+      } catch {
         router.replace("/login?next=/admin");
-        return;
       }
-      const decoded = jwtDecode<{ role?: string; userName?: string }>(token);
-      if (decoded.role !== "admin") {
-        router.replace("/");
-        return;
-      }
-      setUserName(decoded.userName || null);
-      setAllowed(true);
-    } catch {
-      router.replace("/login?next=/admin");
-    }
+    })();
   }, [router]);
 
   const handleLogout = async () => {
@@ -68,19 +77,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
     clearChatSessionState();
-    localStorage.removeItem("token");
-    document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
-    await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "logout" }),
-    }).catch(() => undefined);
+    await logoutClientSession();
     setAnchorElUser(null);
-    window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   };
 
   if (!allowed) return null;
+
+  const avatarUser = { name: userName, email: userEmail, image: userImage, role: "admin" };
 
   const toggleSidebar = () => {
     if (isMobile) {
@@ -150,18 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   sx={{ p: 0.5 }}
                   aria-label="admin account"
                 >
-                  <Avatar
-                    sx={{
-                      bgcolor: BRAND.gold,
-                      color: BRAND.navy,
-                      width: { xs: 32, sm: 36 },
-                      height: { xs: 32, sm: 36 },
-                      fontWeight: 700,
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    {(userName || "A").charAt(0).toUpperCase()}
-                  </Avatar>
+                  <UserAvatar user={avatarUser} size={36} />
                 </IconButton>
               </Tooltip>
               <Menu
@@ -175,7 +168,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <MenuItem disabled sx={{ opacity: "1 !important" }}>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
-                      {userName || "Admin"}
+                      {getDisplayName(avatarUser)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#0284c7", fontWeight: 600 }}>
                       Administrator
@@ -183,6 +176,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </Box>
                 </MenuItem>
                 <Divider />
+                <MenuItem
+                  component={Link}
+                  href="/admin/profile"
+                  onClick={() => setAnchorElUser(null)}
+                >
+                  Profile
+                </MenuItem>
                 <MenuItem
                   component={Link}
                   href="/"
