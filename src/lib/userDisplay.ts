@@ -21,7 +21,9 @@ export function getDisplayName(user?: UserDisplayInput | null): string {
 }
 
 export function isSyntheticEmail(email?: string | null): boolean {
-  return Boolean(email && email.toLowerCase().endsWith(SYNTHETIC_EMAIL_SUFFIX));
+  if (!email) return false;
+  const value = email.trim().toLowerCase();
+  return value.endsWith(SYNTHETIC_EMAIL_SUFFIX) || value === "guest@guest.com";
 }
 
 /** Email safe to show in UI / prefill forms (hides synthetic Facebook placeholders). */
