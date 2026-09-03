@@ -21,7 +21,8 @@ import SecurityIcon from "@mui/icons-material/Security";
 import Link from "next/link";
 import PageBanner from "../components/PageBanner";
 import { BRAND } from "@/lib/constants";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import type { PageSettings } from "@/lib/pageSettings";
+import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 
 const highlights = [
   {

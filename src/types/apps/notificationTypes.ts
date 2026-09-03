@@ -7,7 +7,7 @@ export type NotificationType =
   | "low_stock"
   | "new_user";
 
-export interface NotificationDoc {
+export type NotificationDoc = {
   userId: string;
   type: NotificationType;
   title: string;
@@ -19,9 +19,9 @@ export interface NotificationDoc {
   readAt?: unknown | null;
   createdAt: unknown;
   idempotencyKey: string;
-}
+};
 
-export interface FcmDeviceDoc {
+export type FcmDeviceDoc = {
   userId: string;
   deviceId: string;
   token: string;
@@ -30,9 +30,9 @@ export interface FcmDeviceDoc {
   enabled: boolean;
   createdAt: Date;
   lastSeenAt: Date;
-}
+};
 
-export interface CreateNotificationInput {
+export type CreateNotificationInput = {
   recipients: string[];
   actorId?: string | null;
   type: NotificationType;
@@ -43,9 +43,9 @@ export interface CreateNotificationInput {
   idempotencyKey: string;
   sendPush?: boolean;
   route?: string;
-}
+};
 
-export interface MongoNotificationDoc {
+export type MongoNotificationDoc = {
   firestoreId: string;
   userId: string;
   type: NotificationType;
@@ -58,4 +58,4 @@ export interface MongoNotificationDoc {
   readAt?: Date | null;
   createdAt: Date;
   idempotencyKey: string;
-}
+};

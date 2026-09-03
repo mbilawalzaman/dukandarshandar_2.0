@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { getAuthUser } from "@/lib/auth";
-import type { PaymentBreakdownPoint } from "@/types/admin";
+import type { PaymentBreakdownPoint } from "@/types/apps/adminDashboardTypes";
 import type { ProductImage } from "@/lib/productImages";
 import { MAX_PRODUCT_IMAGES } from "@/lib/productImages";
 

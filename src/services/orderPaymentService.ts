@@ -4,7 +4,7 @@ import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail } from "@/lib/emailTemplates";
-import type { CreatePaymentSessionBody } from "@/types/safepay";
+import type { CreatePaymentSessionBody } from "@/types/apps/paymentTypes";
 
 export interface PendingOrderResult {
   orderId: string;

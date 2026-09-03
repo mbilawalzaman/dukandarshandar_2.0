@@ -1,4 +1,4 @@
-import type { SafepayEnvironment } from "@/types/safepay";
+import type { SafepayEnvironment } from "@/types/apps/paymentTypes";
 
 export function getSafepayEnvironment(): SafepayEnvironment {
   const env = process.env.SAFEPAY_ENV || process.env.NEXT_PUBLIC_SAFEPAY_ENV || "sandbox";

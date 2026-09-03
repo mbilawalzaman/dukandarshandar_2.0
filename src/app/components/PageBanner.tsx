@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { MediaAsset } from "@/lib/pageSettings";
+import type { MediaAsset } from "@/lib/pageSettings";
 import BannerMediaRenderer from "./ui/BannerMediaRenderer";
 
 export interface PageBannerProps {

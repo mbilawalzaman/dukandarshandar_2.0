@@ -20,7 +20,7 @@ import Link from "next/link";
 import { useNotifications } from "@/app/providers/NotificationProvider";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
-import type { NotificationType } from "@/types/notifications";
+import type { NotificationType } from "@/types/apps/notificationTypes";
 
 interface ApiNotification {
   id: string;

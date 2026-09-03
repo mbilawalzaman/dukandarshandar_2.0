@@ -17,7 +17,7 @@ import {
   Avatar,
 } from "@mui/material";
 import Link from "next/link";
-import { RecentOrder, RecentUser } from "@/types/admin";
+import type { RecentOrder, RecentUser } from "@/types/apps/adminDashboardTypes";
 
 interface RecentActivityFeedProps {
   recentOrders?: RecentOrder[];

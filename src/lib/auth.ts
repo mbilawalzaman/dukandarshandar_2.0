@@ -7,13 +7,9 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_COOKIE,
 } from "@/lib/constants";
+import type { JwtPayloadType } from "@/types/shared/authTypes";
 
-export type JwtPayload = {
-  userId: string;
-  email: string;
-  userName: string;
-  role: string;
-};
+export type JwtPayload = JwtPayloadType;
 
 export function getJwtSecret() {
   return process.env.JWT_SECRET || "supersecretkey";

@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { ObjectId } from "mongodb";
+import type { ObjectId } from "mongodb";
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";

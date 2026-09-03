@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
-import { normalizePageSettings, DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import type { PageSettings } from "@/lib/pageSettings";
+import { normalizePageSettings, DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 
 export async function getGlobalPageSettings(): Promise<PageSettings> {
   try {

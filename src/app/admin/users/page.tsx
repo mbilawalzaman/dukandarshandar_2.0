@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Chip } from "@mui/material";
-import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable";
+import type { ColumnDef } from "../../components/admin/AdminDataTable";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 
 interface User {
   _id: string;

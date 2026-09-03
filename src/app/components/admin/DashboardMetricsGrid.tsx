@@ -7,7 +7,7 @@ import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PeopleIcon from "@mui/icons-material/People";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PaidIcon from "@mui/icons-material/Paid";
-import { AdminDashboardStats } from "@/types/admin";
+import type { AdminDashboardStats } from "@/types/apps/adminDashboardTypes";
 
 interface DashboardMetricsGridProps {
   stats: AdminDashboardStats;

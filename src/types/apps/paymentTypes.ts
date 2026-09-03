@@ -1,57 +1,61 @@
+/** Safepay + storefront payment method types */
+
 export type SafepayEnvironment = "sandbox" | "production";
 
-export interface SafepaySessionParams {
+export type PaymentMethod = "cod" | "card" | "raast" | "wallet";
+
+export type SafepaySessionParams = {
   amount: number;
   currency?: string;
   orderId: string;
   customerEmail: string;
   customerName: string;
   customerPhone?: string;
-}
+};
 
-export interface SafepaySessionResult {
+export type SafepaySessionResult = {
   tracker: string;
   clientToken: string;
   orderId: string;
   environment: SafepayEnvironment;
   checkoutUrl?: string;
-}
+};
 
-export interface SafepayTrackerObject {
+export type SafepayTrackerObject = {
   token: string;
-}
+};
 
-export interface SafepaySessionSetupData {
+export type SafepaySessionSetupData = {
   tracker: SafepayTrackerObject;
-}
+};
 
-export interface SafepaySessionSetupResponse {
+export type SafepaySessionSetupResponse = {
   data?: SafepaySessionSetupData;
-}
+};
 
-export interface SafepayPassportTokenData {
+export type SafepayPassportTokenData = {
   token?: string;
   access_token?: string;
-}
+};
 
-export interface SafepayPassportTokenResponse {
+export type SafepayPassportTokenResponse = {
   data?: string | SafepayPassportTokenData;
-}
+};
 
-export interface SafepayCustomerCreateResponse {
+export type SafepayCustomerCreateResponse = {
   data?: {
     token?: string;
   };
-}
+};
 
-export interface SafepayWebhookHeaders {
+export type SafepayWebhookHeaders = {
   signature: string | null;
   timestamp: string | null;
   eventId: string | null;
   eventType: string | null;
-}
+};
 
-export interface SafepayWebhookPayload {
+export type SafepayWebhookPayload = {
   type?: string;
   event?: string;
   data?: {
@@ -78,9 +82,9 @@ export interface SafepayWebhookPayload {
   };
   order_id?: string;
   status?: string;
-}
+};
 
-export interface CreatePaymentSessionBody {
+export type CreatePaymentSessionBody = {
   customer_name: string;
   customer_email: string;
   phone: string;
@@ -95,6 +99,14 @@ export interface CreatePaymentSessionBody {
     image?: string;
   }>;
   total_amount?: number;
-}
+};
 
-export type PaymentMethod = "cod" | "card" | "raast" | "wallet";
+/** Client checkout Safepay session state */
+export type CheckoutSafepaySessionType = {
+  tracker: string;
+  clientToken: string;
+  orderId: string;
+  environment: "sandbox" | "production";
+  checkoutUrl?: string;
+  paymentMethod?: PaymentMethod;
+};

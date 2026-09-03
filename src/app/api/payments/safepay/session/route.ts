@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { SafepayController } from "@/controllers/safepayController";
 
 export const dynamic = "force-dynamic";

@@ -37,13 +37,14 @@ import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import MovieCreationIcon from "@mui/icons-material/MovieCreation";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import VideocamIcon from "@mui/icons-material/Videocam";
-import {
-  DEFAULT_PAGE_SETTINGS,
+import type {
   PageSettings,
   PageSettingsKey,
   BannerItem,
   HomeBannerMode,
-  MediaAsset,
+  MediaAsset} from "@/lib/pageSettings";
+import {
+  DEFAULT_PAGE_SETTINGS
 } from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import { uploadVideoToCloudinary } from "@/lib/cloudinaryClientUpload";

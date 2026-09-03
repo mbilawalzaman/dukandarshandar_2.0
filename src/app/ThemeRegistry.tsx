@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, ReactNode } from "react";
+import type { ReactNode } from "react";
+import React, { useState } from "react";
 import { useServerInsertedHTML } from "next/navigation";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { CacheProvider } from "@emotion/react";
-import createCache, { Options as OptionsOfCreateCache } from "@emotion/cache";
+import type { Options as OptionsOfCreateCache } from "@emotion/cache";
+import createCache from "@emotion/cache";
 import { BRAND } from "@/lib/constants";
 import { CartProvider } from "./providers/CartProvider";
 import { FirebaseProvider } from "./providers/FirebaseProvider";

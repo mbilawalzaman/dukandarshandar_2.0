@@ -2,7 +2,7 @@ import { getDb } from "@/lib/db";
 import { getAdminFirestore, FieldValue } from "@/lib/firebaseAdmin";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { UserRole } from "@/models/User";
-import type { ConversationDoc } from "@/types/chat";
+import type { ConversationDoc } from "@/types/apps/chatTypes";
 import { createNotification } from "@/services/notificationService";
 
 const MAX_MESSAGE_LENGTH = 4000;

@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document } from "mongoose";
+import type { Document } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import type { ProductImage } from "@/lib/productImages";
 
 export interface IProduct extends Document {
