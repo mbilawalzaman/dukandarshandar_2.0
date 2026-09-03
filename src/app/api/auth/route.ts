@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { signupController, loginController, guestLoginController } from "@/controllers/authController";
-import { attachAuthCookie, clearAuthCookie, getAuthUser } from "@/lib/auth";
+import { clearAuthCookie, getAuthUser } from "@/lib/auth";
+import {
+  attachSessionCookies,
+  getRefreshTokenFromRequest,
+  revokeAllRefreshTokens,
+  revokeRefreshToken,
+} from "@/lib/session";
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -13,8 +19,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { name, email, password, type, role } = await req.json();
+    const userAgent = req.headers.get("user-agent") || undefined;
 
     if (type === "logout") {
+      const refresh = getRefreshTokenFromRequest(req);
+      await revokeRefreshToken(refresh).catch(() => undefined);
+      const current = getAuthUser(req);
+      if (current?.userId) {
+        await revokeAllRefreshTokens(current.userId).catch(() => undefined);
+      }
       const response = NextResponse.json({ success: true });
       return clearAuthCookie(response);
     }
@@ -25,10 +38,10 @@ export async function POST(req: Request) {
     }
 
     if (type === "login") {
-      const result = await loginController(email, password);
+      const result = await loginController(email, password, { userAgent });
       const response = NextResponse.json(result, { status: result.success ? 200 : 401 });
-      if (result.success && result.token) {
-        attachAuthCookie(response, result.token);
+      if (result.success && result.token && result.refreshToken) {
+        attachSessionCookies(response, result.token, result.refreshToken);
       }
       return response;
     }
@@ -37,7 +50,9 @@ export async function POST(req: Request) {
       const result = await guestLoginController();
       const response = NextResponse.json(result, { status: result.success ? 200 : 401 });
       if (result.success && result.token) {
-        attachAuthCookie(response, result.token);
+        // Guest: access only — clear any prior refresh cookie
+        clearAuthCookie(response);
+        attachSessionCookies(response, result.token, null);
       }
       return response;
     }

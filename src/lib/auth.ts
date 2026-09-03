@@ -1,7 +1,12 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { TOKEN_COOKIE } from "@/lib/constants";
+import {
+  ACCESS_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_TTL_SECONDS,
+  TOKEN_COOKIE,
+} from "@/lib/constants";
 
 export type JwtPayload = {
   userId: string;
@@ -64,7 +69,7 @@ export function requireAdmin(req: Request) {
   return auth;
 }
 
-export function cookieOptions(maxAgeSeconds = 60 * 60 * 24 * 7) {
+export function cookieOptions(maxAgeSeconds = ACCESS_TOKEN_TTL_SECONDS) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -74,12 +79,22 @@ export function cookieOptions(maxAgeSeconds = 60 * 60 * 24 * 7) {
   };
 }
 
-export function attachAuthCookie(response: NextResponse, token: string) {
-  response.cookies.set(TOKEN_COOKIE, token, cookieOptions());
+export function attachAuthCookie(response: NextResponse, token: string, refreshToken?: string) {
+  // Keep access cookie for the refresh window so middleware still sees a session;
+  // the JWT itself expires sooner and is renewed via /api/auth/refresh.
+  response.cookies.set(TOKEN_COOKIE, token, cookieOptions(REFRESH_TOKEN_TTL_SECONDS));
+  if (refreshToken) {
+    response.cookies.set(
+      REFRESH_TOKEN_COOKIE,
+      refreshToken,
+      cookieOptions(REFRESH_TOKEN_TTL_SECONDS)
+    );
+  }
   return response;
 }
 
 export function clearAuthCookie(response: NextResponse) {
-  response.cookies.set(TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
+  response.cookies.set(TOKEN_COOKIE, "", { ...cookieOptions(0), maxAge: 0 });
+  response.cookies.set(REFRESH_TOKEN_COOKIE, "", { ...cookieOptions(0), maxAge: 0 });
   return response;
 }

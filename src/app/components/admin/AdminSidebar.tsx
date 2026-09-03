@@ -28,6 +28,7 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AutoAwesomeMosaicIcon from "@mui/icons-material/AutoAwesomeMosaic";
+import PersonIcon from "@mui/icons-material/Person";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
@@ -51,6 +52,7 @@ const navItems = [
   { label: "Notifications", path: "/admin/notifications", icon: <NotificationsIcon /> },
   { label: "Support", path: "/admin/support", icon: <SupportAgentIcon /> },
   { label: "Payments", path: "/admin/payments", icon: <PaymentsIcon /> },
+  { label: "Profile", path: "/admin/profile", icon: <PersonIcon /> },
   { label: "Settings", path: "/admin/settings", icon: <SettingsIcon /> },
 ];
 

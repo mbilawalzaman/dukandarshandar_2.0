@@ -23,8 +23,10 @@ import { BRAND } from "@/lib/constants";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
+import { authFetch, persistAccessToken } from "@/lib/authFetch";
+import { isSyntheticEmail, isValidCustomerEmail } from "@/lib/userDisplay";
 
-type TokenUser = { userName?: string; email?: string };
+type TokenUser = { userName?: string; email?: string; userId?: string; role?: string };
 
 interface SafepaySession {
   tracker: string;
@@ -42,6 +44,7 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
+  const [emailRequiredHint, setEmailRequiredHint] = useState(false);
   const [form, setForm] = useState({
     customer_name: "",
     customer_email: "",
@@ -54,19 +57,50 @@ export default function CheckoutPage() {
     process.env.NEXT_PUBLIC_SAFEPAY_ENV === "sandbox" || process.env.NEXT_PUBLIC_SAFEPAY_ENV === "production";
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
+    void (async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
         const decoded: TokenUser = jwtDecode(token);
+        const tokenEmail = decoded.email || "";
+        const needsRealEmail = isSyntheticEmail(tokenEmail);
+
         setForm((prev) => ({
           ...prev,
-          customer_name: decoded.userName || "",
-          customer_email: decoded.email || "",
+          customer_name: decoded.userName || prev.customer_name,
+          customer_email: needsRealEmail ? "" : tokenEmail || prev.customer_email,
         }));
+        setEmailRequiredHint(needsRealEmail);
+
+        if (decoded.role === "guest" || !decoded.userId || decoded.userId === "guest") return;
+
+        const res = await authFetch("/api/profile");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.success || !data.profile) return;
+
+        const p = data.profile as {
+          name?: string;
+          email?: string;
+          phone?: string;
+          address?: string;
+          city?: string;
+          needsEmail?: boolean;
+          image?: string;
+        };
+        setEmailRequiredHint(Boolean(p.needsEmail) || needsRealEmail);
+        setForm((prev) => ({
+          customer_name: p.name || prev.customer_name,
+          customer_email: p.email || (needsRealEmail ? "" : prev.customer_email),
+          phone: p.phone || prev.phone,
+          address: p.address || prev.address,
+          city: p.city || prev.city,
+        }));
+        if (p.image) localStorage.setItem("userImage", p.image);
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
-    }
+    })();
   }, []);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -84,8 +118,12 @@ export default function CheckoutPage() {
   };
 
   const validateForm = (): boolean => {
-    if (!form.customer_name || !form.customer_email || !form.phone || !form.address || !form.city) {
+    if (!form.customer_name || !form.phone || !form.address || !form.city) {
       toast("Please fill in all shipping fields", "error");
+      return false;
+    }
+    if (!isValidCustomerEmail(form.customer_email)) {
+      toast("Please enter a valid email address for order updates", "error");
       return false;
     }
     if (items.length === 0) {
@@ -95,14 +133,43 @@ export default function CheckoutPage() {
     return true;
   };
 
+  const syncShippingToProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const decoded: TokenUser = jwtDecode(token);
+      if (!decoded.userId || decoded.userId === "guest" || decoded.role === "guest") return;
+
+      const res = await authFetch("/api/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          name: form.customer_name.trim(),
+          email: form.customer_email.trim().toLowerCase(),
+          phone: form.phone.trim(),
+          city: form.city.trim(),
+          address: form.address.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.token) persistAccessToken(data.token);
+        setEmailRequiredHint(false);
+      }
+    } catch {
+      /* order can still proceed — server also syncs */
+    }
+  };
+
   const placeCodOrder = async () => {
     if (!validateForm()) return;
 
     try {
       setSubmitting(true);
+      await syncShippingToProfile();
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: authHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           ...form,
           items,
@@ -112,6 +179,8 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.token) persistAccessToken(data.token);
+        setEmailRequiredHint(false);
         clear();
         toast("Order placed successfully!");
         router.push("/orders?placed=1");
@@ -134,9 +203,11 @@ export default function CheckoutPage() {
 
     try {
       setSubmitting(true);
+      await syncShippingToProfile();
       const res = await fetch("/api/payments/safepay/session", {
         method: "POST",
         headers: authHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           ...form,
           items,
@@ -233,6 +304,12 @@ export default function CheckoutPage() {
                       type="email"
                       name="customer_email"
                       label="Email"
+                      placeholder={emailRequiredHint ? "Enter your email" : undefined}
+                      helperText={
+                        emailRequiredHint
+                          ? "Required for order updates — Facebook did not share an email"
+                          : undefined
+                      }
                       value={form.customer_email}
                       onChange={handleChange}
                       disabled={Boolean(paymentSession)}
