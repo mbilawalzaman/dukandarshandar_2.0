@@ -32,6 +32,13 @@ export class SafepayController {
 
       const body = (await req.json()) as CreatePaymentSessionBody;
       const user = getAuthUser(req);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, message: "Please login, sign up, or continue as guest to place an order" },
+          { status: 401 }
+        );
+      }
+
       const paymentMethod = body.payment_method || "card";
 
       if (!body.customer_name || !body.customer_email || !body.phone || !body.address || !body.city) {

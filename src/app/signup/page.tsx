@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   TextField,
   Button,
@@ -25,8 +25,11 @@ import { persistAccessToken } from "@/lib/authFetch";
 import { signInWithSocial, type SocialProvider } from "@/lib/socialAuth";
 import { BRAND } from "@/lib/constants";
 
-export default function Signup() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || searchParams.get("redirect") || "/";
+
   const [showPassword, setShowPassword] = useState(false);
   const [blockAutofill, setBlockAutofill] = useState(true);
   const [formData, setFormData] = useState({
@@ -60,9 +63,59 @@ export default function Signup() {
 
       const data = await res.json();
       if (data.success) {
-        router.push("/login");
+        // Automatically log in the user after signup
+        const loginRes = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            type: "login",
+          }),
+        });
+        const loginData = await loginRes.json();
+        if (loginData.success && loginData.token) {
+          persistAccessToken(loginData.token);
+          router.push(loginData.user?.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
+        } else {
+          router.push(nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login");
+        }
       } else {
-        setError(data.error);
+        setError(data.error || "Signup failed");
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ type: "guest" }),
+      });
+
+      const raw = await res.text();
+      let data: { success?: boolean; token?: string; error?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        setError("Server error check Vercel environment variables.");
+        return;
+      }
+
+      if (data.success && data.token) {
+        persistAccessToken(data.token);
+        router.push(nextPath);
+      } else {
+        setError(data.error || "Guest login failed");
       }
     } finally {
       setLoading(false);
@@ -75,7 +128,7 @@ export default function Signup() {
     try {
       const { token, user } = await signInWithSocial(provider);
       persistAccessToken(token);
-      router.push(user.role === "admin" ? "/admin" : "/");
+      router.push(user.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Social signup failed";
       if (/popup-closed|cancelled|canceled/i.test(message)) {
@@ -178,10 +231,19 @@ export default function Signup() {
               >
                 {loading && !socialLoading ? <CircularProgress size={22} color="inherit" /> : "Sign Up"}
               </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                fullWidth
+                onClick={handleGuestLogin}
+                disabled={loading || !!socialLoading}
+              >
+                Continue as Guest
+              </Button>
 
               {socialEnabled && (
                 <>
-                  <Divider>
+                  <Divider sx={{ my: 0.5 }}>
                     <Typography variant="caption" color="text.secondary">
                       or continue with
                     </Typography>
@@ -216,7 +278,7 @@ export default function Signup() {
 
               <Typography align="center">
                 Already have an account?{" "}
-                <Link href="/login" color="primary">
+                <Link href={nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"} color="primary">
                   Login
                 </Link>
               </Typography>
@@ -225,5 +287,13 @@ export default function Signup() {
         </CardContent>
       </Card>
     </Container>
+  );
+}
+
+export default function Signup() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

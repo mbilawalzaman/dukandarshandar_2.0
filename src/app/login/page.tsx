@@ -28,7 +28,7 @@ import { BRAND } from "@/lib/constants";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/";
+  const nextPath = searchParams.get("next") || searchParams.get("redirect") || "/";
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -237,7 +237,7 @@ function LoginForm() {
 
               <Typography align="center">
                 Don&apos;t have an account?{" "}
-                <Link href="/signup" color="primary">
+                <Link href={nextPath !== "/" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup"} color="primary">
                   Sign Up
                 </Link>
               </Typography>

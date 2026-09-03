@@ -212,6 +212,13 @@ export async function POST(req: NextRequest) {
     const { customer_name, customer_email, phone, address, city, items, payment_method } = body;
     const user = getAuthUser(req);
 
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Please login, sign up, or continue as guest to place an order" },
+        { status: 401 }
+      );
+    }
+
     if (!items || items.length === 0) {
       return NextResponse.json({ success: false, message: "Cart is empty" }, { status: 400 });
     }
