@@ -3,13 +3,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Typography, Box, Button, CircularProgress } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import ProductFormModal, { ProductFormData } from "@/app/components/admin/ProductFormModal";
+import type { ProductFormData } from "@/app/components/admin/ProductFormModal";
+import ProductFormModal from "@/app/components/admin/ProductFormModal";
 import DashboardMetricsGrid from "@/app/components/admin/DashboardMetricsGrid";
 import InventoryAlertWidget from "@/app/components/admin/InventoryAlertWidget";
 import DashboardCharts from "@/app/components/admin/DashboardCharts";
 import RecentActivityFeed from "@/app/components/admin/RecentActivityFeed";
 import DashboardQuickActions from "@/app/components/admin/DashboardQuickActions";
-import { AdminDashboardStats } from "@/types/admin";
+import type { AdminDashboardStats } from "@/types/apps/adminDashboardTypes";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminDashboardStats>({

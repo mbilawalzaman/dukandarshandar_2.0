@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Box, Typography } from "@mui/material";
-import { MediaAsset } from "@/lib/pageSettings";
+import type { MediaAsset } from "@/lib/pageSettings";
 import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
 
 interface BannerMediaRendererProps {

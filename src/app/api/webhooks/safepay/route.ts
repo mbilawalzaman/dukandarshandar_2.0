@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { SafepayWebhookController } from "@/controllers/safepayWebhookController";
 
 export const dynamic = "force-dynamic";

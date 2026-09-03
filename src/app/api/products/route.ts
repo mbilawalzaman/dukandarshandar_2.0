@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { fetchProductsPaginated } from "@/controllers/productController";
 
 export async function GET(req: NextRequest) {

@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { isSafepayConfigured } from "@/lib/safepayConfig";
 import { OrderPaymentService } from "@/services/orderPaymentService";
 import { SafepayService } from "@/services/safepayService";
-import type { CreatePaymentSessionBody } from "@/types/safepay";
+import type { CreatePaymentSessionBody } from "@/types/apps/paymentTypes";
 
 function getAppBaseUrl(req: NextRequest): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;

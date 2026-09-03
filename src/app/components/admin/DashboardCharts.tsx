@@ -21,14 +21,14 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import {
-  SalesTrendPoint,
-  CategoryDistPoint,
-  OrderStatusPoint,
-  PaymentBreakdownPoint,
   CATEGORY_COLORS,
   STATUS_COLORS,
   PAYMENT_COLORS,
-} from "@/types/admin";
+  type SalesTrendPoint,
+  type CategoryDistPoint,
+  type OrderStatusPoint,
+  type PaymentBreakdownPoint,
+} from "@/types/apps/adminDashboardTypes";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import Link from "next/link";
 

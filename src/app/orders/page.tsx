@@ -36,35 +36,13 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import CloseIcon from "@mui/icons-material/Close";
 import PageBanner from "../components/PageBanner";
-import OrderFilterSidebar, { OrderFilterState } from "../components/orders/OrderFilterSidebar";
+import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
+import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
+import type { OrderType } from "@/types/apps/orderTypes";
 
-interface OrderItem {
-  _id?: string;
-  name: string;
-  quantity: number;
-  price: number;
-  image?: string;
-}
-
-interface Order {
-  _id: string;
-  customer_name: string;
-  customer_email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  total_amount: number;
-  subtotal?: number;
-  shipping?: number;
-  delivery_promo?: boolean;
-  status: string;
-  payment_status?: string;
-  payment_method?: string;
-  created_at?: string;
-  items: OrderItem[];
-}
+type Order = OrderType;
 
 const INITIAL_FILTERS: OrderFilterState = {
   search: "",

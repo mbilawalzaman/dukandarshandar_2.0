@@ -2,15 +2,15 @@ export type ConversationType = "support";
 
 export type MessageType = "text" | "image" | "file" | "system";
 
-export interface LastMessageSummary {
+export type LastMessageSummary = {
   messageId: string;
   senderId: string;
   preview: string;
   type: MessageType;
   createdAt: unknown;
-}
+};
 
-export interface ConversationDoc {
+export type ConversationDoc = {
   type: ConversationType;
   customerId: string;
   participantIds: string[];
@@ -21,9 +21,9 @@ export interface ConversationDoc {
   createdAt: unknown;
   updatedAt: unknown;
   lastMessage?: LastMessageSummary | null;
-}
+};
 
-export interface MessageDoc {
+export type MessageDoc = {
   senderId: string;
   type: MessageType;
   text: string;
@@ -33,9 +33,9 @@ export interface MessageDoc {
   editedAt?: unknown | null;
   deletedAt?: unknown | null;
   clientMessageId: string;
-}
+};
 
-export interface ConversationMemberDoc {
+export type ConversationMemberDoc = {
   conversationId: string;
   userId: string;
   joinedAt: unknown;
@@ -45,4 +45,4 @@ export interface ConversationMemberDoc {
   muted: boolean;
   archived: boolean;
   updatedAt?: unknown;
-}
+};

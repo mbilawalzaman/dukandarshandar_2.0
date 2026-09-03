@@ -16,7 +16,8 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable";
+import type { ColumnDef } from "../../components/admin/AdminDataTable";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 
 interface OrderItem {
   name: string;

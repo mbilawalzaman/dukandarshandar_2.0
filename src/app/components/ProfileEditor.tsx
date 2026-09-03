@@ -20,26 +20,9 @@ import UserAvatar from "@/app/components/ui/UserAvatar";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { BRAND } from "@/lib/constants";
 import { isValidCustomerEmail } from "@/lib/userDisplay";
+import type { ProfileData, ProfileEditorProps } from "@/types/apps/profileTypes";
 
-export type ProfileData = {
-  id: string;
-  name: string;
-  email: string;
-  needsEmail: boolean;
-  phone: string;
-  address: string;
-  city: string;
-  image: string;
-  role: string;
-  authProvider: string;
-};
-
-type ProfileEditorProps = {
-  /** Where to send the user after 401 */
-  loginNextPath?: string;
-  /** Hide delivery address for admin-only context (optional — keep for both) */
-  showDelivery?: boolean;
-};
+export type { ProfileData };
 
 export default function ProfileEditor({
   loginNextPath = "/profile",

@@ -2,7 +2,7 @@ import { getDb } from "@/lib/db";
 import { getAdminFirestore, FieldValue } from "@/lib/firebaseAdmin";
 import { getAdminMessaging } from "@/lib/firebaseAdmin";
 import { paginationMeta } from "@/lib/pagination";
-import type { CreateNotificationInput, FcmDeviceDoc, MongoNotificationDoc } from "@/types/notifications";
+import type { CreateNotificationInput, FcmDeviceDoc, MongoNotificationDoc } from "@/types/apps/notificationTypes";
 
 function deviceDocId(userId: string, deviceId: string) {
   return `${userId}_${deviceId}`;

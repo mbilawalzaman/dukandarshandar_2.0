@@ -1,14 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
 import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
-import {
-  DEFAULT_PAGE_SETTINGS,
+import type {
   PageSettings,
   PageSettingsKey,
   BannerItem,
-  MediaAsset,
+  MediaAsset} from "@/lib/pageSettings";
+import {
+  DEFAULT_PAGE_SETTINGS,
   normalizePageSettings,
 } from "@/lib/pageSettings";
 

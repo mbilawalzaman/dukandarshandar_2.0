@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { attachAuthCookie, clearAuthCookie, getJwtSecret, type JwtPayload } from "@/lib/auth";
 import {

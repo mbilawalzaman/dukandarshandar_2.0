@@ -16,7 +16,8 @@ import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
-import { DEFAULT_PAGE_SETTINGS, PageSettings } from "@/lib/pageSettings";
+import type { PageSettings } from "@/lib/pageSettings";
+import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 
 export default function ContactPage() {
   const { toast } = useCart();

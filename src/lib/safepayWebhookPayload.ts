@@ -1,4 +1,4 @@
-import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/safepay";
+import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/apps/paymentTypes";
 
 function normalizeEventToken(value: string): string {
   return value.toLowerCase().replace(/:/g, ".");

@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Avatar, AvatarProps } from "@mui/material";
+import type { AvatarProps } from "@mui/material";
+import { Avatar } from "@mui/material";
 import { BRAND } from "@/lib/constants";
 import {
   getAvatarSrc,

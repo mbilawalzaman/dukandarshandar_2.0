@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Link from "next/link";
-import { LowStockProduct } from "@/types/admin";
-import { ProductFormData } from "./ProductFormModal";
+import type { LowStockProduct } from "@/types/apps/adminDashboardTypes";
+import type { ProductFormData } from "./ProductFormModal";
 
 interface InventoryAlertWidgetProps {
   lowStockCount?: number;

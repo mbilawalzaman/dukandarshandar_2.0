@@ -16,7 +16,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import PageBanner from "../components/PageBanner";
 import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
-import PaymentMethodSelector, { PaymentMethod } from "../components/checkout/PaymentMethodSelector";
+import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector";
 import { useCart } from "@/app/providers/CartProvider";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
@@ -25,17 +25,13 @@ import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { isSyntheticEmail, isValidCustomerEmail } from "@/lib/userDisplay";
+import type { CheckoutShippingFormType } from "@/types/apps/orderTypes";
+import type { CheckoutSafepaySessionType, PaymentMethod } from "@/types/apps/paymentTypes";
+import type { UserTokenType } from "@/types/shared/authTypes";
 
-type TokenUser = { userName?: string; email?: string; userId?: string; role?: string };
+type TokenUser = UserTokenType;
 
-interface SafepaySession {
-  tracker: string;
-  clientToken: string;
-  orderId: string;
-  environment: "sandbox" | "production";
-  checkoutUrl?: string;
-  paymentMethod?: PaymentMethod;
-}
+type SafepaySession = CheckoutSafepaySessionType;
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -45,7 +41,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
   const [emailRequiredHint, setEmailRequiredHint] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CheckoutShippingFormType>({
     customer_name: "",
     customer_email: "",
     phone: "",

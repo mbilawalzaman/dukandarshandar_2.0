@@ -13,7 +13,7 @@ import type {
   SafepaySessionParams,
   SafepaySessionResult,
   SafepaySessionSetupResponse,
-} from "@/types/safepay";
+} from "@/types/apps/paymentTypes";
 
 function createClient() {
   return new Safepay(getSafepaySecretKey(), {

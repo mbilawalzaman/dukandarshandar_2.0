@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { isSafepayWebhookConfigured } from "@/lib/safepayConfig";
 import { SafepayWebhookService } from "@/services/safepayWebhookService";
 import { SafepayService } from "@/services/safepayService";
-import type { SafepayWebhookPayload } from "@/types/safepay";
+import type { SafepayWebhookPayload } from "@/types/apps/paymentTypes";
 
 /**
  * HTTP controller for Safepay webhook endpoints.

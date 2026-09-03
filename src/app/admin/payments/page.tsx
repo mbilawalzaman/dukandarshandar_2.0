@@ -20,8 +20,9 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import AdminDataTable, { ColumnDef } from "../../components/admin/AdminDataTable";
-import type { AdminPaymentRecord, AdminPaymentStats } from "@/types/admin";
+import type { ColumnDef } from "../../components/admin/AdminDataTable";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import type { AdminPaymentRecord, AdminPaymentStats } from "@/types/apps/adminDashboardTypes";
 
 type MethodFilter = "all" | "online" | "card" | "cod";
 type StatusFilter = "all" | "paid" | "failed" | "awaiting";

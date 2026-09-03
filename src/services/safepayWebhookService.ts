@@ -7,7 +7,7 @@ import {
   resolveSafepayOrderId,
   resolveSafepayTracker,
 } from "@/lib/safepayWebhookPayload";
-import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/safepay";
+import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/apps/paymentTypes";
 
 /**
  * Safepay webhook business logic parse events and update order payment state.
