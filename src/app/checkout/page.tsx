@@ -12,6 +12,7 @@ import {
   Paper,
   Divider,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 import PageBanner from "../components/PageBanner";
@@ -38,6 +39,7 @@ export default function CheckoutPage() {
   const { items, clear, toast } = useCart();
   const { settings, getShipping, isPromoActive } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
   const [emailRequiredHint, setEmailRequiredHint] = useState(false);
@@ -53,11 +55,34 @@ export default function CheckoutPage() {
     process.env.NEXT_PUBLIC_SAFEPAY_ENV === "sandbox" || process.env.NEXT_PUBLIC_SAFEPAY_ENV === "production";
 
   useEffect(() => {
+    const redirectToLogin = (severity: "info" | "error" = "info") => {
+      toast("Please login, sign up, or continue as guest to place an order.", severity);
+      router.push("/login?next=/checkout");
+    };
+
     void (async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
-        const decoded: TokenUser = jwtDecode(token);
+        if (!token) {
+          redirectToLogin();
+          return;
+        }
+
+        let decoded: TokenUser;
+        try {
+          decoded = jwtDecode(token);
+        } catch {
+          localStorage.removeItem("token");
+          redirectToLogin("error");
+          return;
+        }
+
+        if (!decoded.userId && decoded.role !== "guest") {
+          localStorage.removeItem("token");
+          redirectToLogin("error");
+          return;
+        }
+
         const tokenEmail = decoded.email || "";
         const needsRealEmail = isSyntheticEmail(tokenEmail);
 
@@ -67,6 +92,7 @@ export default function CheckoutPage() {
           customer_email: needsRealEmail ? "" : tokenEmail || prev.customer_email,
         }));
         setEmailRequiredHint(needsRealEmail);
+        setCheckingAuth(false);
 
         if (decoded.role === "guest" || !decoded.userId || decoded.userId === "guest") return;
 
@@ -94,10 +120,10 @@ export default function CheckoutPage() {
         }));
         if (p.image) localStorage.setItem("userImage", p.image);
       } catch {
-        /* ignore */
+        redirectToLogin("error");
       }
     })();
-  }, []);
+  }, [router, toast]);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = getShipping(subtotal);
@@ -114,6 +140,20 @@ export default function CheckoutPage() {
   };
 
   const validateForm = (): boolean => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast("Please login, sign up, or continue as guest to place your order.", "error");
+      router.push("/login?next=/checkout");
+      return false;
+    }
+    try {
+      jwtDecode(token);
+    } catch {
+      localStorage.removeItem("token");
+      toast("Please login, sign up, or continue as guest to place your order.", "error");
+      router.push("/login?next=/checkout");
+      return false;
+    }
     if (!form.customer_name || !form.phone || !form.address || !form.city) {
       toast("Please fill in all shipping fields", "error");
       return false;
@@ -174,6 +214,11 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        toast(data.message || "Please login to place an order", "error");
+        router.push("/login?next=/checkout");
+        return;
+      }
       if (res.ok && data.success) {
         if (data.token) persistAccessToken(data.token);
         setEmailRequiredHint(false);
@@ -213,6 +258,11 @@ export default function CheckoutPage() {
       });
 
       const data = await res.json();
+      if (res.status === 401) {
+        toast(data.message || "Please login to place an order", "error");
+        router.push("/login?next=/checkout");
+        return;
+      }
       if (!res.ok || !data.success || !data.session) {
         toast(data.message || "Could not start payment session", "error");
         return;
@@ -262,6 +312,14 @@ export default function CheckoutPage() {
         : paymentSession
           ? "Payment ready below"
           : "Continue to card payment";
+
+  if (checkingAuth) {
+    return (
+      <Box sx={{ minHeight: "70vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ backgroundColor: "#f8fafc", minHeight: "70vh" }}>
