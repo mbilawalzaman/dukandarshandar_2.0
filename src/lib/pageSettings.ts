@@ -1,11 +1,13 @@
-export type BannerMediaType = "image" | "lottie";
+export type BannerMediaType = "image" | "video";
 export type ProcessingStatus = "idle" | "uploading" | "processing" | "failed";
+export type PageSettingsKey = "home" | "shop" | "about" | "contact";
+export type HomeBannerMode = "image_slider" | "single_video";
 
 export interface MediaAsset {
   type: BannerMediaType;
   url: string;
   publicId?: string;
-  resourceType?: "image" | "raw";
+  resourceType?: "image" | "video" | "raw";
   format?: string;
   width?: number;
   height?: number;
@@ -21,7 +23,7 @@ export interface BannerItem {
   isActive: boolean;
   activeMedia: MediaAsset;
   pendingMedia?: MediaAsset | null;
-  processingStatus: ProcessingStatus;
+  processingStatus?: ProcessingStatus;
   errorMessage?: string;
 }
 
@@ -36,7 +38,7 @@ export interface PageBannerConfig {
 
 export interface PageSettings {
   home: {
-    bannerMode: "image_slider" | "single_lottie";
+    bannerMode: HomeBannerMode;
     banners: BannerItem[];
     singleBanner?: BannerItem;
     bannerImages?: string[];
@@ -79,7 +81,7 @@ export const DEFAULT_PAGE_SETTINGS: PageSettings = {
 
 export interface RawMongoPageSettingsDoc {
   home?: {
-    bannerMode?: "image_slider" | "single_lottie";
+    bannerMode?: HomeBannerMode | "single_lottie";
     bannerImages?: string[];
     banners?: BannerItem[];
     singleBanner?: BannerItem;
@@ -89,6 +91,50 @@ export interface RawMongoPageSettingsDoc {
   shop?: Partial<PageSettings["shop"]>;
   about?: Partial<PageSettings["about"]>;
   contact?: Partial<PageSettings["contact"]>;
+}
+
+function normalizeMediaAsset(media?: MediaAsset | null): MediaAsset {
+  if (!media?.url) {
+    return { type: "image", url: "" };
+  }
+
+  let url = media.url;
+  const lower = url.toLowerCase();
+  let type: BannerMediaType = media.type === "video" ? "video" : "image";
+
+  // Legacy Lottie assets are ignored for playback; admin should re-upload MP4/image.
+  if (
+    (media.type as string) === "lottie" ||
+    lower.endsWith(".json") ||
+    lower.includes("/raw/upload/")
+  ) {
+    return { type: "image", url: "" };
+  }
+
+  if (
+    type === "video" ||
+    lower.includes("/video/upload/") ||
+    /\.(mp4|webm|mov)(\?|$)/i.test(lower)
+  ) {
+    type = "video";
+    // Client-safe inline transform (avoid importing node cloudinary SDK here)
+    if (url.includes("res.cloudinary.com") && url.includes("/video/upload/") && !url.includes("/video/upload/f_mp4")) {
+      url = url.replace("/video/upload/", "/video/upload/f_mp4/");
+    }
+  } else {
+    type = "image";
+  }
+
+  return {
+    ...media,
+    type,
+    url,
+  };
+}
+
+function normalizeBannerMode(mode?: string): HomeBannerMode {
+  if (mode === "single_video" || mode === "single_lottie") return "single_video";
+  return "image_slider";
 }
 
 /**
@@ -106,10 +152,7 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
       subtitle: b.subtitle || "",
       order: typeof b.order === "number" ? b.order : idx + 1,
       isActive: b.isActive !== false,
-      activeMedia: b.activeMedia || {
-        type: "image",
-        url: "",
-      },
+      activeMedia: normalizeMediaAsset(b.activeMedia),
       pendingMedia: b.pendingMedia || null,
       processingStatus: b.processingStatus || "idle",
       errorMessage: b.errorMessage || undefined,
@@ -131,37 +174,48 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
     }));
   }
 
-  // Preserve the user's existing active media for singleBanner
-  let singleBanner: BannerItem | undefined = homeDoc.singleBanner;
-  if (!singleBanner && banners.length > 0) {
+  let singleBanner: BannerItem | undefined = homeDoc.singleBanner
+    ? {
+        ...homeDoc.singleBanner,
+        activeMedia: normalizeMediaAsset(homeDoc.singleBanner.activeMedia),
+        processingStatus: homeDoc.singleBanner.processingStatus || "idle",
+      }
+    : undefined;
+
+  if (!singleBanner && banners.length > 0 && normalizeBannerMode(homeDoc.bannerMode) !== "single_video") {
     singleBanner = {
       ...banners[0],
       id: "single-banner-1",
     };
   }
 
+  const normalizePageBanner = (
+    page: Partial<PageBannerConfig> | undefined,
+    defaults: PageBannerConfig
+  ): PageBannerConfig => {
+    const merged = { ...defaults, ...(page || {}) };
+    const media = normalizeMediaAsset(merged.bannerMedia || (merged.bannerImage ? { type: merged.bannerType, url: merged.bannerImage } : null));
+    return {
+      ...merged,
+      bannerType: media.type || merged.bannerType || "image",
+      bannerImage: media.url || merged.bannerImage || "",
+      bannerMedia: media.url ? media : undefined,
+    };
+  };
+
   return {
     home: {
       ...DEFAULT_PAGE_SETTINGS.home,
       ...(safeDoc.home || {}),
-      bannerMode: homeDoc.bannerMode || "image_slider",
+      bannerMode: normalizeBannerMode(homeDoc.bannerMode),
       banners,
       singleBanner,
     },
     shop: {
-      ...DEFAULT_PAGE_SETTINGS.shop,
-      ...(safeDoc.shop || {}),
-      bannerType: safeDoc.shop?.bannerType || "image",
+      ...normalizePageBanner(safeDoc.shop, DEFAULT_PAGE_SETTINGS.shop),
+      productsPerPage: Number(safeDoc.shop?.productsPerPage) || DEFAULT_PAGE_SETTINGS.shop.productsPerPage,
     },
-    about: {
-      ...DEFAULT_PAGE_SETTINGS.about,
-      ...(safeDoc.about || {}),
-      bannerType: safeDoc.about?.bannerType || "image",
-    },
-    contact: {
-      ...DEFAULT_PAGE_SETTINGS.contact,
-      ...(safeDoc.contact || {}),
-      bannerType: safeDoc.contact?.bannerType || "image",
-    },
+    about: normalizePageBanner(safeDoc.about, DEFAULT_PAGE_SETTINGS.about),
+    contact: normalizePageBanner(safeDoc.contact, DEFAULT_PAGE_SETTINGS.contact),
   };
 }

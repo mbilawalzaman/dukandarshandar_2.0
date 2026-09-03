@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import Image from "next/image";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -12,9 +11,9 @@ import {
   Button,
   Grid,
   Divider,
-  Alert,
   CircularProgress,
   Snackbar,
+  Alert,
   Card,
   CardActions,
   Chip,
@@ -36,97 +35,67 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SaveIcon from "@mui/icons-material/Save";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import MovieCreationIcon from "@mui/icons-material/MovieCreation";
-import HourglassTopIcon from "@mui/icons-material/HourglassTop";
-import AnimationIcon from "@mui/icons-material/Animation";
 import CollectionsIcon from "@mui/icons-material/Collections";
-import { DEFAULT_PAGE_SETTINGS, PageSettings, BannerItem } from "@/lib/pageSettings";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import {
+  DEFAULT_PAGE_SETTINGS,
+  PageSettings,
+  PageSettingsKey,
+  BannerItem,
+  HomeBannerMode,
+  MediaAsset,
+} from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import { uploadVideoToCloudinary } from "@/lib/cloudinaryClientUpload";
+
+const PAGE_LABELS: Record<PageSettingsKey, string> = {
+  home: "Home",
+  shop: "Shop",
+  about: "About",
+  contact: "Contact",
+};
 
 export default function AdminManagePages() {
   const [activeTab, setActiveTab] = useState(0);
   const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingPage, setSavingPage] = useState<PageSettingsKey | null>(null);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({
     open: false,
     message: "",
     severity: "success",
   });
 
-  // Modal State for Adding New Banner / Video
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"image" | "video">("image");
-  const [modalTargetPage, setModalTargetPage] = useState<"home" | "shop" | "about" | "contact">("home");
-  const [modalMediaPayload, setModalMediaPayload] = useState<string>("");
-  const [modalMediaPreview, setModalMediaPreview] = useState<string>("");
+  const [modalTargetPage, setModalTargetPage] = useState<PageSettingsKey>("home");
+  const [modalMediaPayload, setModalMediaPayload] = useState("");
+  const [modalMediaPreview, setModalMediaPreview] = useState("");
   const [modalVideoFile, setModalVideoFile] = useState<File | null>(null);
   const [modalUploading, setModalUploading] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalSubtitle, setModalSubtitle] = useState("");
-
-  // Track pending image uploads for existing slides: slideId -> base64
   const [slideImageUploads, setSlideImageUploads] = useState<Record<string, string>>({});
 
-  // Track in-flight request lock to prevent pile-up
-  const isFetchingRef = useRef(false);
-
-  const isVideoProcessing =
-    settings.home?.singleBanner?.processingStatus === "processing" ||
-    settings.home?.banners?.some((b) => b.processingStatus === "processing") ||
-    false;
-
-  const fetchSettings = useCallback(async (isPolling = false) => {
-    // Guard: never send a new request if one is already pending/in-flight
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s safety timeout
-
+  const fetchSettings = useCallback(async () => {
     try {
-      if (!isPolling) setLoading(true);
+      setLoading(true);
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const res = await fetch(`/api/admin/page-settings?t=${Date.now()}`, {
         cache: "no-store",
-        signal: controller.signal,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
       if (data.success && data.settings) {
-        setSettings((prev) => {
-          if (isPolling) {
-            const wasProcessing =
-              prev.home?.singleBanner?.processingStatus === "processing" ||
-              prev.home?.banners?.some((b) => b.processingStatus === "processing");
-            const nowProcessing =
-              data.settings.home?.singleBanner?.processingStatus === "processing" ||
-              data.settings.home?.banners?.some((b: BannerItem) => b.processingStatus === "processing");
-
-            if (wasProcessing && !nowProcessing) {
-              setToast({
-                open: true,
-                message: "Video conversion to Lottie JSON completed! Banner updated live.",
-                severity: "success",
-              });
-            }
-          }
-          return data.settings;
-        });
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") {
-        console.warn("Page settings request timed out or was aborted");
+        setSettings(data.settings);
       } else {
-        console.error("Error fetching page settings:", err);
-      }
-      if (!isPolling) {
         setToast({ open: true, message: "Failed to load page settings", severity: "error" });
       }
+    } catch (err) {
+      console.error("Error fetching page settings:", err);
+      setToast({ open: true, message: "Failed to load page settings", severity: "error" });
     } finally {
-      clearTimeout(timeoutId);
-      isFetchingRef.current = false;
-      if (!isPolling) setLoading(false);
+      setLoading(false);
     }
   }, []);
 
@@ -134,52 +103,55 @@ export default function AdminManagePages() {
     fetchSettings();
   }, [fetchSettings]);
 
-  // Sequential Polling: Schedules next request ONLY after previous request finishes
-  useEffect(() => {
-    if (!isVideoProcessing) return;
-
-    let timerId: NodeJS.Timeout;
-    let isMounted = true;
-
-    const runSequentialPoll = async () => {
-      await fetchSettings(true);
-      if (isMounted && isVideoProcessing) {
-        timerId = setTimeout(runSequentialPoll, 3000); // Wait 3s after resolution before next poll
-      }
-    };
-
-    timerId = setTimeout(runSequentialPoll, 3000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timerId);
-    };
-  }, [isVideoProcessing, fetchSettings]);
-
-  const handleSave = async (updatedSettingsOverride?: PageSettings) => {
+  const savePage = async (page: PageSettingsKey, overrideSettings?: PageSettings) => {
     try {
-      setSaving(true);
+      setSavingPage(page);
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const current = overrideSettings || settings;
 
-      const currentSettings = updatedSettingsOverride || settings;
-
-      // Merge pending slide image uploads
-      const payload: PageSettings = {
-        ...currentSettings,
-        home: {
-          ...currentSettings.home,
-          banners: currentSettings.home.banners.map((b) => {
+      let dataPayload: Record<string, unknown>;
+      if (page === "home") {
+        const single = current.home.singleBanner;
+        const singleUrl = single?.activeMedia?.url || "";
+        const singleIsVideo =
+          single?.activeMedia?.type === "video" ||
+          singleUrl.includes("/video/upload/") ||
+          /\.(mp4|webm|mov)(\?|$)/i.test(singleUrl);
+        dataPayload = {
+          ...current.home,
+          banners: current.home.banners.map((b) => {
             const pendingImg = slideImageUploads[b.id];
             if (pendingImg) {
-              return {
-                ...b,
-                ...({ mediaUpload: pendingImg } as unknown as BannerItem),
-              };
+              return { ...b, mediaUpload: pendingImg };
             }
             return b;
           }),
-        },
-      };
+          singleBanner: single
+            ? {
+                ...single,
+                ...(singleIsVideo
+                  ? {
+                      videoUrl: single.activeMedia.url,
+                      videoPublicId: single.activeMedia.publicId,
+                      videoFormat: single.activeMedia.format,
+                    }
+                  : {}),
+              }
+            : undefined,
+        };
+      } else {
+        const pageSettings = current[page];
+        dataPayload = {
+          ...pageSettings,
+          ...(pageSettings.bannerMedia?.type === "video"
+            ? {
+                videoUrl: pageSettings.bannerMedia.url,
+                videoPublicId: pageSettings.bannerMedia.publicId,
+                videoFormat: pageSettings.bannerMedia.format,
+              }
+            : {}),
+        };
+      }
 
       const res = await fetch("/api/admin/page-settings", {
         method: "PUT",
@@ -187,7 +159,7 @@ export default function AdminManagePages() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ page, data: dataPayload }),
       });
 
       const raw = await res.text();
@@ -199,48 +171,51 @@ export default function AdminManagePages() {
           open: true,
           message:
             res.status === 413
-              ? "Upload is too large for the server. Videos must be uploaded via Cloudinary first."
-              : `Failed to save settings (HTTP ${res.status})`,
+              ? "Upload is too large. Use Cloudinary direct upload for videos."
+              : `Failed to save ${PAGE_LABELS[page]} (HTTP ${res.status})`,
           severity: "error",
         });
-        return;
+        return false;
       }
 
-      if (res.ok && data.success) {
-        setSettings(data.settings!);
-        setSlideImageUploads({});
+      if (res.ok && data.success && data.settings) {
+        setSettings(data.settings);
+        if (page === "home") setSlideImageUploads({});
         setToast({
           open: true,
-          message: "Page settings saved successfully!",
+          message: data.message || `${PAGE_LABELS[page]} settings saved`,
           severity: "success",
         });
-      } else {
-        setToast({ open: true, message: data.message || "Failed to save settings", severity: "error" });
+        return true;
       }
+
+      setToast({ open: true, message: data.message || "Failed to save settings", severity: "error" });
+      return false;
     } catch (err) {
-      console.error("Error saving settings:", err);
+      console.error("Error saving page settings:", err);
       setToast({ open: true, message: "Network error while saving settings", severity: "error" });
+      return false;
     } finally {
-      setSaving(false);
+      setSavingPage(null);
     }
   };
 
-  // Open Modal to Add New Banner or Video
-  const handleOpenModal = (pageKey: "home" | "shop" | "about" | "contact") => {
-    if (modalMediaPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(modalMediaPreview);
-    }
-    setModalTargetPage(pageKey);
-    setModalType("image");
+  const clearModalMedia = () => {
+    if (modalMediaPreview.startsWith("blob:")) URL.revokeObjectURL(modalMediaPreview);
     setModalMediaPayload("");
     setModalMediaPreview("");
     setModalVideoFile(null);
+  };
+
+  const handleOpenModal = (pageKey: PageSettingsKey, preferVideo = false) => {
+    clearModalMedia();
+    setModalTargetPage(pageKey);
+    setModalType(preferVideo ? "video" : "image");
     setModalTitle("");
     setModalSubtitle("");
     setModalOpen(true);
   };
 
-  // Handle Modal File Upload
   const handleModalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -250,13 +225,10 @@ export default function AdminManagePages() {
         setToast({ open: true, message: "Video must be under 25MB", severity: "error" });
         return;
       }
-      if (modalMediaPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(modalMediaPreview);
-      }
-      const previewUrl = URL.createObjectURL(file);
+      if (modalMediaPreview.startsWith("blob:")) URL.revokeObjectURL(modalMediaPreview);
       setModalVideoFile(file);
       setModalMediaPayload("");
-      setModalMediaPreview(previewUrl);
+      setModalMediaPreview(URL.createObjectURL(file));
       return;
     }
 
@@ -275,30 +247,34 @@ export default function AdminManagePages() {
     };
   };
 
-  // Submit Modal Action
   const handleModalSubmit = async () => {
     if (modalType === "video" && !modalVideoFile) {
       setToast({ open: true, message: "Please select a video file first", severity: "error" });
       return;
     }
     if (modalType === "image" && !modalMediaPayload) {
-      setToast({ open: true, message: "Please select an image or video file first", severity: "error" });
+      setToast({ open: true, message: "Please select an image file first", severity: "error" });
       return;
     }
 
     try {
-      let videoUrl = "";
+      let videoAsset: MediaAsset | null = null;
       if (modalType === "video" && modalVideoFile) {
         setModalUploading(true);
-        setToast({
-          open: true,
-          message: "Uploading video to Cloudinary…",
-          severity: "info",
-        });
+        setToast({ open: true, message: "Uploading video to Cloudinary…", severity: "info" });
         const uploaded = await uploadVideoToCloudinary(modalVideoFile);
-        videoUrl = uploaded.url;
+        videoAsset = {
+          type: "video",
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+          resourceType: "video",
+          format: uploaded.format || "mp4",
+          bytes: uploaded.bytes,
+          duration: uploaded.duration,
+        };
       }
 
+      // Keep existing live banner until save succeeds — never swap in a static placeholder mid-upload.
       if (modalTargetPage === "home") {
         if (modalType === "image") {
           const nextIdx = settings.home.banners.length + 1;
@@ -308,15 +284,11 @@ export default function AdminManagePages() {
             subtitle: modalSubtitle.trim() || "",
             order: nextIdx,
             isActive: true,
-            activeMedia: {
-              type: "image",
-              url: modalMediaPayload,
-            },
+            activeMedia: { type: "image", url: modalMediaPayload },
             pendingMedia: null,
             processingStatus: "idle",
           };
-
-          const updated: PageSettings = {
+          const nextSettings: PageSettings = {
             ...settings,
             home: {
               ...settings.home,
@@ -324,81 +296,69 @@ export default function AdminManagePages() {
               banners: [...settings.home.banners, newSlide],
             },
           };
-
           setSlideImageUploads((prev) => ({ ...prev, [newSlide.id]: modalMediaPayload }));
-          setModalOpen(false);
-          await handleSave(updated);
-        } else {
-          const currentActiveMedia =
-            settings.home.singleBanner?.activeMedia?.url
-              ? settings.home.singleBanner.activeMedia
-              : settings.home.banners.find((b) => b.isActive !== false && b.activeMedia?.url)?.activeMedia ||
-                settings.home.banners[0]?.activeMedia || {
-                  type: "image" as const,
-                  url: "",
-                };
-
-          const updated = {
+          const ok = await savePage("home", nextSettings);
+          if (ok) setModalOpen(false);
+        } else if (videoAsset) {
+          const homePayloadSettings: PageSettings = {
             ...settings,
             home: {
               ...settings.home,
-              bannerMode: "single_lottie" as const,
+              bannerMode: "single_video",
               singleBanner: {
-                id: "single-banner-1",
+                id: settings.home.singleBanner?.id || "single-banner-1",
                 title: modalTitle.trim() || settings.home.singleBanner?.title || "Dukandar Shandar",
                 subtitle: modalSubtitle.trim() || settings.home.singleBanner?.subtitle || "",
                 order: 1,
                 isActive: true,
-                activeMedia: currentActiveMedia,
+                activeMedia: videoAsset,
                 pendingMedia: null,
-                processingStatus: "processing" as const,
-                videoUrl,
+                processingStatus: "idle",
               },
             },
           };
+          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoUrl = videoAsset.url;
+          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoPublicId =
+            videoAsset.publicId;
+          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoFormat =
+            videoAsset.format;
 
-          setModalOpen(false);
-          await handleSave(updated as unknown as PageSettings);
-          setToast({
-            open: true,
-            message:
-              "Video conversion to Lottie is in progress. Your current banner will remain live until processing finishes.",
-            severity: "info",
-          });
+          const ok = await savePage("home", homePayloadSettings);
+          if (ok) setModalOpen(false);
         }
-      } else if (modalType === "video") {
-        const updated = {
+      } else if (modalType === "video" && videoAsset) {
+        const nextSettings = {
           ...settings,
           [modalTargetPage]: {
             ...settings[modalTargetPage],
-            bannerType: "lottie" as const,
-            videoUrl,
+            bannerType: "video",
+            bannerImage: videoAsset.url,
+            bannerMedia: videoAsset,
+            videoUrl: videoAsset.url,
+            videoPublicId: videoAsset.publicId,
+            videoFormat: videoAsset.format,
           },
-        };
-        setModalOpen(false);
-        await handleSave(updated as unknown as PageSettings);
-        setToast({
-          open: true,
-          message: "Video conversion to Lottie is in progress. Existing banner remains live.",
-          severity: "info",
-        });
+        } as PageSettings;
+        const ok = await savePage(modalTargetPage, nextSettings);
+        if (ok) setModalOpen(false);
       } else {
-        const updated: PageSettings = {
+        const nextSettings: PageSettings = {
           ...settings,
           [modalTargetPage]: {
             ...settings[modalTargetPage],
             bannerType: "image",
             bannerImage: modalMediaPayload,
+            bannerMedia: { type: "image", url: modalMediaPayload },
           },
         };
-        setModalOpen(false);
-        await handleSave(updated);
+        const ok = await savePage(modalTargetPage, nextSettings);
+        if (ok) setModalOpen(false);
       }
     } catch (err) {
       console.error("Error submitting banner media:", err);
       setToast({
         open: true,
-        message: err instanceof Error ? err.message : "Failed to upload video",
+        message: err instanceof Error ? err.message : "Failed to upload media",
         severity: "error",
       });
     } finally {
@@ -406,20 +366,18 @@ export default function AdminManagePages() {
     }
   };
 
-  // Remove a slide from home slideshow
   const handleRemoveSlide = (slideId: string) => {
     if (settings.home.banners.length <= 1) {
       setToast({ open: true, message: "At least one slide is required", severity: "error" });
       return;
     }
-    const updated: PageSettings = {
-      ...settings,
+    setSettings((prev) => ({
+      ...prev,
       home: {
-        ...settings.home,
-        banners: settings.home.banners.filter((b) => b.id !== slideId),
+        ...prev.home,
+        banners: prev.home.banners.filter((b) => b.id !== slideId),
       },
-    };
-    setSettings(updated);
+    }));
     setSlideImageUploads((prev) => {
       const next = { ...prev };
       delete next[slideId];
@@ -427,23 +385,39 @@ export default function AdminManagePages() {
     });
   };
 
-  // Replace an image on an existing slide
   const handleReplaceSlideImage = (e: React.ChangeEvent<HTMLInputElement>, slideId: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 6 * 1024 * 1024) {
       setToast({ open: true, message: "Image must be under 6MB", severity: "error" });
       return;
     }
-
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
-      const result = reader.result as string;
-      setSlideImageUploads((prev) => ({ ...prev, [slideId]: result }));
+      setSlideImageUploads((prev) => ({ ...prev, [slideId]: reader.result as string }));
     };
   };
+
+  const SavePageButton = ({ page }: { page: PageSettingsKey }) => (
+    <Button
+      variant="contained"
+      startIcon={savingPage === page ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+      onClick={() => savePage(page)}
+      disabled={savingPage !== null || modalUploading}
+      sx={{
+        borderRadius: 2,
+        px: 3,
+        py: 1.1,
+        fontWeight: 700,
+        textTransform: "none",
+        backgroundColor: "#0284c7",
+        "&:hover": { backgroundColor: "#0369a1" },
+      }}
+    >
+      {savingPage === page ? "Saving..." : `Save ${PAGE_LABELS[page]}`}
+    </Button>
+  );
 
   if (loading) {
     return (
@@ -455,47 +429,15 @@ export default function AdminManagePages() {
 
   return (
     <Box>
-      {/* Page Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            Page & Banner Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage multi-slide Image Carousels or Single Video-to-Lottie animated banners for your storefront.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
-          onClick={() => handleSave()}
-          disabled={saving}
-          sx={{
-            borderRadius: 2,
-            px: 3.5,
-            py: 1.2,
-            fontWeight: 700,
-            backgroundColor: "#0284c7",
-            "&:hover": { backgroundColor: "#0369a1" },
-          }}
-        >
-          {saving ? "Saving..." : "Save All Changes"}
-        </Button>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
+          Page & Banner Management
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Edit each page separately. Image carousels or MP4 video banners upload directly to Cloudinary.
+        </Typography>
       </Box>
 
-      {/* Video Conversion Processing Banner */}
-      {isVideoProcessing && (
-        <Alert
-          severity="warning"
-          icon={<HourglassTopIcon className="animate-spin" />}
-          sx={{ mb: 3, borderRadius: 2, fontWeight: 600 }}
-        >
-          Video conversion to Lottie JSON is in progress. Your current live banner remains visible to customers until conversion finishes.
-        </Alert>
-      )}
-
-      {/* Navigation Tabs */}
       <Paper sx={{ borderRadius: 3, mb: 3, border: "1px solid #e2e8f0" }} elevation={0}>
         <Tabs
           value={activeTab}
@@ -520,10 +462,8 @@ export default function AdminManagePages() {
         </Tabs>
       </Paper>
 
-      {/* TAB 0: HOME PAGE BANNER */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          {/* Banner Mode Selector Card */}
           <Grid item xs={12}>
             <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
@@ -532,32 +472,34 @@ export default function AdminManagePages() {
                     Home Banner Format
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Choose between a Multi-Slide Image Carousel (Add Slides) or a Single Video / Lottie Animation.
+                    Use a multi-slide image carousel or a single MP4 video banner.
                   </Typography>
                 </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={<AddPhotoAlternateIcon />}
-                  onClick={() => handleOpenModal("home")}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    backgroundColor: "#f59e0b",
-                    color: "#1a1a1a",
-                    "&:hover": { backgroundColor: "#d97706" },
-                  }}
-                >
-                  + Add New Banner / Slide
-                </Button>
+                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddPhotoAlternateIcon />}
+                    onClick={() => handleOpenModal("home", settings.home.bannerMode === "single_video")}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      backgroundColor: "#f59e0b",
+                      color: "#1a1a1a",
+                      "&:hover": { backgroundColor: "#d97706" },
+                    }}
+                  >
+                    {settings.home.bannerMode === "single_video" ? "+ Upload Video Banner" : "+ Add New Slide"}
+                  </Button>
+                  <SavePageButton page="home" />
+                </Box>
               </Box>
 
               <RadioGroup
                 row
                 value={settings.home.bannerMode || "image_slider"}
                 onChange={(e) => {
-                  const mode = e.target.value as "image_slider" | "single_lottie";
+                  const mode = e.target.value as HomeBannerMode;
                   setSettings((prev) => ({
                     ...prev,
                     home: { ...prev.home, bannerMode: mode },
@@ -571,33 +513,30 @@ export default function AdminManagePages() {
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <CollectionsIcon sx={{ fontSize: 20, color: "#0284c7" }} />
-                      <Typography sx={{ fontWeight: 600 }}>Image Carousel Slideshow (Multiple Slides)</Typography>
+                      <Typography sx={{ fontWeight: 600 }}>Image Carousel Slideshow</Typography>
                     </Box>
                   }
                 />
                 <FormControlLabel
-                  value="single_lottie"
+                  value="single_video"
                   control={<Radio />}
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <AnimationIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                      <Typography sx={{ fontWeight: 600 }}>Single Video / Lottie Banner (1 Banner Only)</Typography>
+                      <VideocamIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
+                      <Typography sx={{ fontWeight: 600 }}>Single MP4 Video Banner</Typography>
                     </Box>
                   }
                 />
               </RadioGroup>
 
-              {/* MODE A: MULTI-IMAGE SLIDER */}
-              {settings.home.bannerMode !== "single_lottie" && (
+              {settings.home.bannerMode !== "single_video" && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#475569", mb: 2 }}>
-                    Active Slides ({settings.home.banners.length} images in carousel)
+                    Active Slides ({settings.home.banners.length})
                   </Typography>
-
                   <Grid container spacing={2}>
                     {settings.home.banners.map((slide, index) => {
                       const previewUrl = slideImageUploads[slide.id] || slide.activeMedia?.url || "";
-
                       return (
                         <Grid item xs={12} sm={6} md={4} key={slide.id}>
                           <Card sx={{ borderRadius: 2.5, border: "1px solid #e2e8f0", overflow: "hidden" }}>
@@ -605,21 +544,21 @@ export default function AdminManagePages() {
                               <Chip label={`Slide #${index + 1}`} size="small" color="primary" sx={{ fontWeight: 700 }} />
                               <Chip label="IMAGE" size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
                             </Box>
-
                             <Box sx={{ height: 160, position: "relative", backgroundColor: "#f1f5f9" }}>
                               {previewUrl ? (
                                 <BannerMediaRenderer
-                                  media={{ type: slide.activeMedia?.type || "image", url: previewUrl }}
+                                  media={{ type: "image", url: previewUrl }}
                                   alt={slide.title || "Slide"}
                                   style={{ width: "100%", height: "100%" }}
                                 />
                               ) : (
-                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "text.secondary" }}>
-                                  <Typography variant="caption">No image selected</Typography>
+                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    No image
+                                  </Typography>
                                 </Box>
                               )}
                             </Box>
-
                             <Box sx={{ p: 1.5 }}>
                               <TextField
                                 label="Slide Title"
@@ -638,7 +577,6 @@ export default function AdminManagePages() {
                                 }}
                               />
                             </Box>
-
                             <Divider />
                             <CardActions sx={{ justifyContent: "space-between", px: 1.5, py: 1 }}>
                               <input
@@ -653,7 +591,6 @@ export default function AdminManagePages() {
                                   Replace Image
                                 </Button>
                               </label>
-
                               <IconButton
                                 size="small"
                                 color="error"
@@ -671,49 +608,85 @@ export default function AdminManagePages() {
                 </Box>
               )}
 
-              {/* MODE B: SINGLE VIDEO / LOTTIE BANNER */}
-              {settings.home.bannerMode === "single_lottie" && (
+              {settings.home.bannerMode === "single_video" && (
                 <Box sx={{ mt: 2, p: 2.5, backgroundColor: "#f8fafc", borderRadius: 3, border: "1px solid #e2e8f0" }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                     <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        Single Video / Lottie Banner
+                        Single Video Banner
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Renders a single high-performance Lottie JSON vector animation.
+                        Plays as MP4 on all devices (including iPhone). Existing video stays until the new one is saved — no static placeholder.
                       </Typography>
                     </Box>
-
-                    {settings.home.singleBanner?.processingStatus === "processing" ? (
-                      <Chip
-                        icon={<HourglassTopIcon fontSize="small" />}
-                        label="Converting Video in Queue..."
-                        color="warning"
-                        sx={{ fontWeight: 700 }}
-                      />
-                    ) : (
-                      <Chip label="LIVE" color="success" size="small" sx={{ fontWeight: 700 }} />
-                    )}
-                  </Box>
-
-                  {/* Live Banner Preview */}
-                  <Box sx={{ height: 260, borderRadius: 2.5, overflow: "hidden", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}>
-                    <BannerMediaRenderer
-                      media={settings.home.singleBanner?.activeMedia}
-                      alt={settings.home.singleBanner?.title || "Home Single Banner"}
-                      style={{ width: "100%", height: "100%" }}
+                    <Chip
+                      label={modalUploading || savingPage === "home" ? "UPLOADING" : "LIVE"}
+                      color={modalUploading || savingPage === "home" ? "warning" : "success"}
+                      size="small"
+                      sx={{ fontWeight: 700 }}
                     />
                   </Box>
-
-                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                  {(() => {
+                    const live = settings.home.singleBanner?.activeMedia;
+                    const liveUrl = live?.url || "";
+                    const isLiveVideo =
+                      Boolean(liveUrl) &&
+                      (live?.type === "video" ||
+                        liveUrl.includes("/video/upload/") ||
+                        /\.(mp4|webm|mov)(\?|$)/i.test(liveUrl));
+                    const busy = modalUploading || savingPage === "home";
+                    return (
+                      <Box
+                        sx={{
+                          position: "relative",
+                          height: 260,
+                          borderRadius: 2.5,
+                          overflow: "hidden",
+                          backgroundColor: "#0f172a",
+                          border: "1px solid #e2e8f0",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {isLiveVideo ? (
+                          <BannerMediaRenderer
+                            media={live}
+                            alt={settings.home.singleBanner?.title || "Home Video Banner"}
+                            style={{ width: "100%", height: "100%" }}
+                          />
+                        ) : (
+                          <Typography variant="body2" sx={{ color: "#94a3b8", px: 2, textAlign: "center" }}>
+                            No video banner yet. Upload an MP4 to go live.
+                          </Typography>
+                        )}
+                        {busy && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              inset: 0,
+                              bgcolor: "rgba(15, 23, 42, 0.45)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              zIndex: 2,
+                            }}
+                          >
+                            <CircularProgress size={36} sx={{ color: "#febe4c" }} />
+                          </Box>
+                        )}
+                      </Box>
+                    );
+                  })()}
+                  <Box sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
                       startIcon={<MovieCreationIcon />}
-                      onClick={() => handleOpenModal("home")}
-                      disabled={isVideoProcessing}
+                      onClick={() => handleOpenModal("home", true)}
+                      disabled={modalUploading || savingPage !== null}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      {isVideoProcessing ? "Conversion in Progress..." : "Upload New Video (Auto-Convert to Lottie)"}
+                      Upload New MP4 / MOV / WebM
                     </Button>
                   </Box>
                 </Box>
@@ -721,7 +694,6 @@ export default function AdminManagePages() {
             </Paper>
           </Grid>
 
-          {/* Quotas */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
               <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", mb: 1 }}>
@@ -766,23 +738,24 @@ export default function AdminManagePages() {
         </Grid>
       )}
 
-      {/* TAB 1: SHOP PAGE */}
       {activeTab === 1 && (
         <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
               Shop Catalog Page Banner
             </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<CloudUploadIcon />}
-              onClick={() => handleOpenModal("shop")}
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              Configure Banner (Image / Video)
-            </Button>
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => handleOpenModal("shop")}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                Configure Banner
+              </Button>
+              <SavePageButton page="shop" />
+            </Box>
           </Box>
-
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -825,14 +798,13 @@ export default function AdminManagePages() {
                 inputProps={{ min: 1, max: 48 }}
               />
             </Grid>
-
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                Live Background Preview ({settings.shop.bannerType?.toUpperCase() || "IMAGE"})
+                Preview ({(settings.shop.bannerMedia?.type || settings.shop.bannerType || "image").toUpperCase()})
               </Typography>
               <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
                 <BannerMediaRenderer
-                  media={{ type: settings.shop.bannerType || "image", url: settings.shop.bannerImage || "" }}
+                  media={settings.shop.bannerMedia || { type: settings.shop.bannerType || "image", url: settings.shop.bannerImage || "" }}
                   alt="Shop Banner"
                   style={{ width: "100%", height: "100%" }}
                 />
@@ -842,23 +814,24 @@ export default function AdminManagePages() {
         </Paper>
       )}
 
-      {/* TAB 2: ABOUT PAGE */}
       {activeTab === 2 && (
         <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
               About Us Page Banner
             </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<CloudUploadIcon />}
-              onClick={() => handleOpenModal("about")}
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              Configure Banner (Image / Video)
-            </Button>
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => handleOpenModal("about")}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                Configure Banner
+              </Button>
+              <SavePageButton page="about" />
+            </Box>
           </Box>
-
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -889,11 +862,11 @@ export default function AdminManagePages() {
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                Live Background Preview
+                Preview
               </Typography>
               <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
                 <BannerMediaRenderer
-                  media={{ type: settings.about.bannerType || "image", url: settings.about.bannerImage || "" }}
+                  media={settings.about.bannerMedia || { type: settings.about.bannerType || "image", url: settings.about.bannerImage || "" }}
                   alt="About Banner"
                   style={{ width: "100%", height: "100%" }}
                 />
@@ -903,23 +876,24 @@ export default function AdminManagePages() {
         </Paper>
       )}
 
-      {/* TAB 3: CONTACT PAGE */}
       {activeTab === 3 && (
         <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
               Contact Page Banner
             </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<CloudUploadIcon />}
-              onClick={() => handleOpenModal("contact")}
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              Configure Banner (Image / Video)
-            </Button>
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => handleOpenModal("contact")}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                Configure Banner
+              </Button>
+              <SavePageButton page="contact" />
+            </Box>
           </Box>
-
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -950,11 +924,11 @@ export default function AdminManagePages() {
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                Live Background Preview
+                Preview
               </Typography>
               <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
                 <BannerMediaRenderer
-                  media={{ type: settings.contact.bannerType || "image", url: settings.contact.bannerImage || "" }}
+                  media={settings.contact.bannerMedia || { type: settings.contact.bannerType || "image", url: settings.contact.bannerImage || "" }}
                   alt="Contact Banner"
                   style={{ width: "100%", height: "100%" }}
                 />
@@ -964,27 +938,26 @@ export default function AdminManagePages() {
         </Paper>
       )}
 
-      {/* MODAL: ADD NEW BANNER / UPLOAD VIDEO OR IMAGE */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={modalOpen}
+        onClose={() => !modalUploading && setModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
-          Add New Banner ({modalTargetPage.toUpperCase()})
+          {modalType === "video" ? "Upload Video Banner" : "Add Banner Media"} ({PAGE_LABELS[modalTargetPage]})
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#475569" }}>
-              1. SELECT MEDIA TYPE
+              Media type
             </Typography>
             <RadioGroup
               row
               value={modalType}
               onChange={(e) => {
-                if (modalMediaPreview.startsWith("blob:")) {
-                  URL.revokeObjectURL(modalMediaPreview);
-                }
+                clearModalMedia();
                 setModalType(e.target.value as "image" | "video");
-                setModalMediaPayload("");
-                setModalMediaPreview("");
-                setModalVideoFile(null);
               }}
             >
               <FormControlLabel
@@ -993,7 +966,7 @@ export default function AdminManagePages() {
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <CollectionsIcon sx={{ fontSize: 18, color: "#0284c7" }} />
-                    <Typography sx={{ fontWeight: 600 }}>Image (Slideshow Slide)</Typography>
+                    <Typography sx={{ fontWeight: 600 }}>Image</Typography>
                   </Box>
                 }
               />
@@ -1003,7 +976,7 @@ export default function AdminManagePages() {
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <MovieCreationIcon sx={{ fontSize: 18, color: "#8b5cf6" }} />
-                    <Typography sx={{ fontWeight: 600 }}>Video (Auto-Convert to Lottie JSON)</Typography>
+                    <Typography sx={{ fontWeight: 600 }}>MP4 Video</Typography>
                   </Box>
                 }
               />
@@ -1011,9 +984,6 @@ export default function AdminManagePages() {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#475569" }}>
-              2. UPLOAD FILE
-            </Typography>
             <input
               type="file"
               id="modal-file-upload"
@@ -1027,60 +997,33 @@ export default function AdminManagePages() {
                 variant="outlined"
                 fullWidth
                 startIcon={<CloudUploadIcon />}
+                disabled={modalUploading}
                 sx={{ py: 1.5, textTransform: "none", fontWeight: 700 }}
               >
                 {modalVideoFile || modalMediaPayload
                   ? "Change Selected File"
-                  : `Browse ${modalType === "video" ? "MOV / MP4 Video" : "Image"}`}
+                  : `Browse ${modalType === "video" ? "MP4 / MOV / WebM" : "Image"}`}
               </Button>
             </label>
-
-            {modalType === "video" && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                Video uploads go directly to Cloudinary (avoids size limits), then convert to Lottie in the background.
-                Your current live banner stays active until processing finishes.
-                {modalVideoFile ? ` Selected: ${modalVideoFile.name}` : ""}
-              </Typography>
-            )}
-
-            {/* Selected Preview */}
-            {modalMediaPreview && modalType === "image" && (
-              <Box sx={{ mt: 2, height: 160, borderRadius: 2, overflow: "hidden", position: "relative", border: "1px solid #e2e8f0" }}>
-                <Image src={modalMediaPreview} alt="Preview" fill style={{ objectFit: "cover" }} unoptimized />
+            {modalMediaPreview && modalType === "video" && (
+              <Box sx={{ mt: 2, height: 180, borderRadius: 2, overflow: "hidden", bgcolor: "#0f172a" }}>
+                <Box component="video" src={modalMediaPreview} controls muted playsInline sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
               </Box>
             )}
-            {modalMediaPreview && modalType === "video" && (
-              <Box sx={{ mt: 2, p: 2, backgroundColor: "#f8fafc", borderRadius: 2, border: "1px solid #e2e8f0" }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#10b981" }}>
-                  ✓ Video file loaded and ready for conversion queue.
-                </Typography>
+            {modalMediaPreview && modalType === "image" && (
+              <Box sx={{ mt: 2, height: 180, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                <Box component="img" src={modalMediaPreview} alt="Preview" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </Box>
             )}
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Banner Title (Optional)"
-              size="small"
-              fullWidth
-              value={modalTitle}
-              onChange={(e) => setModalTitle(e.target.value)}
-            />
-            <TextField
-              label="Banner Subtitle (Optional)"
-              size="small"
-              fullWidth
-              value={modalSubtitle}
-              onChange={(e) => setModalSubtitle(e.target.value)}
-            />
+            <TextField label="Banner Title (Optional)" size="small" fullWidth value={modalTitle} onChange={(e) => setModalTitle(e.target.value)} />
+            <TextField label="Banner Subtitle (Optional)" size="small" fullWidth value={modalSubtitle} onChange={(e) => setModalSubtitle(e.target.value)} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={() => setModalOpen(false)}
-            disabled={modalUploading || saving}
-            sx={{ textTransform: "none" }}
-          >
+          <Button onClick={() => setModalOpen(false)} disabled={modalUploading} sx={{ textTransform: "none" }}>
             Cancel
           </Button>
           <Button
@@ -1088,39 +1031,30 @@ export default function AdminManagePages() {
             onClick={handleModalSubmit}
             disabled={
               modalUploading ||
-              saving ||
+              savingPage !== null ||
               (modalType === "video" ? !modalVideoFile : !modalMediaPayload)
             }
             startIcon={modalUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              backgroundColor: "#0284c7",
-              "&:hover": { backgroundColor: "#0369a1" },
-            }}
+            sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "#0284c7", "&:hover": { backgroundColor: "#0369a1" } }}
           >
             {modalUploading
-              ? "Uploading video…"
+              ? "Uploading…"
               : modalType === "video"
-                ? "Start Video Conversion Queue"
-                : "Add Image Slide"}
+                ? "Upload & Activate Video"
+                : modalTargetPage === "home"
+                  ? "Add Image Slide"
+                  : "Upload & Save Image"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Toast */}
       <Snackbar
         open={toast.open}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
-          severity={toast.severity}
-          variant="filled"
-          sx={{ width: "100%", fontWeight: 600 }}
-        >
+        <Alert severity={toast.severity} onClose={() => setToast((prev) => ({ ...prev, open: false }))} sx={{ width: "100%" }}>
           {toast.message}
         </Alert>
       </Snackbar>

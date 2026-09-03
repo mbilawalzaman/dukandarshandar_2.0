@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { Box, CircularProgress, Typography } from "@mui/material";
-import { Lottie } from "lottie-react";
+import { Box, Typography } from "@mui/material";
 import { MediaAsset } from "@/lib/pageSettings";
+import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
 
 interface BannerMediaRendererProps {
   media?: MediaAsset | null;
@@ -14,7 +14,19 @@ interface BannerMediaRendererProps {
   className?: string;
 }
 
-function isJsonOrLottieUrl(url: string, type?: string): boolean {
+function isVideoUrl(url: string, type?: string): boolean {
+  if (type === "video") return true;
+  if (!url) return false;
+  const cleanUrl = url.toLowerCase().split("?")[0];
+  return (
+    cleanUrl.includes("/video/upload/") ||
+    cleanUrl.endsWith(".mp4") ||
+    cleanUrl.endsWith(".webm") ||
+    cleanUrl.endsWith(".mov")
+  );
+}
+
+function isLegacyLottieUrl(url: string, type?: string): boolean {
   if (type === "lottie") return true;
   if (!url) return false;
   const cleanUrl = url.toLowerCase().split("?")[0];
@@ -31,109 +43,14 @@ export default function BannerMediaRenderer({
   priority = false,
   style,
 }: BannerMediaRendererProps) {
-  const [lottieData, setLottieData] = useState<Record<string, unknown> | null>(null);
-  const [lottieLoading, setLottieLoading] = useState(false);
-  const [lottieError, setLottieError] = useState(false);
-
   const mediaType = media?.type || "image";
   const mediaUrl = media?.url || "";
-  const isLottie = isJsonOrLottieUrl(mediaUrl, mediaType);
-
-  useEffect(() => {
-    if (isLottie && mediaUrl) {
-      setLottieLoading(true);
-      setLottieError(false);
-
-      // If mediaUrl is already a direct raw JSON string
-      if (mediaUrl.trim().startsWith("{")) {
-        try {
-          const parsed = JSON.parse(mediaUrl);
-          setLottieData(parsed);
-          setLottieLoading(false);
-          return;
-        } catch {
-          setLottieError(true);
-          setLottieLoading(false);
-          return;
-        }
-      }
-
-      // Fetch remote Lottie JSON from Cloudinary CDN
-      let isMounted = true;
-      fetch(mediaUrl)
-        .then(async (res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const text = await res.text();
-          if (!text.trim().startsWith("{")) {
-            throw new Error("Invalid Lottie JSON payload");
-          }
-          return JSON.parse(text);
-        })
-        .then((data) => {
-          if (isMounted) {
-            setLottieData(data);
-            setLottieLoading(false);
-          }
-        })
-        .catch((err) => {
-          console.warn("Lottie fetch failed:", err.message);
-          if (isMounted) {
-            setLottieError(true);
-            setLottieLoading(false);
-          }
-        });
-
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [isLottie, mediaUrl]);
 
   if (!mediaUrl) {
     return null;
   }
 
-  // 1. LOTTIE ANIMATION RENDERER
-  if (isLottie) {
-    if (lottieLoading) {
-      return (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#f8fafc",
-            minHeight: { xs: 240, md: 400 },
-          }}
-        >
-          <CircularProgress size={36} sx={{ color: "#f59e0b" }} />
-        </Box>
-      );
-    }
-
-    if (lottieError || !lottieData) {
-      return (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#0f172a",
-            minHeight: { xs: 240, md: 400 },
-            ...style,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Animation ready
-          </Typography>
-        </Box>
-      );
-    }
-
+  if (isLegacyLottieUrl(mediaUrl, mediaType)) {
     return (
       <Box
         sx={{
@@ -142,22 +59,52 @@ export default function BannerMediaRenderer({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#000000",
+          backgroundColor: "#0f172a",
+          minHeight: { xs: 180, md: 280 },
+          px: 2,
+          ...style,
+        }}
+      >
+        <Typography variant="body2" sx={{ color: "#94a3b8", textAlign: "center" }}>
+          Legacy Lottie banner removed. Re-upload an MP4 or image in Admin → Manage Pages.
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (isVideoUrl(mediaUrl, mediaType)) {
+    const playableUrl = toPlayableVideoUrl(mediaUrl);
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#0f172a",
           overflow: "hidden",
           ...style,
         }}
       >
-        <Lottie
-          src={lottieData}
-          loop={true}
-          autoplay={true}
-          style={{ width: "100%", height: "100%", maxHeight: "550px", objectFit: "contain" }}
+        <Box
+          component="video"
+          key={playableUrl}
+          src={playableUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-label={alt}
+          sx={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
         />
       </Box>
     );
   }
 
-  // 2. REGULAR IMAGE RENDERER (JPG, PNG, WebP, etc.)
   return (
     <Box
       sx={{

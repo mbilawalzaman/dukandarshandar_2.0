@@ -190,24 +190,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   Main Storefront
                 </MenuItem>
-                {isChatEnabled() && (
-                  <>
-                    <MenuItem
-                      component={Link}
-                      href="/admin/messages"
-                      onClick={() => setAnchorElUser(null)}
-                    >
-                      Messages
-                    </MenuItem>
-                    <MenuItem
-                      component={Link}
-                      href="/admin/notifications"
-                      onClick={() => setAnchorElUser(null)}
-                    >
-                      Notifications
-                    </MenuItem>
-                  </>
-                )}
+                {isChatEnabled() && [
+                  <MenuItem
+                    key="admin-messages"
+                    component={Link}
+                    href="/admin/messages"
+                    onClick={() => setAnchorElUser(null)}
+                  >
+                    Messages
+                  </MenuItem>,
+                  <MenuItem
+                    key="admin-notifications"
+                    component={Link}
+                    href="/admin/notifications"
+                    onClick={() => setAnchorElUser(null)}
+                  >
+                    Notifications
+                  </MenuItem>,
+                ]}
                 <MenuItem onClick={handleLogout}>
                   <Typography color="error">Logout</Typography>
                 </MenuItem>
