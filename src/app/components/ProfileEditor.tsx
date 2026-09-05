@@ -17,6 +17,7 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SaveIcon from "@mui/icons-material/Save";
 import UserAvatar from "@/app/components/ui/UserAvatar";
+import PakistanLocationFields from "@/app/components/checkout/PakistanLocationFields";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { BRAND } from "@/lib/constants";
 import { isValidCustomerEmail } from "@/lib/userDisplay";
@@ -38,7 +39,9 @@ export default function ProfileEditor({
     name: "",
     email: "",
     phone: "",
+    province: "",
     city: "",
+    area: "",
     address: "",
     image: "",
   });
@@ -62,13 +65,15 @@ export default function ProfileEditor({
         setError(data.message || "Failed to load profile");
         return;
       }
-      const p = data.profile as ProfileData;
+      const p = data.profile as ProfileData & { province?: string; area?: string };
       setProfile(p);
       setForm({
         name: p.name || "",
         email: p.email || "",
         phone: p.phone || "",
+        province: p.province || "",
         city: p.city || "",
+        area: p.area || "",
         address: p.address || "",
         image: p.image || "",
       });
@@ -88,6 +93,11 @@ export default function ProfileEditor({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setSuccess("");
+  };
+
+  const handleLocationFieldsChange = (updatedFields: Partial<typeof form>) => {
+    setForm((prev) => ({ ...prev, ...updatedFields }));
     setSuccess("");
   };
 
@@ -128,7 +138,9 @@ export default function ProfileEditor({
           name: form.name.trim(),
           email: form.email.trim().toLowerCase(),
           phone: form.phone.trim(),
+          province: form.province.trim(),
           city: form.city.trim(),
+          area: form.area.trim(),
           address: form.address.trim(),
           image: form.image,
         }),
@@ -141,13 +153,15 @@ export default function ProfileEditor({
       if (data.token) {
         persistAccessToken(data.token);
       }
-      const p = data.profile as ProfileData;
+      const p = data.profile as ProfileData & { province?: string; area?: string };
       setProfile(p);
       setForm({
         name: p.name || "",
         email: p.email || "",
         phone: p.phone || "",
+        province: p.province || "",
         city: p.city || "",
+        area: p.area || "",
         address: p.address || "",
         image: p.image || "",
       });
@@ -269,21 +283,19 @@ export default function ProfileEditor({
             Delivery address
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField fullWidth name="phone" label="Phone" value={form.phone} onChange={handleChange} />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth name="city" label="City" value={form.city} onChange={handleChange} />
-            </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                name="address"
-                label="Address"
-                value={form.address}
-                onChange={handleChange}
-                multiline
-                minRows={2}
+              <PakistanLocationFields
+                values={{
+                  province: form.province,
+                  city: form.city,
+                  area: form.area,
+                  address: form.address,
+                }}
+                onChange={handleLocationFieldsChange}
+                required={false}
               />
             </Grid>
           </Grid>

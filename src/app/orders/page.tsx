@@ -514,7 +514,7 @@ function OrdersContent() {
                         <Grid container spacing={2} sx={{ alignItems: "center" }}>
                           {/* Left: Shipping Destination */}
                           <Grid item xs={12} sm={7}>
-                            {order.address && (
+                            {Boolean(order.address || order.area || order.city || order.province) && (
                               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
                                 <PlaceOutlinedIcon sx={{ fontSize: 18, color: "#64748b", mt: 0.2 }} />
                                 <Box>
@@ -522,7 +522,9 @@ function OrdersContent() {
                                     DELIVERY ADDRESS
                                   </Typography>
                                   <Typography variant="body2" sx={{ color: "#334155", fontSize: "0.85rem" }}>
-                                    {order.address}, {order.city}
+                                    {[order.address, order.area, order.city, order.province]
+                                      .filter(Boolean)
+                                      .join(", ")}
                                   </Typography>
                                   {order.phone && (
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>

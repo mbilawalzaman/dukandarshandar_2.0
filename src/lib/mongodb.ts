@@ -18,7 +18,10 @@ function createClientPromise(): Promise<MongoClient> {
 
 function getClientPromise(): Promise<MongoClient> {
   if (!global._mongoClientPromise) {
-    global._mongoClientPromise = createClientPromise();
+    global._mongoClientPromise = createClientPromise().catch((err) => {
+      global._mongoClientPromise = undefined;
+      throw err;
+    });
   }
   return global._mongoClientPromise;
 }

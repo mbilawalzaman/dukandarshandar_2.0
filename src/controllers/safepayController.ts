@@ -41,7 +41,7 @@ export class SafepayController {
 
       const paymentMethod = body.payment_method || "card";
 
-      if (!body.customer_name || !body.customer_email || !body.phone || !body.address || !body.city) {
+      if (!body.customer_name || !body.customer_email || !body.phone || !body.address || !body.city || !body.province) {
         return NextResponse.json({ success: false, message: "All shipping fields are required" }, { status: 400 });
       }
 

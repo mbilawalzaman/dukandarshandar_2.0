@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "emulators:firebase": "firebase emulators:start --only firestore,auth",
-    "test:webhook-signature": "node --env-file=.env scripts/test-webhook-signature.mjs"
+    "test:webhook-signature": "node --env-file=.env scripts/test-webhook-signature.mjs",
+    "seed:locations": "node --env-file=.env scripts/seedLocations.mjs",
+    "download:areas": "node --env-file=.env scripts/downloadDarazAreas.mjs",
+    "apply:areas": "node --env-file=.env scripts/applyDarazAreas.mjs",
+    "import:areas": "node --env-file=.env scripts/importDarazAreas.mjs",
+    "scrape:areas": "node --env-file=.env scripts/scrapeDarazBatched.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -47,6 +52,7 @@
     "eslint": "^9",
     "eslint-config-next": "^15.5.24",
     "prisma": "^6.5.0",
+    "puppeteer-core": "^25.9.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

@@ -18,6 +18,7 @@ import { jwtDecode } from "jwt-decode";
 import PageBanner from "../components/PageBanner";
 import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
 import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector";
+import PakistanLocationFields from "../components/checkout/PakistanLocationFields";
 import { useCart } from "@/app/providers/CartProvider";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
@@ -32,6 +33,7 @@ import {
   isGuestUser,
 } from "@/lib/guestCheckout";
 import type { CheckoutShippingFormType } from "@/types/apps/orderTypes";
+import { fetchAreas } from "@/lib/locationClient";
 import type { CheckoutSafepaySessionType, PaymentMethod } from "@/types/apps/paymentTypes";
 import type { UserTokenType } from "@/types/shared/authTypes";
 
@@ -52,8 +54,10 @@ export default function CheckoutPage() {
     customer_name: "",
     customer_email: "",
     phone: "",
-    address: "",
+    province: "",
     city: "",
+    area: "",
+    address: "",
   });
 
   const safepayEnabled =
@@ -99,8 +103,10 @@ export default function CheckoutPage() {
             customer_name: guestInfo.customer_name,
             customer_email: guestInfo.customer_email,
             phone: guestInfo.phone,
-            address: guestInfo.address,
-            city: guestInfo.city,
+            province: guestInfo.province || "",
+            city: guestInfo.city || "",
+            area: guestInfo.area || "",
+            address: guestInfo.address || "",
           });
           setEmailRequiredHint(true);
           setCheckingAuth(false);
@@ -127,8 +133,10 @@ export default function CheckoutPage() {
           name?: string;
           email?: string;
           phone?: string;
-          address?: string;
+          province?: string;
           city?: string;
+          area?: string;
+          address?: string;
           needsEmail?: boolean;
           image?: string;
         };
@@ -137,8 +145,10 @@ export default function CheckoutPage() {
           customer_name: p.name || prev.customer_name,
           customer_email: p.email || (needsRealEmail ? "" : prev.customer_email),
           phone: p.phone || prev.phone,
-          address: p.address || prev.address,
+          province: p.province || prev.province,
           city: p.city || prev.city,
+          area: p.area || prev.area,
+          address: p.address || prev.address,
         }));
         if (p.image) localStorage.setItem("userImage", p.image);
       } catch {
@@ -153,7 +163,20 @@ export default function CheckoutPage() {
   const grandTotal = subtotal + shipping;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((prev) => {
+      const next = { ...prev, [name]: value };
+      persistGuestDraft(next);
+      return next;
+    });
+  };
+
+  const handleLocationFieldsChange = (updatedFields: Partial<CheckoutShippingFormType>) => {
+    setForm((prev) => {
+      const next = { ...prev, ...updatedFields };
+      persistGuestDraft(next);
+      return next;
+    });
   };
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
@@ -161,20 +184,24 @@ export default function CheckoutPage() {
     setPaymentSession(null);
   };
 
-  const persistGuestInfoIfApplicable = () => {
+  const persistGuestDraft = (info: CheckoutShippingFormType) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
       const decoded: TokenUser = jwtDecode(token);
       if (isGuestUser(decoded)) {
-        saveGuestCheckoutInfo(form);
+        saveGuestCheckoutInfo(info);
       }
     } catch {
       /* ignore */
     }
   };
 
-  const validateForm = (): boolean => {
+  const persistGuestInfoIfApplicable = () => {
+    persistGuestDraft(form);
+  };
+
+  const validateForm = async (): Promise<boolean> => {
     const token = localStorage.getItem("token");
     if (!token) {
       toast("Please login, sign up, or continue as guest to place your order.", "error");
@@ -198,8 +225,13 @@ export default function CheckoutPage() {
       toast("Please enter a valid email address for order updates", "error");
       return false;
     }
-    if (!form.phone || !form.address || !form.city) {
-      toast("Please fill in all shipping fields", "error");
+    if (!form.phone || !form.province || !form.city || !form.address) {
+      toast("Please fill in all required shipping fields (Phone, Province, City, Address)", "error");
+      return false;
+    }
+    const areaCheck = await fetchAreas(form.city, form.province);
+    if (areaCheck.hasCuratedAreas && !(form.area || "").trim()) {
+      toast("Please select an area / neighborhood", "error");
       return false;
     }
     if (items.length === 0) {
@@ -222,7 +254,9 @@ export default function CheckoutPage() {
           name: form.customer_name.trim(),
           email: form.customer_email.trim().toLowerCase(),
           phone: form.phone.trim(),
+          province: (form.province || "").trim(),
           city: form.city.trim(),
+          area: (form.area || "").trim(),
           address: form.address.trim(),
         }),
       });
@@ -237,7 +271,7 @@ export default function CheckoutPage() {
   };
 
   const placeCodOrder = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
 
     try {
       setSubmitting(true);
@@ -278,7 +312,7 @@ export default function CheckoutPage() {
   };
 
   const startOnlinePayment = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
     if (!safepayEnabled) {
       toast("Online payments are not available right now", "error");
       return;
@@ -408,7 +442,7 @@ export default function CheckoutPage() {
                       disabled={Boolean(paymentSession)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={12}>
                     <TextField
                       fullWidth
                       required
@@ -419,25 +453,15 @@ export default function CheckoutPage() {
                       disabled={Boolean(paymentSession)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      required
-                      name="city"
-                      label="City"
-                      value={form.city}
-                      onChange={handleChange}
-                      disabled={Boolean(paymentSession)}
-                    />
-                  </Grid>
                   <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      required
-                      name="address"
-                      label="Address"
-                      value={form.address}
-                      onChange={handleChange}
+                    <PakistanLocationFields
+                      values={{
+                        province: form.province,
+                        city: form.city,
+                        area: form.area,
+                        address: form.address,
+                      }}
+                      onChange={handleLocationFieldsChange}
                       disabled={Boolean(paymentSession)}
                     />
                   </Grid>

@@ -209,7 +209,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customer_name, customer_email, phone, address, city, items, payment_method } = body;
+    const { customer_name, customer_email, phone, province, city, area, address, items, payment_method } = body;
     const user = getAuthUser(req);
 
     if (!user) {
@@ -286,8 +286,10 @@ export async function POST(req: NextRequest) {
       customer_email: customer_email || user?.email || "guest@example.com",
       customer_id: user?.userId || null,
       phone: phone || "",
-      address: address || "",
+      province: province || "",
       city: city || "",
+      area: area || "",
+      address: address || "",
       items: enrichedItems,
       subtotal,
       shipping,
@@ -322,8 +324,10 @@ export async function POST(req: NextRequest) {
       orderId,
       items,
       total: computedTotal,
-      address: newOrder.address,
+      province: newOrder.province,
       city: newOrder.city,
+      area: newOrder.area,
+      address: newOrder.address,
     });
 
     await Promise.all([

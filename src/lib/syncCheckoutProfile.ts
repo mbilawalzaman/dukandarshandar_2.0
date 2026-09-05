@@ -7,13 +7,15 @@ export type CheckoutShippingInput = {
   customer_name?: string;
   customer_email?: string;
   phone?: string;
-  address?: string;
+  province?: string;
   city?: string;
+  area?: string;
+  address?: string;
 };
 
 /**
  * Persist checkout shipping fields onto the logged-in Mongo user
- * (email, phone, city, address, name) — same flow for COD and online pay.
+ * (email, phone, province, city, area, address, name) — same flow for COD and online pay.
  */
 export async function syncCheckoutProfileToUser(
   userId: string | undefined | null,
@@ -34,11 +36,17 @@ export async function syncCheckoutProfileToUser(
   if (typeof input.phone === "string" && input.phone.trim()) {
     profileUpdates.phone = input.phone.trim();
   }
-  if (typeof input.address === "string" && input.address.trim()) {
-    profileUpdates.address = input.address.trim();
+  if (typeof input.province === "string" && input.province.trim()) {
+    profileUpdates.province = input.province.trim();
   }
   if (typeof input.city === "string" && input.city.trim()) {
     profileUpdates.city = input.city.trim();
+  }
+  if (typeof input.area === "string" && input.area.trim()) {
+    profileUpdates.area = input.area.trim();
+  }
+  if (typeof input.address === "string" && input.address.trim()) {
+    profileUpdates.address = input.address.trim();
   }
   if (typeof input.customer_name === "string" && input.customer_name.trim()) {
     profileUpdates.name = input.customer_name.trim();

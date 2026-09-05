@@ -58,8 +58,10 @@ export function orderConfirmationEmail(input: {
   orderId: string;
   items: { name: string; quantity: number; price: number }[];
   total: number;
-  address?: string;
+  province?: string;
   city?: string;
+  area?: string;
+  address?: string;
 }) {
   const rows = input.items
     .map(
@@ -71,13 +73,16 @@ export function orderConfirmationEmail(input: {
     )
     .join("");
 
+  const locationParts = [input.address, input.area, input.city, input.province].filter(Boolean);
+  const fullLocation = locationParts.map((p) => escapeHtml(p!)).join(", ");
+
   return layout(
     "Order confirmed",
     `<p>Hi ${escapeHtml(input.name)},</p>
      <p>Thank you for your order <strong>#${escapeHtml(input.orderId)}</strong>.</p>
      <table style="width:100%; border-collapse:collapse;">${rows}</table>
      <p style="margin-top:16px;"><strong>Total: PKR ${input.total.toLocaleString()}</strong></p>
-     ${input.address ? `<p>Shipping to: ${escapeHtml(input.address)}${input.city ? `, ${escapeHtml(input.city)}` : ""}</p>` : ""}
+     ${fullLocation ? `<p>Shipping to: ${fullLocation}</p>` : ""}
      <p>We will email you again when the status changes.</p>`
   );
 }

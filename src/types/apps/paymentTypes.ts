@@ -88,8 +88,10 @@ export type CreatePaymentSessionBody = {
   customer_name: string;
   customer_email: string;
   phone: string;
-  address: string;
+  province?: string;
   city: string;
+  area?: string;
+  address: string;
   payment_method?: "card" | "raast" | "wallet";
   items: Array<{
     _id: string;

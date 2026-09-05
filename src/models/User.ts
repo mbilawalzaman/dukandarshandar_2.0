@@ -14,8 +14,10 @@ export interface User {
   role: UserRole;
   image?: string;
   phone?: string;
-  address?: string;
+  province?: string;
   city?: string;
+  area?: string;
+  address?: string;
   password?: string | null;
   firebaseUid?: string;
   authProvider?: "password" | "google" | "facebook" | "firebase";

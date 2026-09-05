@@ -29,6 +29,11 @@ interface Order {
   _id: string;
   customer_name: string;
   customer_email: string;
+  phone?: string;
+  province?: string;
+  city?: string;
+  area?: string;
+  address?: string;
   items: OrderItem[];
   total_amount: number;
   status: string;
@@ -203,6 +208,15 @@ export default function AdminOrdersPage() {
       format: (val) => String(val).slice(-8).toUpperCase(),
     },
     { id: "customer_name", label: "Customer", minWidth: 130 },
+    {
+      id: "address",
+      label: "Shipping Address",
+      minWidth: 180,
+      format: (_val, row) => {
+        const parts = [row.address, row.area, row.city, row.province].filter(Boolean);
+        return parts.join(", ") || "—";
+      },
+    },
     {
       id: "payment_method",
       label: "Payment",

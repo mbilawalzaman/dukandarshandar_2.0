@@ -48,37 +48,63 @@ export default function CartPage() {
             <Grid item xs={12} md={8}>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {items.map((item) => (
-                  <Card key={item._id} sx={{ borderRadius: 3 }}>
-                    <CardContent sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap", p: 2.5 }}>
+                  <Card key={item._id} sx={{ borderRadius: 3, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    <CardContent
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: { xs: 2, sm: 3 },
+                        flexWrap: { xs: "wrap", sm: "nowrap" },
+                        p: 2.5,
+                        "&:last-child": { pb: 2.5 },
+                      }}
+                    >
+                      {/* Item Details (Image + Name & Price) */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flex: 1, minWidth: 0 }}>
+                        <Box
+                          component="img"
+                          src={item.image || "/images/logo.jpg"}
+                          alt={item.name}
+                          sx={{ width: 80, height: 80, borderRadius: 2, objectFit: "cover", flexShrink: 0 }}
+                        />
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+                            {item.name}
+                          </Typography>
+                          <Typography variant="body2" color="primary" sx={{ fontWeight: 600, mt: 0.5 }}>
+                            PKR {item.price.toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Item Actions (Quantity, Total Price, Delete Icon) */}
                       <Box
-                        component="img"
-                        src={item.image || "/images/logo.jpg"}
-                        alt={item.name}
-                        sx={{ width: 80, height: 80, borderRadius: 2, objectFit: "cover" }}
-                      />
-                      <Box sx={{ flexGrow: 1, minWidth: 160 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                          {item.name}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: { xs: "space-between", sm: "flex-end" },
+                          gap: { xs: 2, sm: 2.5 },
+                          width: { xs: "100%", sm: "auto" },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", border: "1px solid #e2e8f0", borderRadius: 2 }}>
+                          <IconButton size="small" onClick={() => updateQuantity(item._id, item.quantity - 1)}>
+                            <RemoveIcon fontSize="small" />
+                          </IconButton>
+                          <Typography sx={{ px: 2, fontWeight: 700 }}>{item.quantity}</Typography>
+                          <IconButton size="small" onClick={() => updateQuantity(item._id, item.quantity + 1)}>
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, minWidth: { xs: "auto", sm: 90 }, textAlign: "right" }}>
+                          PKR {(item.price * item.quantity).toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
-                          PKR {item.price.toLocaleString()}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center", border: "1px solid #e2e8f0", borderRadius: 2 }}>
-                        <IconButton size="small" onClick={() => updateQuantity(item._id, item.quantity - 1)}>
-                          <RemoveIcon fontSize="small" />
-                        </IconButton>
-                        <Typography sx={{ px: 2, fontWeight: 700 }}>{item.quantity}</Typography>
-                        <IconButton size="small" onClick={() => updateQuantity(item._id, item.quantity + 1)}>
-                          <AddIcon fontSize="small" />
+                        <IconButton color="error" onClick={() => remove(item._id)} sx={{ p: 1 }}>
+                          <DeleteIcon />
                         </IconButton>
                       </Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, minWidth: 100, textAlign: "right" }}>
-                        PKR {(item.price * item.quantity).toLocaleString()}
-                      </Typography>
-                      <IconButton color="error" onClick={() => remove(item._id)}>
-                        <DeleteIcon />
-                      </IconButton>
                     </CardContent>
                   </Card>
                 ))}
