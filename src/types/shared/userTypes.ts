@@ -8,8 +8,10 @@ export type UserProfileType = {
   email: string;
   needsEmail: boolean;
   phone: string;
-  address: string;
+  province?: string;
   city: string;
+  area?: string;
+  address: string;
   image: string;
   role: string;
   authProvider: string;
@@ -28,7 +30,9 @@ export type UserProfileUpdateType = {
   name?: string;
   email?: string;
   phone?: string;
+  province?: string;
   city?: string;
+  area?: string;
   address?: string;
   image?: string | null;
 };

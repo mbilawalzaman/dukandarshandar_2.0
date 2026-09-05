@@ -17,8 +17,10 @@ function publicProfile(user: Record<string, unknown>) {
     rawEmail: email,
     needsEmail: Boolean(user.needsEmail) || isSyntheticEmail(email),
     phone: user.phone || "",
-    address: user.address || "",
+    province: user.province || "",
     city: user.city || "",
+    area: user.area || "",
+    address: user.address || "",
     image: user.image || "",
     role: user.role || "user",
     authProvider: user.authProvider || "password",
@@ -78,11 +80,17 @@ export async function PUT(req: Request) {
     if (typeof body.phone === "string") {
       updates.phone = body.phone.trim();
     }
-    if (typeof body.address === "string") {
-      updates.address = body.address.trim();
+    if (typeof body.province === "string") {
+      updates.province = body.province.trim();
     }
     if (typeof body.city === "string") {
       updates.city = body.city.trim();
+    }
+    if (typeof body.area === "string") {
+      updates.area = body.area.trim();
+    }
+    if (typeof body.address === "string") {
+      updates.address = body.address.trim();
     }
 
     let emailChanged = false;

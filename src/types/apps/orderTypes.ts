@@ -25,8 +25,10 @@ export type OrderType = {
   customer_email?: string;
   customer_id?: string | null;
   phone?: string;
-  address?: string;
+  province?: string;
   city?: string;
+  area?: string;
+  address?: string;
   total_amount: number;
   subtotal?: number;
   shipping?: number;
@@ -47,6 +49,8 @@ export type CheckoutShippingFormType = {
   customer_name: string;
   customer_email: string;
   phone: string;
-  address: string;
+  province?: string;
   city: string;
+  area?: string;
+  address: string;
 };

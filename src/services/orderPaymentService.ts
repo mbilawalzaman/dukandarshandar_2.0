@@ -109,8 +109,10 @@ export class OrderPaymentService {
           $set: {
             customer_name: body.customer_name || user?.userName || existingOrder.customer_name,
             phone: body.phone || "",
-            address: body.address || "",
+            province: body.province || "",
             city: body.city || "",
+            area: body.area || "",
+            address: body.address || "",
             payment_method: paymentMethod,
             updated_at: new Date(),
           },
@@ -122,8 +124,10 @@ export class OrderPaymentService {
         customer_name: body.customer_name,
         customer_email: body.customer_email || customerEmail,
         phone: body.phone,
-        address: body.address,
+        province: body.province,
         city: body.city,
+        area: body.area,
+        address: body.address,
       }).catch(() => undefined);
 
       return {
@@ -185,8 +189,10 @@ export class OrderPaymentService {
       customer_email: customerEmail,
       customer_id: user?.userId || null,
       phone: body.phone || "",
-      address: body.address || "",
+      province: body.province || "",
       city: body.city || "",
+      area: body.area || "",
+      address: body.address || "",
       items: enrichedItems,
       subtotal,
       shipping,
@@ -208,8 +214,10 @@ export class OrderPaymentService {
       customer_name: body.customer_name,
       customer_email: customerEmail,
       phone: body.phone,
-      address: body.address,
+      province: body.province,
       city: body.city,
+      area: body.area,
+      address: body.address,
     }).catch(() => undefined);
 
     return {
@@ -320,8 +328,10 @@ export class OrderPaymentService {
       orderId: displayOrderId,
       items: order.items || [],
       total: Number(order.total_amount) || 0,
-      address: order.address || "",
+      province: order.province || "",
       city: order.city || "",
+      area: order.area || "",
+      address: order.address || "",
     });
 
     await Promise.all([
