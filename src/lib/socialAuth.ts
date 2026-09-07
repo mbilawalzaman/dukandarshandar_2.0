@@ -17,6 +17,7 @@ function getProvider(provider: SocialProvider): AuthProvider {
   google.addScope("email");
   google.addScope("profile");
   return google;
+  
 }
 
 /**
