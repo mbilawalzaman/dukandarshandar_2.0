@@ -1,4 +1,3 @@
-// dynamically imported in createFirebaseCustomToken
 import type { JwtPayload } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 
@@ -19,7 +18,8 @@ export async function createFirebaseCustomToken(user: JwtPayload) {
 
   try {
     const { getAdminAuth } = await import("@/lib/firebaseAdmin");
-    const token = await getAdminAuth().createCustomToken(String(user.userId), claims);
+    const adminAuth = await getAdminAuth();
+    const token = await adminAuth.createCustomToken(String(user.userId), claims);
     return { success: true as const, token };
   } catch (error) {
     console.error("Firebase custom token error:", error);

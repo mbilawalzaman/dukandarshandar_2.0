@@ -1,5 +1,4 @@
 import { initializeApp, getApps, cert, type App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
@@ -27,7 +26,8 @@ function getAdminApp(): App {
   });
 }
 
-export function getAdminAuth() {
+export async function getAdminAuth() {
+  const { getAuth } = await import("firebase-admin/auth");
   return getAuth(getAdminApp());
 }
 

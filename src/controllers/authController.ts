@@ -150,24 +150,31 @@ export async function socialLoginController(
   let image = decoded.picture || "";
 
   if (!email || !name || !image) {
-    try {
-      const { getAdminAuth } = await import("@/lib/firebaseAdmin");
-      const fbUser = await getAdminAuth().getUser(firebaseUid);
-      if (!email) {
-        const fromRecord =
-          fbUser.email ||
-          fbUser.providerData.find((p) => Boolean(p.email))?.email ||
-          "";
-        if (fromRecord) {
-          email = fromRecord.toLowerCase();
-          emailFromProvider = true;
+    if (isFirebaseServerConfigured()) {
+      try {
+        const { getAdminAuth } = await import("@/lib/firebaseAdmin");
+        const adminAuth = await getAdminAuth();
+        const fbUser = await adminAuth.getUser(firebaseUid);
+        if (!email) {
+          const fromRecord =
+            fbUser.email ||
+            fbUser.providerData.find((p) => Boolean(p.email))?.email ||
+            "";
+          if (fromRecord) {
+            email = fromRecord.toLowerCase();
+            emailFromProvider = true;
+          }
         }
+        if (!name) name = fbUser.displayName || "";
+        if (!image) image = fbUser.photoURL || "";
+      } catch (error) {
+        console.warn("Could not load Firebase user for social profile fallback:", error);
       }
-      if (!name) name = fbUser.displayName || "";
-      if (!image) image = fbUser.photoURL || "";
-    } catch (error) {
-      console.warn("Could not load Firebase user for social profile fallback:", error);
     }
+  }
+
+  if (!name) {
+    name = email ? email.split("@")[0] : "User";
   }
 
   const usedSyntheticEmail = !email;
