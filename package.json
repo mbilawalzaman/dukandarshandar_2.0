@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "lint": "next lint",
     "emulators:firebase": "firebase emulators:start --only firestore,auth",
     "test:webhook-signature": "node --env-file=.env scripts/test-webhook-signature.mjs",
