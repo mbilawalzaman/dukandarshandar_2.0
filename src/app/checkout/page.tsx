@@ -434,7 +434,7 @@ export default function CheckoutPage() {
                       placeholder={emailRequiredHint ? "Enter your email" : undefined}
                       helperText={
                         emailRequiredHint
-                          ? "Required for order updates — Facebook did not share an email"
+                          ? "Required for order updates — social account did not share an email"
                           : undefined
                       }
                       value={form.customer_email}

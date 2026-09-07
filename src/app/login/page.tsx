@@ -19,7 +19,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "@mui/icons-material/Google";
-import FacebookIcon from "@mui/icons-material/Facebook";
+// import FacebookIcon from "@mui/icons-material/Facebook";
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
 import { signInWithSocial, type SocialProvider } from "@/lib/socialAuth";
@@ -217,7 +217,7 @@ function LoginForm() {
                   >
                     Continue with Google
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="outlined"
                     fullWidth
                     startIcon={socialLoading === "facebook" ? <CircularProgress size={18} /> : <FacebookIcon />}
@@ -231,7 +231,7 @@ function LoginForm() {
                     }}
                   >
                     Continue with Facebook
-                  </Button>
+                  </Button> */}
                 </>
               )}
 
