@@ -255,7 +255,7 @@ export default function ProfileEditor({
             onChange={handleChange}
             helperText={
               profile?.needsEmail
-                ? "Add your email for order updates (Facebook did not share one)"
+                ? "Add your email for order updates (social account did not share one)"
                 : "Used for login and order receipts"
             }
           />

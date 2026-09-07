@@ -64,7 +64,7 @@ export async function loginController(
   if (!user.password) {
     return {
       success: false,
-      error: "This account uses Google or Facebook. Please continue with social login.",
+      error: "This account uses Google. Please continue with social login.",
     };
   }
 
