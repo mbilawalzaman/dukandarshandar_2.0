@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "lint": "next lint",
     "emulators:firebase": "firebase emulators:start --only firestore,auth",
     "test:webhook-signature": "node --env-file=.env scripts/test-webhook-signature.mjs",
@@ -40,6 +40,9 @@
     "react-slick": "^0.30.3",
     "recharts": "^3.10.1",
     "slick-carousel": "^1.8.1"
+  },
+  "overrides": {
+    "jose": "4.15.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
