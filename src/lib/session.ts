@@ -106,10 +106,11 @@ export async function issueSessionForUser(
   };
 }
 
-/** Guest: short-lived access only, no refresh. */
+/** Guest: short-lived access only, no refresh. Unique id so this browser session owns its orders. */
 export function issueGuestAccessToken(): { accessToken: string; user: SessionUser } {
+  const guestId = `guest_${crypto.randomBytes(12).toString("hex")}`;
   const accessToken = signAccessToken({
-    userId: "guest",
+    userId: guestId,
     email: "guest@guest.com",
     userName: "Guest User",
     role: "guest",
@@ -170,7 +171,7 @@ export async function revokeRefreshToken(rawRefreshToken: string | null): Promis
 }
 
 export async function revokeAllRefreshTokens(userId: string): Promise<void> {
-  if (!userId || userId === "guest") return;
+  if (!userId || userId === "guest" || userId.startsWith("guest_")) return;
   try {
     const db = await getDb();
     await db.collection("users").updateOne(

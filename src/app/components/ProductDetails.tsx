@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Rating } from "@mui/material";
+import Link from "next/link";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  Rating,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/constants";
+import { authHeaders } from "@/lib/cart";
 import ProductImageGallery from "@/app/components/ProductImageGallery";
 import { getProductImageUrls, getProductThumbnail } from "@/lib/productImages";
+import type { ProductReview } from "@/types/apps/productReviewTypes";
 
 interface Product {
   _id: string;
@@ -28,20 +40,57 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [userRating, setUserRating] = useState<number | null>(null);
+
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [myReview, setMyReview] = useState<ProductReview | null>(null);
+  const [canReview, setCanReview] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [draftRating, setDraftRating] = useState<number | null>(null);
+  const [draftComment, setDraftComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const productId = Array.isArray(id) ? id[0] : id;
+
+  const loadReviews = useCallback(async (pid: string) => {
+    try {
+      const res = await fetch(`/api/products/${pid}/reviews`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.success) return;
+      setReviews(data.reviews || []);
+      setMyReview(data.myReview || null);
+      setCanReview(Boolean(data.canReview));
+      setAverageRating(Number(data.averageRating) || 0);
+      setReviewCount(Number(data.reviewCount) || 0);
+      if (data.myReview) {
+        setDraftRating(Number(data.myReview.rating) || null);
+        setDraftComment(String(data.myReview.comment || ""));
+      }
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!id) return;
+    setIsLoggedIn(Boolean(typeof window !== "undefined" && localStorage.getItem("token")));
+  }, []);
+
+  useEffect(() => {
+    if (!productId) return;
 
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/products/${id}`);
+        const res = await fetch(`/api/products/${productId}`);
         const data = await res.json();
         if (data.success) {
           setProduct(data.product);
-          setUserRating(Number(data.product.rating) || 0);
+          setAverageRating(Number(data.product.rating) || 0);
         }
+        await loadReviews(productId);
       } catch (error) {
         console.error("Error fetching product:", error);
       } finally {
@@ -50,26 +99,52 @@ const ProductDetails = () => {
     };
 
     fetchProductDetails();
-  }, [id]);
+  }, [productId, loadReviews]);
 
-  const handleRatingChange = async (newValue: number | null) => {
-    if (!product || newValue === null) return;
-    const roundedRating = Math.round(newValue * 2) / 2;
-    setUserRating(roundedRating);
+  const handleSubmitReview = async () => {
+    if (!productId || draftRating === null) {
+      setReviewError("Please choose a star rating");
+      return;
+    }
+    if (!isLoggedIn) {
+      router.push(`/login?next=/products/${productId}`);
+      return;
+    }
+    if (!canReview) {
+      setReviewError("You can only review products after a delivered order.");
+      return;
+    }
 
+    setSubmitting(true);
+    setReviewError("");
+    setReviewSuccess("");
     try {
-      const res = await fetch("/api/products/updateProduct", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ _id: product._id, rating: roundedRating }),
+      const res = await fetch(`/api/products/${productId}/reviews`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          rating: draftRating,
+          comment: draftComment.trim(),
+        }),
       });
       const data = await res.json();
-      if (data.success && data.product) {
-        setProduct(data.product);
-        setUserRating(data.product.rating);
+      if (!res.ok || !data.success) {
+        setReviewError(data.message || data.error || "Could not submit review");
+        return;
       }
-    } catch (error) {
-      console.error("Error updating rating:", error);
+      setReviews(data.reviews || []);
+      setMyReview(data.myReview || null);
+      setCanReview(Boolean(data.canReview ?? true));
+      setAverageRating(Number(data.averageRating) || 0);
+      setReviewCount(Number(data.reviewCount) || 0);
+      setProduct((prev) =>
+        prev ? { ...prev, rating: Number(data.averageRating) || prev.rating } : prev
+      );
+      setReviewSuccess(data.message || "Review saved");
+    } catch {
+      setReviewError("Network error submitting review");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -123,74 +198,201 @@ const ProductDetails = () => {
   return (
     <Box
       sx={{
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-        gap: { xs: 3, md: 8 },
         maxWidth: 1200,
         margin: "40px auto",
-        padding: { xs: 3, md: 6 },
-        backgroundColor: "#fff",
-        borderRadius: 3,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        padding: { xs: 2, md: 4 },
       }}
     >
-      <Box>
-        <ProductImageGallery images={galleryImages} alt={product.name} />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: { xs: 3, md: 8 },
+          padding: { xs: 3, md: 6 },
+          backgroundColor: "#fff",
+          borderRadius: 3,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        }}
+      >
+        <Box>
+          <ProductImageGallery images={galleryImages} alt={product.name} />
+        </Box>
+
+        <Box>
+          <Typography variant="h4" sx={{ color: BRAND.navy }}>
+            {product.name}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Category: {product.category}
+          </Typography>
+          <Typography variant="h5" sx={{ mt: 2, fontWeight: 800 }}>
+            PKR {Number(product.price).toLocaleString()}
+            <Typography component="sup" sx={{ ml: 1, fontSize: "0.8rem", color: "text.secondary" }}>
+              per piece
+            </Typography>
+          </Typography>
+
+          <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Rating value={averageRating} max={5} precision={0.5} readOnly />
+            <Typography variant="body2" color="text.secondary">
+              {averageRating.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? "" : "s"}
+            </Typography>
+          </Box>
+
+          <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.7 }}>
+            {product.description ?? "No description available"}
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", mt: 3, gap: 1 }}>
+            <Typography>Quantity:</Typography>
+            <Button variant="outlined" onClick={() => setQuantity((prev) => Math.max(1, prev - 1))} disabled={quantity <= 1}>
+              -
+            </Button>
+            <Typography sx={{ minWidth: 32, textAlign: "center", fontWeight: 700 }}>{quantity}</Typography>
+            <Button
+              variant="outlined"
+              onClick={() => setQuantity((prev) => Math.min(maxQty, prev + 1))}
+              disabled={quantity >= maxQty}
+            >
+              +
+            </Button>
+          </Box>
+
+          {outOfStock && (
+            <Typography color="error" sx={{ mt: 1 }}>
+              Out of stock
+            </Typography>
+          )}
+
+          <Box sx={{ mt: 4, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+            <Button
+              onClick={handleBuyNow}
+              variant="contained"
+              disabled={outOfStock}
+              fullWidth
+              sx={{ py: 1.4, backgroundColor: BRAND.goldHover, color: "#fff", "&:hover": { backgroundColor: BRAND.goldDark } }}
+            >
+              Buy Now
+            </Button>
+            <Button onClick={handleAddToCart} variant="outlined" disabled={outOfStock} fullWidth sx={{ py: 1.4 }}>
+              Add to Cart
+            </Button>
+          </Box>
+        </Box>
       </Box>
 
-      <Box>
-        <Typography variant="h4" sx={{ color: BRAND.navy }}>
-          {product.name}
+      <Box
+        sx={{
+          mt: 4,
+          p: { xs: 3, md: 4 },
+          backgroundColor: "#fff",
+          borderRadius: 3,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: 800, color: BRAND.navy, mb: 1 }}>
+          Ratings & reviews
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          Category: {product.category}
-        </Typography>
-        <Typography variant="h5" sx={{ mt: 2, fontWeight: 800 }}>
-          PKR {Number(product.price).toLocaleString()}
-          <Typography component="sup" sx={{ ml: 1, fontSize: "0.8rem", color: "text.secondary" }}>
-            per piece
-          </Typography>
-        </Typography>
-
-        <Box sx={{ mt: 2 }}>
-          <Rating value={userRating} max={5} precision={0.5} onChange={(_, newValue) => handleRatingChange(newValue)} />
-        </Box>
-
-        <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.7 }}>
-          {product.description ?? "No description available"}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Share your experience. One review per account — you can update it anytime.
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", mt: 3, gap: 1 }}>
-          <Typography>Quantity:</Typography>
-          <Button variant="outlined" onClick={() => setQuantity((prev) => Math.max(1, prev - 1))} disabled={quantity <= 1}>
-            -
-          </Button>
-          <Typography sx={{ minWidth: 32, textAlign: "center", fontWeight: 700 }}>{quantity}</Typography>
-          <Button variant="outlined" onClick={() => setQuantity((prev) => Math.min(maxQty, prev + 1))} disabled={quantity >= maxQty}>
-            +
-          </Button>
-        </Box>
-
-        {outOfStock && (
-          <Typography color="error" sx={{ mt: 1 }}>
-            Out of stock
-          </Typography>
+        {!isLoggedIn ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Link href={`/login?next=/products/${productId}`} style={{ fontWeight: 700, color: BRAND.navy }}>
+              Log in
+            </Link>{" "}
+            to leave a rating and comment after your order is delivered.
+          </Alert>
+        ) : !canReview ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            You can leave a rating and comment only after an order containing this product is{" "}
+            <strong>delivered</strong>.
+          </Alert>
+        ) : (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+              {myReview ? "Update your review" : "Write a review"}
+            </Typography>
+            <Rating
+              value={draftRating}
+              max={5}
+              precision={0.5}
+              onChange={(_, value) => setDraftRating(value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Comment (optional)"
+              placeholder="What did you like or dislike?"
+              value={draftComment}
+              onChange={(e) => setDraftComment(e.target.value.slice(0, 1000))}
+              fullWidth
+              multiline
+              minRows={3}
+              helperText={`${draftComment.length}/1000`}
+            />
+            {reviewError ? (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {reviewError}
+              </Alert>
+            ) : null}
+            {reviewSuccess ? (
+              <Alert severity="success" sx={{ mt: 2 }}>
+                {reviewSuccess}
+              </Alert>
+            ) : null}
+            <Button
+              variant="contained"
+              onClick={handleSubmitReview}
+              disabled={submitting || draftRating === null}
+              sx={{
+                mt: 2,
+                textTransform: "none",
+                fontWeight: 700,
+                backgroundColor: BRAND.navy,
+              }}
+            >
+              {submitting ? "Saving…" : myReview ? "Update review" : "Submit review"}
+            </Button>
+          </Box>
         )}
 
-        <Box sx={{ mt: 4, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
-          <Button
-            onClick={handleBuyNow}
-            variant="contained"
-            disabled={outOfStock}
-            fullWidth
-            sx={{ py: 1.4, backgroundColor: BRAND.goldHover, color: "#fff", "&:hover": { backgroundColor: BRAND.goldDark } }}
-          >
-            Buy Now
-          </Button>
-          <Button onClick={handleAddToCart} variant="outlined" disabled={outOfStock} fullWidth sx={{ py: 1.4 }}>
-            Add to Cart
-          </Button>
-        </Box>
+        <Divider sx={{ mb: 3 }} />
+
+        {reviews.length === 0 ? (
+          <Typography color="text.secondary">No reviews yet. Be the first to rate this product.</Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {reviews.map((review) => (
+              <Box
+                key={review._id}
+                sx={{
+                  pb: 2,
+                  borderBottom: "1px solid #e2e8f0",
+                  "&:last-child": { borderBottom: "none", pb: 0 },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <Typography sx={{ fontWeight: 700 }}>{review.userName}</Typography>
+                  <Rating value={review.rating} max={5} precision={0.5} size="small" readOnly />
+                  <Typography variant="caption" color="text.secondary">
+                    {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                    {myReview?._id === review._id ? " · You" : ""}
+                  </Typography>
+                </Box>
+                {review.comment ? (
+                  <Typography variant="body2" sx={{ mt: 1, lineHeight: 1.6, color: "text.primary" }}>
+                    {review.comment}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}>
+                    No written comment
+                  </Typography>
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
       </Box>
     </Box>
   );
