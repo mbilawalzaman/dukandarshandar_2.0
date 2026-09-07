@@ -1,19 +1,9 @@
-import type { NextRequest} from "next/server";
 import { NextResponse } from "next/server";
 
 /**
- * Public Cloudinary Webhook Endpoint
+ * Cloudinary webhook stub removed — unsigned acknowledgements are unsafe.
+ * Re-enable only with signature verification against CLOUDINARY_API_SECRET.
  */
-export async function POST(req: NextRequest) {
-  try {
-    const rawBody = await req.text();
-    if (!rawBody) {
-      return NextResponse.json({ success: false, message: "Empty payload" }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, message: "Webhook acknowledged" });
-  } catch (error) {
-    console.error("Cloudinary webhook route error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
-  }
+export async function POST() {
+  return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
 }

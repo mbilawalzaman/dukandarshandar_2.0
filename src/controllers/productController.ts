@@ -114,6 +114,11 @@ export const createProduct = async (req: Request) => {
 
 export const updateProduct = async (req: Request) => {
   try {
+    const admin = getAuthUser(req);
+    if (!admin || admin.role !== "admin") {
+      return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
+    }
+
     const { _id, rating, image, images, ...updateFields } = await req.json();
 
     if (!_id) {
@@ -166,6 +171,71 @@ export const updateProduct = async (req: Request) => {
     return NextResponse.json({ success: true, message: "Product updated successfully", product: updatedProduct });
   } catch (error) {
     console.error("Error updating product:", error);
+    return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+  }
+};
+
+/** Public: storefront star rating only — rejects any other product fields. */
+export const submitProductRating = async (req: Request) => {
+  try {
+    const body = await req.json();
+    const { _id, rating, ...rest } = body as {
+      _id?: string;
+      rating?: number;
+      [key: string]: unknown;
+    };
+
+    const extraKeys = Object.keys(rest).filter((k) => rest[k] !== undefined);
+    if (extraKeys.length > 0) {
+      return NextResponse.json(
+        { success: false, message: "Only rating updates are allowed on this endpoint" },
+        { status: 400 }
+      );
+    }
+
+    if (!_id || !ObjectId.isValid(_id)) {
+      return NextResponse.json({ success: false, message: "Valid Product ID is required" }, { status: 400 });
+    }
+
+    if (typeof rating !== "number" || Number.isNaN(rating) || rating < 0.5 || rating > 5) {
+      return NextResponse.json(
+        { success: false, message: "Rating must be a number between 0.5 and 5" },
+        { status: 400 }
+      );
+    }
+
+    const roundedRating = Math.round(rating * 2) / 2;
+    const db = await getDb();
+    const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+
+    if (!product) {
+      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    }
+
+    const ratings = Array.isArray(product.ratings) ? [...product.ratings] : [];
+    ratings.push(roundedRating);
+    const newAverageRating =
+      Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
+
+    await db.collection("products").updateOne(
+      { _id: new ObjectId(_id) },
+      {
+        $set: {
+          rating: newAverageRating,
+          ratings,
+          updated_at: new Date(),
+        },
+      }
+    );
+
+    const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+    return NextResponse.json({
+      success: true,
+      message: "Rating submitted",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error("Error submitting product rating:", error);
     return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
   }
 };
