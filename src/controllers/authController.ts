@@ -136,7 +136,8 @@ export async function socialLoginController(
     decoded = await getAdminAuth().verifyIdToken(idToken);
   } catch (error) {
     console.error("Firebase ID token verification failed:", error);
-    return { success: false, error: "Invalid or expired social login token" };
+    const detail = error instanceof Error ? error.message : "Invalid or expired social login token";
+    return { success: false, error: detail };
   }
 
   const firebaseUid = decoded.uid;
