@@ -4,7 +4,7 @@ import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
 // dynamically imported in socialLoginController
-import { isFirebaseServerConfigured } from "@/lib/firebaseConfig";
+import { isFirebaseClientConfigured, isFirebaseServerConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 
 export async function signupController(name: string, email: string, password: string, role: string) {
@@ -120,7 +120,7 @@ export async function socialLoginController(
   }
 
   if (!isFirebaseServerConfigured()) {
-    return { success: false, error: "Firebase Admin is not configured on the server" };
+    return { success: false, error: "Firebase is not configured on the server" };
   }
 
   let decoded: {
@@ -132,8 +132,8 @@ export async function socialLoginController(
   };
 
   try {
-    const { getAdminAuth } = await import("@/lib/firebaseAdmin");
-    decoded = await getAdminAuth().verifyIdToken(idToken);
+    const { verifyFirebaseIdToken } = await import("@/lib/firebaseTokenVerifier");
+    decoded = await verifyFirebaseIdToken(idToken);
   } catch (error) {
     console.error("Firebase ID token verification failed:", error);
     const detail = error instanceof Error ? error.message : "Invalid or expired social login token";
