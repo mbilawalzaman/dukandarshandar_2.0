@@ -164,4 +164,25 @@ export class SafepayService {
   ) {
     return verifySafepayWebhookSignature(rawBody, signature, timestamp);
   }
+
+  /**
+   * Full refund for a captured payment (works in sandbox + production).
+   * `tracker` is the Safepay payment tracker stored on the order.
+   */
+  static async refundPayment(
+    tracker: string,
+    params?: { amount?: number; reason?: string }
+  ): Promise<unknown> {
+    if (!tracker?.trim()) {
+      throw new Error("Safepay tracker is required for refund");
+    }
+    const client = createClient();
+    const body: Record<string, unknown> = {
+      reason: params?.reason || "requested_by_customer",
+    };
+    if (typeof params?.amount === "number" && params.amount > 0) {
+      body.amount = toSafepayAmount(params.amount);
+    }
+    return client.order.cancel.refund(tracker.trim(), body);
+  }
 }
