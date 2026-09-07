@@ -95,12 +95,20 @@ function buildOrderFilter(
   }
 
   if (search) {
-    filter.$or = [
+    const searchOr: Array<Record<string, unknown>> = [
       { customer_name: { $regex: search, $options: "i" } },
       { customer_email: { $regex: search, $options: "i" } },
       { "items.name": { $regex: search, $options: "i" } },
       ...(ObjectId.isValid(search) ? [{ _id: new ObjectId(search) }] : []),
     ];
+    // Don't clobber ownership $or (registered users) — combine with $and
+    if (filter.$or) {
+      const ownershipOr = filter.$or;
+      delete filter.$or;
+      filter.$and = [{ $or: ownershipOr }, { $or: searchOr }];
+    } else {
+      filter.$or = searchOr;
+    }
   }
 
   const from = resolveTimeframeFrom(searchParams);
@@ -178,7 +186,21 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const { page, limit, skip } = parsePageLimit(searchParams, { page: 1, limit: 10, maxLimit: 50 });
-    const baseQuery = user.role === "admin" ? {} : { customer_email: user.email };
+
+    // Admin: all orders.
+    // Guest: only this guest session (customer_id). Checkout email ≠ JWT email (guest@guest.com).
+    // Registered: match by account id or account email.
+    let baseQuery: Record<string, unknown> = {};
+    if (user.role === "admin") {
+      baseQuery = {};
+    } else if (user.role === "guest") {
+      baseQuery = { customer_id: user.userId };
+    } else {
+      baseQuery = {
+        $or: [{ customer_id: user.userId }, { customer_email: user.email }],
+      };
+    }
+
     const filter = buildOrderFilter(baseQuery, searchParams);
     const sort = orderSort(searchParams);
 

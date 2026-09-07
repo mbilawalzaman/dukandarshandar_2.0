@@ -1,6 +1,12 @@
-import { submitProductRating } from "@/controllers/productController";
+import { NextResponse } from "next/server";
 
-/** Public storefront rating only — full product edits use PUT /api/products/[id] (admin). */
-export async function PATCH(req: Request) {
-  return await submitProductRating(req);
+/** Deprecated: use POST /api/products/[id]/reviews (requires delivered order). */
+export async function PATCH() {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Use POST /api/products/{id}/reviews. Reviews require a delivered order for that product.",
+    },
+    { status: 410 }
+  );
 }

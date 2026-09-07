@@ -2,7 +2,7 @@ import type { JwtPayload } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 
 export async function createFirebaseCustomToken(user: JwtPayload) {
-  if (user.role === UserRole.GUEST || user.userId === "guest") {
+  if (user.role === UserRole.GUEST || user.userId === "guest" || user.userId.startsWith("guest_")) {
     return { success: false as const, message: "Guest users cannot use Firebase features", status: 403 };
   }
 

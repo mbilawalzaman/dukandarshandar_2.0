@@ -21,7 +21,7 @@ export async function syncCheckoutProfileToUser(
   userId: string | undefined | null,
   input: CheckoutShippingInput
 ): Promise<{ updated: boolean; session?: IssuedSession }> {
-  if (!userId || userId === "guest" || !ObjectId.isValid(userId)) {
+  if (!userId || userId === "guest" || userId.startsWith("guest_") || !ObjectId.isValid(userId)) {
     return { updated: false };
   }
 
