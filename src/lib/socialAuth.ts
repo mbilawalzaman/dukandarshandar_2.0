@@ -41,7 +41,13 @@ export async function signInWithSocial(provider: SocialProvider): Promise<{
     body: JSON.stringify({ idToken }),
   });
 
-  const data = await res.json();
+  const raw = await res.text();
+  let data: { success?: boolean; token?: string; user?: { name: string; email: string; role: string }; error?: string } = {};
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error("Server error. Please verify database and auth environment variables.");
+  }
   if (!res.ok || !data.success || !data.token) {
     throw new Error(data.error || `${provider} login failed`);
   }

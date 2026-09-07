@@ -44,14 +44,23 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         headers: authHeaders(),
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: { success?: boolean; token?: string; message?: string } = {};
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        setError("Firebase authentication server error");
+        setFirebaseUser(null);
+        setReady(true);
+        return;
+      }
       if (!res.ok || !data.success) {
         setError(data.message || "Firebase auth failed");
         setFirebaseUser(null);
         setReady(true);
         return;
       }
-      await signInWithCustomToken(getFirebaseAuth(), data.token);
+      await signInWithCustomToken(getFirebaseAuth(), data.token!);
       setError(null);
     } catch (err) {
       console.error("Firebase sign-in error:", err);
