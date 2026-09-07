@@ -3,7 +3,7 @@ import type { ObjectId } from "mongodb";
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
-import { getAdminAuth } from "@/lib/firebaseAdmin";
+// dynamically imported in socialLoginController
 import { isFirebaseServerConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 
@@ -132,6 +132,7 @@ export async function socialLoginController(
   };
 
   try {
+    const { getAdminAuth } = await import("@/lib/firebaseAdmin");
     decoded = await getAdminAuth().verifyIdToken(idToken);
   } catch (error) {
     console.error("Firebase ID token verification failed:", error);
@@ -149,6 +150,7 @@ export async function socialLoginController(
 
   if (!email || !name || !image) {
     try {
+      const { getAdminAuth } = await import("@/lib/firebaseAdmin");
       const fbUser = await getAdminAuth().getUser(firebaseUid);
       if (!email) {
         const fromRecord =
