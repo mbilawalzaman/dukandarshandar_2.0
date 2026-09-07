@@ -4,7 +4,7 @@ import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
 // dynamically imported in socialLoginController
-import { isFirebaseServerConfigured } from "@/lib/firebaseConfig";
+import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 
 export async function signupController(name: string, email: string, password: string, role: string) {
@@ -119,7 +119,7 @@ export async function socialLoginController(
     return { success: false, error: "Missing Firebase ID token" };
   }
 
-  if (!isFirebaseServerConfigured()) {
+  if (!isFirebaseClientConfigured()) {
     return { success: false, error: "Firebase is not configured on the server" };
   }
 
@@ -143,40 +143,14 @@ export async function socialLoginController(
   const firebaseUid = decoded.uid;
   const authProvider = mapFirebaseProvider(decoded.firebase?.sign_in_provider);
 
-  // Token email is often missing for Facebook; also check Admin user record / providerData.
+  // Token email is often missing for Facebook.
   let email = (decoded.email || "").toLowerCase();
-  let emailFromProvider = Boolean(email);
+  const emailFromProvider = Boolean(email);
   let name = decoded.name || "";
-  let image = decoded.picture || "";
+  const image = decoded.picture || "";
 
-  if (!email || !name || !image) {
-    if (isFirebaseServerConfigured()) {
-      try {
-        const { getAdminAuth } = await import("@/lib/firebaseAdmin");
-        const adminAuth = await getAdminAuth();
-        const fbUser = await adminAuth.getUser(firebaseUid);
-        if (!email) {
-          const fromRecord =
-            fbUser.email ||
-            fbUser.providerData.find((p) => Boolean(p.email))?.email ||
-            "";
-          if (fromRecord) {
-            email = fromRecord.toLowerCase();
-            emailFromProvider = true;
-          }
-        }
-        if (!name) name = fbUser.displayName || "";
-        if (!image) image = fbUser.photoURL || "";
-      } catch (error) {
-        console.warn("Could not load Firebase user for social profile fallback:", error);
-      }
-    }
-  }
-
-  if (!name) {
-    name = email ? email.split("@")[0] : "User";
-  }
-
+  // Do not call firebase-admin/auth (pulls jwks-rsa → jose ESM on Vercel).
+  // Missing Facebook email → synthetic placeholder; user can add email in profile/checkout.
   const usedSyntheticEmail = !email;
   if (!email) {
     email = syntheticSocialEmail(firebaseUid, authProvider);

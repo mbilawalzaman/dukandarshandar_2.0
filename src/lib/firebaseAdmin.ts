@@ -26,11 +26,7 @@ function getAdminApp(): App {
   });
 }
 
-export async function getAdminAuth() {
-  const { getAuth } = await import("firebase-admin/auth");
-  return getAuth(getAdminApp());
-}
-
+/** Firestore only — do not import firebase-admin/auth (jwks-rsa / jose ESM crash on Vercel). */
 export function getAdminFirestore() {
   return getFirestore(getAdminApp());
 }
