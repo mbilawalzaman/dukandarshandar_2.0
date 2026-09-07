@@ -36,6 +36,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import CloseIcon from "@mui/icons-material/Close";
 import PageBanner from "../components/PageBanner";
+import ConfirmModal from "../components/ConfirmModal";
 import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
 import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
@@ -100,6 +101,13 @@ function OrdersContent() {
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const perPage = 10;
 
   const params = useSearchParams();
@@ -189,6 +197,53 @@ function OrdersContent() {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  const canCancelOrder = (order: Order) => String(order.status || "").toLowerCase() === "pending";
+
+  const cancelConfirmMessage = (order: Order) => {
+    const displayId = order._id.slice(-8).toUpperCase();
+    const paidCard =
+      String(order.payment_status || "").toLowerCase() === "paid" &&
+      String(order.payment_method || "").toLowerCase() !== "cod";
+    return paidCard
+      ? `Cancel order #${displayId}? A refund will be requested for your card payment.`
+      : `Cancel order #${displayId}? Items will be returned to stock.`;
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!orderToCancel) return;
+    const order = orderToCancel;
+
+    try {
+      setCancellingId(order._id);
+      const res = await fetch(`/api/orders/${order._id}/cancel`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setToast({
+          open: true,
+          message: data.message || "Could not cancel order",
+          severity: "error",
+        });
+        return;
+      }
+      setOrders((prev) =>
+        prev.map((o) => (o._id === order._id ? { ...o, status: "cancelled" } : o))
+      );
+      setOrderToCancel(null);
+      setToast({
+        open: true,
+        message: data.message || "Order cancelled",
+        severity: "success",
+      });
+    } catch {
+      setToast({ open: true, message: "Network error cancelling order", severity: "error" });
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   return (
@@ -563,7 +618,31 @@ function OrdersContent() {
                                 PKR {Number(order.total_amount).toLocaleString()}
                               </Typography>
 
-                              <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                              <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap", justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+                                {canCancelOrder(order) && (
+                                  <Button
+                                    size="small"
+                                    color="error"
+                                    variant="outlined"
+                                    disabled={cancellingId === order._id}
+                                    onClick={() => setOrderToCancel(order)}
+                                    startIcon={
+                                      cancellingId === order._id ? (
+                                        <CircularProgress size={14} color="inherit" />
+                                      ) : (
+                                        <CancelOutlinedIcon fontSize="small" />
+                                      )
+                                    }
+                                    sx={{
+                                      textTransform: "none",
+                                      fontSize: "0.78rem",
+                                      borderRadius: 1.5,
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {cancellingId === order._id ? "Cancelling…" : "Cancel order"}
+                                  </Button>
+                                )}
                                 <Button
                                   component={Link}
                                   href="/shop"
@@ -662,6 +741,21 @@ function OrdersContent() {
         </Button>
       </Drawer>
 
+      <ConfirmModal
+        open={Boolean(orderToCancel)}
+        title="Cancel order"
+        message={orderToCancel ? cancelConfirmMessage(orderToCancel) : ""}
+        confirmLabel="Cancel order"
+        loadingLabel="Cancelling…"
+        cancelLabel="Keep order"
+        confirmColor="error"
+        loading={Boolean(cancellingId)}
+        onClose={() => {
+          if (!cancellingId) setOrderToCancel(null);
+        }}
+        onConfirm={handleCancelConfirm}
+      />
+
       {/* Toast Notification for ID copy */}
       <Snackbar
         open={Boolean(copiedId)}
@@ -670,6 +764,20 @@ function OrdersContent() {
         message="Order ID copied to clipboard"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast((t) => ({ ...t, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity={toast.severity}
+          onClose={() => setToast((t) => ({ ...t, open: false }))}
+          sx={{ width: "100%" }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
