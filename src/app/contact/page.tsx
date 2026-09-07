@@ -12,12 +12,15 @@ import {
   CardContent,
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
 import type { PageSettings } from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
+
+const WHATSAPP_URL = "https://wa.me/923009437476";
 
 export default function ContactPage() {
   const { toast } = useCart();
@@ -91,9 +94,47 @@ export default function ContactPage() {
                 <Box>
                   <Typography fontWeight={700}>Email</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    hello@dukandarshandar.com
+                    dukandarshandar@gmail.com
                   </Typography>
                 </Box>
+              </CardContent>
+            </Card>
+            <Card sx={{ mb: 2, borderRadius: 3 }}>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                  <WhatsAppIcon sx={{ color: "#25D366" }} />
+                  <Box>
+                    <Typography fontWeight={700}>WhatsApp</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Chat with us on WhatsApp
+                    </Typography>
+                  </Box>
+                </Box>
+                <Button
+                  component="a"
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="contained"
+                  startIcon={<WhatsAppIcon />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    backgroundColor: "#25D366",
+                    color: "#fff",
+                    "&:hover": { backgroundColor: "#1ebe57" },
+                  }}
+                >
+                  WhatsApp
+                </Button>
               </CardContent>
             </Card>
             <Card sx={{ mb: 2, borderRadius: 3 }}>
