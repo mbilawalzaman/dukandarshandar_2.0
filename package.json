@@ -28,7 +28,7 @@
     "cloudinary": "^2.11.0",
     "firebase": "^12.18.0",
     "firebase-admin": "^14.3.0",
-    "jose": "^4.15.9",
+    "jose": "4.15.9",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mongodb": "^6.15.0",
@@ -40,9 +40,6 @@
     "react-slick": "^0.30.3",
     "recharts": "^3.10.1",
     "slick-carousel": "^1.8.1"
-  },
-  "overrides": {
-    "jose": "4.15.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
