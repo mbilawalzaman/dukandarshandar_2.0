@@ -12,7 +12,15 @@ import type { JwtPayloadType } from "@/types/shared/authTypes";
 export type JwtPayload = JwtPayloadType;
 
 export function getJwtSecret() {
-  return process.env.JWT_SECRET || "supersecretkey";
+  const secret = process.env.JWT_SECRET?.trim();
+  if (secret) return secret;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET environment variable is required in production");
+  }
+
+  // Local/dev only — never used when NODE_ENV=production
+  return "supersecretkey";
 }
 
 export function verifyToken(token: string): JwtPayload | null {
