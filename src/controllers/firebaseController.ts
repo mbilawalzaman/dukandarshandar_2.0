@@ -17,9 +17,8 @@ export async function createFirebaseCustomToken(user: JwtPayload) {
       : { role: UserRole.USER };
 
   try {
-    const { getAdminAuth } = await import("@/lib/firebaseAdmin");
-    const adminAuth = await getAdminAuth();
-    const token = await adminAuth.createCustomToken(String(user.userId), claims);
+    const { createFirebaseCustomTokenNative } = await import("@/lib/firebaseTokenVerifier");
+    const token = createFirebaseCustomTokenNative(String(user.userId), claims);
     return { success: true as const, token };
   } catch (error) {
     console.error("Firebase custom token error:", error);

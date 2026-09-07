@@ -84,3 +84,30 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
     firebase: verified.firebase,
   };
 }
+
+/**
+ * Create a Firebase Custom Token natively using RS256 private key & jsonwebtoken.
+ * Completely eliminates dependency on firebase-admin/auth, jwks-rsa, and jose.
+ */
+export function createFirebaseCustomTokenNative(userId: string, claims?: Record<string, any>): string {
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY || "";
+  const privateKey = privateKeyRaw.replace(/\\n/g, "\n");
+
+  if (!clientEmail || !privateKey) {
+    throw new Error("Firebase client email and private key are not configured");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: clientEmail,
+    sub: clientEmail,
+    aud: "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+    iat: now,
+    exp: now + 3600,
+    uid: userId,
+    claims,
+  };
+
+  return jwt.sign(payload, privateKey, { algorithm: "RS256" });
+}
