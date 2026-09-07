@@ -55,7 +55,7 @@ export async function PUT(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth.response;
 
-  if (auth.user.userId === "guest") {
+  if (auth.user.userId === "guest" || auth.user.userId.startsWith("guest_") || auth.user.role === "guest") {
     return NextResponse.json(
       { success: false, message: "Guests cannot update a profile" },
       { status: 403 }

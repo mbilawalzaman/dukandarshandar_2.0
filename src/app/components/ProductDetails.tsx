@@ -111,7 +111,7 @@ const ProductDetails = () => {
       return;
     }
     if (!canReview) {
-      setReviewError("You can only review products after a delivered order.");
+      setReviewError("Unable to submit a review for this product.");
       return;
     }
 
@@ -294,7 +294,7 @@ const ProductDetails = () => {
           Ratings & reviews
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Share your experience. One review per account — you can update it anytime.
+          Share your experience. One review per account, you can update it anytime.
         </Typography>
 
         {!isLoggedIn ? (
@@ -302,14 +302,9 @@ const ProductDetails = () => {
             <Link href={`/login?next=/products/${productId}`} style={{ fontWeight: 700, color: BRAND.navy }}>
               Log in
             </Link>{" "}
-            to leave a rating and comment after your order is delivered.
+            to leave a rating and comment.
           </Alert>
-        ) : !canReview ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            You can leave a rating and comment only after an order containing this product is{" "}
-            <strong>delivered</strong>.
-          </Alert>
-        ) : (
+        ) : canReview ? (
           <Box sx={{ mb: 4 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
               {myReview ? "Update your review" : "Write a review"}
@@ -355,7 +350,7 @@ const ProductDetails = () => {
               {submitting ? "Saving…" : myReview ? "Update review" : "Submit review"}
             </Button>
           </Box>
-        )}
+        ) : null}
 
         <Divider sx={{ mb: 3 }} />
 
