@@ -351,6 +351,23 @@ export class OrderPaymentService {
         : Promise.resolve(),
     ]);
 
+    // Same admin alert as COD (POST /api/orders) — only after card payment is confirmed
+    const { safeNotify } = await import("@/lib/safeNotify");
+    const { notifyAdmins } = await import("@/services/notificationService");
+    await safeNotify(() =>
+      notifyAdmins({
+        type: "order_placed",
+        title: "New order placed",
+        body: `Order #${displayOrderId} PKR ${Number(order.total_amount || 0).toLocaleString()}`,
+        entityType: "order",
+        entityId: String(orderId),
+        actorId: order.customer_id ? String(order.customer_id) : null,
+        idempotencyKey: `order_placed:${orderId}`,
+        sendPush: true,
+        route: "/admin/orders",
+      })
+    );
+
     return { alreadyPaid: false };
   }
 
