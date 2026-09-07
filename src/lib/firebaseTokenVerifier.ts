@@ -89,7 +89,7 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
  * Create a Firebase Custom Token natively using RS256 private key & jsonwebtoken.
  * Completely eliminates dependency on firebase-admin/auth, jwks-rsa, and jose.
  */
-export function createFirebaseCustomTokenNative(userId: string, claims?: Record<string, any>): string {
+export function createFirebaseCustomTokenNative(userId: string, claims?: Record<string, unknown>): string {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY || "";
   const privateKey = privateKeyRaw.replace(/\\n/g, "\n");

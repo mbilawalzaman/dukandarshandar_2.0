@@ -4,7 +4,7 @@ import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
 // dynamically imported in socialLoginController
-import { isFirebaseClientConfigured, isFirebaseServerConfigured } from "@/lib/firebaseConfig";
+import { isFirebaseServerConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 
 export async function signupController(name: string, email: string, password: string, role: string) {
