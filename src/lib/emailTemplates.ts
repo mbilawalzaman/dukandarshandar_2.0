@@ -95,3 +95,24 @@ export function orderStatusEmail(input: { name: string; orderId: string; status:
      <p>Thank you for shopping with Dukandar Shandar.</p>`
   );
 }
+
+export function orderDeliveredEmail(input: { name: string; orderId: string; fullOrderId: string }) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dukandarshandar.com";
+  const reviewUrl = `${baseUrl}/orders?orderId=${encodeURIComponent(input.fullOrderId)}&action=review`;
+
+  return layout(
+    "Order Delivered - Rate & Review",
+    `<p>Hi ${escapeHtml(input.name)},</p>
+     <p>Your order <strong>#${escapeHtml(input.orderId)}</strong> has been successfully <strong>delivered</strong> 🎉.</p>
+     <p>We hope you are delighted with your items! Please take a moment to rate your products and share your feedback with us.</p>
+     <div style="margin:28px 0; text-align:center;">
+       <a href="${reviewUrl}" style="background:${gold}; color:${navy}; font-size:15px; font-weight:bold; padding:14px 28px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         ★ Rate &amp; Review Products
+       </a>
+     </div>
+     <p style="font-size:13px; color:#64748b;">If the button above does not work, copy and paste this link into your browser:<br/>
+     <a href="${reviewUrl}" style="color:${navy};">${reviewUrl}</a></p>
+     <p>Thank you for shopping with Dukandar Shandar!</p>`
+  );
+}
+
