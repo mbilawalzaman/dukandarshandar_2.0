@@ -35,9 +35,11 @@ import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import CloseIcon from "@mui/icons-material/Close";
+import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import PageBanner from "../components/PageBanner";
 import ConfirmModal from "../components/ConfirmModal";
 import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
+import OrderFeedbackModal from "../components/reviews/OrderFeedbackModal";
 import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
@@ -103,6 +105,7 @@ function OrdersContent() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: "",
@@ -113,6 +116,14 @@ function OrdersContent() {
   const params = useSearchParams();
   const router = useRouter();
   const placed = params.get("placed");
+  const urlOrderId = params.get("orderId");
+  const urlAction = params.get("action");
+
+  useEffect(() => {
+    if (urlOrderId && urlAction === "review") {
+      setFeedbackOrderId(urlOrderId);
+    }
+  }, [urlOrderId, urlAction]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(filters.search), 300);
@@ -643,6 +654,25 @@ function OrdersContent() {
                                     {cancellingId === order._id ? "Cancelling…" : "Cancel order"}
                                   </Button>
                                 )}
+                                {order.status === "delivered" && (
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => setFeedbackOrderId(order._id)}
+                                    startIcon={<StarOutlineIcon fontSize="small" />}
+                                    sx={{
+                                      textTransform: "none",
+                                      fontSize: "0.78rem",
+                                      borderRadius: 1.5,
+                                      fontWeight: 700,
+                                      backgroundColor: BRAND.goldHover,
+                                      color: "#ffffff",
+                                      "&:hover": { backgroundColor: BRAND.goldDark },
+                                    }}
+                                  >
+                                    Rate Products
+                                  </Button>
+                                )}
                                 <Button
                                   component={Link}
                                   href="/shop"
@@ -778,6 +808,12 @@ function OrdersContent() {
           {toast.message}
         </Alert>
       </Snackbar>
+
+      <OrderFeedbackModal
+        open={Boolean(feedbackOrderId)}
+        onClose={() => setFeedbackOrderId(null)}
+        orderId={feedbackOrderId}
+      />
     </Box>
   );
 }

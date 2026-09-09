@@ -194,3 +194,83 @@ export async function upsertProductReview(input: {
     reviewCount: stats.count,
   };
 }
+
+export async function getOrderReviews(userId: string, orderId: string) {
+  if (!userId || !ObjectId.isValid(orderId)) {
+    return { success: false as const, message: "Invalid user or order ID", status: 400 };
+  }
+
+  const db = await getDb();
+  const orderOid = new ObjectId(orderId);
+
+  let userEmail = "";
+  if (ObjectId.isValid(userId)) {
+    const userDoc = await db.collection("users").findOne({ _id: new ObjectId(userId) });
+    userEmail = userDoc?.email || "";
+  }
+
+  const order = await db.collection("orders").findOne({
+    _id: orderOid,
+    $or: [
+      { customer_id: userId },
+      ...(userEmail ? [{ customer_email: userEmail }] : []),
+    ],
+  });
+
+  if (!order) {
+    return { success: false as const, message: "Order not found", status: 404 };
+  }
+
+  const items = Array.isArray(order.items) ? order.items : [];
+  const productObjectIds: ObjectId[] = [];
+
+  for (const item of items) {
+    const pidStr = String(item._id || "");
+    if (pidStr && ObjectId.isValid(pidStr)) {
+      productObjectIds.push(new ObjectId(pidStr));
+    }
+  }
+
+  const userReviews = await db
+    .collection(COLLECTION)
+    .find({
+      userId,
+      productId: { $in: productObjectIds },
+    })
+    .toArray();
+
+  const reviewMapByProduct = new Map<string, ReturnType<typeof serialize>>();
+  userReviews.forEach((r) => {
+    reviewMapByProduct.set(String(r.productId), serialize(r));
+  });
+
+  const itemsMap = items.map((item) => {
+    const pidStr = String(item._id || "");
+    const rev = reviewMapByProduct.get(pidStr) || null;
+    return {
+      _id: pidStr,
+      name: String(item.name || "Product"),
+      image: String(item.image || ""),
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 1,
+      review: rev
+        ? {
+            rating: rev.rating,
+            comment: rev.comment,
+            updatedAt: rev.updatedAt,
+          }
+        : null,
+    };
+  });
+
+  return {
+    success: true as const,
+    status: 200,
+    orderId: String(order._id),
+    orderDisplayId: String(order._id).slice(-8).toUpperCase(),
+    orderStatus: String(order.status || ""),
+    isDelivered: order.status === "delivered",
+    items: itemsMap,
+  };
+}
+

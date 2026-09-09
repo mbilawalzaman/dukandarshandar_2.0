@@ -2,6 +2,7 @@ export type NotificationType =
   | "new_message"
   | "order_placed"
   | "order_status"
+  | "order_delivered"
   | "payment_paid"
   | "payment_failed"
   | "low_stock"
