@@ -8,7 +8,7 @@ import { syncCheckoutProfileToUser } from "@/lib/syncCheckoutProfile";
 import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
-import { orderConfirmationEmail, orderStatusEmail } from "@/lib/emailTemplates";
+import { orderConfirmationEmail, orderStatusEmail, orderDeliveredEmail } from "@/lib/emailTemplates";
 import { safeNotify } from "@/lib/safeNotify";
 import { notifyAdmins, createNotification } from "@/services/notificationService";
 import { parsePageLimit, paginationMeta } from "@/lib/pagination";
@@ -463,14 +463,23 @@ export async function PUT(req: NextRequest) {
 
     if (existingOrder.customer_email) {
       const orderId = String(existingOrder._id).slice(-8).toUpperCase();
+      const isDelivered = status === "delivered";
       await sendMail({
         to: existingOrder.customer_email,
-        subject: `Order #${orderId} is ${status} Dukandar Shandar`,
-        html: orderStatusEmail({
-          name: existingOrder.customer_name || "Customer",
-          orderId,
-          status,
-        }),
+        subject: isDelivered
+          ? `Order #${orderId} delivered! Rate & Review Your Products - Dukandar Shandar`
+          : `Order #${orderId} is ${status} Dukandar Shandar`,
+        html: isDelivered
+          ? orderDeliveredEmail({
+              name: existingOrder.customer_name || "Customer",
+              orderId,
+              fullOrderId: String(existingOrder._id),
+            })
+          : orderStatusEmail({
+              name: existingOrder.customer_name || "Customer",
+              orderId,
+              status,
+            }),
       });
     }
 
@@ -480,17 +489,21 @@ export async function PUT(req: NextRequest) {
       recipientId = customer?._id ? String(customer._id) : null;
     }
     if (recipientId) {
+      const isDelivered = status === "delivered";
+      const displayId = String(existingOrder._id).slice(-8).toUpperCase();
       await safeNotify(() =>
         createNotification({
-          recipients: [recipientId],
-          type: "order_status",
-          title: `Order #${String(existingOrder._id).slice(-8).toUpperCase()} updated`,
-          body: `Your order is now ${status}`,
+          recipients: [recipientId!],
+          type: isDelivered ? "order_delivered" : "order_status",
+          title: isDelivered ? `Order #${displayId} Delivered 🎉` : `Order #${displayId} updated`,
+          body: isDelivered
+            ? `Your order #${displayId} has been delivered. Tap to rate and review your products!`
+            : `Your order is now ${status}`,
           entityType: "order",
           entityId: String(existingOrder._id),
           idempotencyKey: `order_status:${existingOrder._id}:${status}`,
           sendPush: true,
-          route: "/orders",
+          route: `/orders?orderId=${existingOrder._id}&action=review`,
         })
       );
     }
