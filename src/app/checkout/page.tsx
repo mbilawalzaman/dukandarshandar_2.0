@@ -12,7 +12,6 @@ import {
   Paper,
   Divider,
   Alert,
-  CircularProgress,
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 import PageBanner from "../components/PageBanner";
@@ -22,6 +21,7 @@ import PakistanLocationFields from "../components/checkout/PakistanLocationField
 import { useCart } from "@/app/providers/CartProvider";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
+import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
@@ -387,15 +387,12 @@ export default function CheckoutPage() {
           : "Continue to card payment";
 
   if (checkingAuth) {
-    return (
-      <Box sx={{ minHeight: "70vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Loader size={220} message="Verifying checkout session..." />;
   }
 
   return (
     <Box sx={{ backgroundColor: "#f8fafc", minHeight: "70vh" }}>
+      {submitting && <Loader overlay message="Processing order..." />}
       <PageBanner title="Checkout" subtitle="Choose how you want to pay and confirm your order" />
       <Container maxWidth="lg" sx={{ py: 6 }}>
         {items.length === 0 ? (

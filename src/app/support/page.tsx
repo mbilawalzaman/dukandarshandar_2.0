@@ -2,13 +2,14 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Container, Typography, CircularProgress, Alert } from "@mui/material";
+import { Box, Container, Typography, Alert } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 import PageBanner from "../components/PageBanner";
 import SupportChatPanel from "../components/chat/SupportChatPanel";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { useFirebase } from "../providers/FirebaseProvider";
+import Loader from "../components/loader/Loader";
 
 function SupportContent() {
   const router = useRouter();
@@ -94,12 +95,7 @@ function SupportContent() {
         {firebaseError && <Alert severity="warning" sx={{ mb: 2 }}>{firebaseError}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {loading || !ready || !firebaseUser || !conversationId || !userId ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8, gap: 2 }}>
-            <CircularProgress />
-            <Typography variant="body2" color="text.secondary">
-              Connecting to support chat…
-            </Typography>
-          </Box>
+          <Loader size={180} message="Connecting to support chat…" />
         ) : (
           <SupportChatPanel
             conversationId={conversationId}

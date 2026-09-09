@@ -14,10 +14,8 @@ import {
   TextField,
   Button,
   Chip,
-  CircularProgress,
   Alert,
   IconButton,
-  Divider,
   Card,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,6 +24,7 @@ import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import { BRAND } from "@/lib/constants";
 import { authHeaders } from "@/lib/cart";
+import Loader from "@/app/components/loader/Loader";
 
 export interface OrderItemReviewState {
   _id: string;
@@ -212,13 +211,9 @@ export default function OrderFeedbackModal({
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, backgroundColor: "#f8fafc" }}>
+        {!!submittingPid && <Loader overlay message="Submitting feedback..." />}
         {loading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8, gap: 2 }}>
-            <CircularProgress size={36} sx={{ color: BRAND.navy }} />
-            <Typography variant="body2" color="text.secondary">
-              Loading your delivered products…
-            </Typography>
-          </Box>
+          <Loader size={160} message="Loading your delivered products…" />
         ) : error ? (
           <Alert severity="error" sx={{ my: 2 }}>
             {error}

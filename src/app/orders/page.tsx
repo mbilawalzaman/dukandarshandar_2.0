@@ -43,6 +43,7 @@ import OrderFeedbackModal from "../components/reviews/OrderFeedbackModal";
 import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
+import Loader from "@/app/components/loader/Loader";
 import type { OrderType } from "@/types/apps/orderTypes";
 
 type Order = OrderType;
@@ -388,9 +389,7 @@ function OrdersContent() {
 
             {/* LOADING STATE */}
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 12 }}>
-                <CircularProgress size={44} sx={{ color: BRAND.gold }} />
-              </Box>
+              <Loader size={180} message="Loading your orders..." />
             ) : error ? (
               <Alert severity="error" sx={{ borderRadius: 3 }}>
                 {error}
@@ -820,13 +819,7 @@ function OrdersContent() {
 
 export default function OrdersPage() {
   return (
-    <Suspense
-      fallback={
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 400 }}>
-          <CircularProgress size={44} sx={{ color: BRAND.gold }} />
-        </Box>
-      }
-    >
+    <Suspense fallback={<Loader size={180} message="Loading orders..." />}>
       <OrdersContent />
     </Suspense>
   );

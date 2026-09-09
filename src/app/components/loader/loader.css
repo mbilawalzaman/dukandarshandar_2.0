@@ -1,0 +1,127 @@
+.loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.gooey-circle-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gooey-ring-1 {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  border-top-color: #febe4c;
+  border-right-color: #042549;
+  animation: gooeySpin1 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(254, 190, 76, 0.4));
+}
+
+.gooey-ring-2 {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  border-bottom-color: #e8ecef;
+  border-left-color: #febe4c;
+  animation: gooeySpin2 1.5s ease-in-out infinite reverse;
+}
+
+.gooey-ring-3 {
+  position: absolute;
+  inset: 24%;
+  border-radius: 50%;
+  border: 5px solid transparent;
+  border-top-color: #042549;
+  border-right-color: #e8ecef;
+  animation: gooeySpin1 1.2s linear infinite;
+}
+
+.gooey-core {
+  position: absolute;
+  width: 33%;
+  height: 33%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #042549 0%, #081a2e 100%);
+  border: 3px solid #febe4c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 25px rgba(254, 190, 76, 0.5);
+  animation: gooeyPulse 2s ease-in-out infinite alternate;
+}
+
+.gooey-core img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.loader-message {
+  margin-top: 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #febe4c;
+  letter-spacing: 0.5px;
+  animation: gooeyFadeInOut 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes gooeySpin1 {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes gooeySpin2 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gooeyPulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 15px rgba(254, 190, 76, 0.3);
+  }
+  100% {
+    transform: scale(1.1);
+    box-shadow: 0 0 35px rgba(254, 190, 76, 0.7);
+  }
+}
+
+@keyframes gooeyFadeInOut {
+  0% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}

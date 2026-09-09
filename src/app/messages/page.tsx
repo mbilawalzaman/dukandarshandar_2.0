@@ -2,8 +2,9 @@
 
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Container, Typography, Box, CircularProgress } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import MessagesWorkspace from "@/app/components/chat/MessagesWorkspace";
+import Loader from "@/app/components/loader/Loader";
 
 function MessagesContent() {
   const params = useSearchParams();
@@ -26,13 +27,7 @@ function MessagesContent() {
 
 export default function MessagesPage() {
   return (
-    <Suspense
-      fallback={
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress />
-        </Box>
-      }
-    >
+    <Suspense fallback={<Loader size={180} message="Loading messages..." />}>
       <MessagesContent />
     </Suspense>
   );

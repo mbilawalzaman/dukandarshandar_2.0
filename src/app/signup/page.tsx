@@ -24,6 +24,7 @@ import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
 import { signInWithSocial, type SocialProvider } from "@/lib/socialAuth";
 import { BRAND } from "@/lib/constants";
+import Loader from "@/app/components/loader/Loader";
 
 function SignupForm() {
   const router = useRouter();
@@ -148,7 +149,14 @@ function SignupForm() {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8, mb: 8 }}>
+    <Container maxWidth="xs" sx={{ mt: 6, mb: 8 }}>
+      {(loading || !!socialLoading) && (
+        <Loader
+          overlay
+          size={180}
+          message={socialLoading ? `Connecting to ${socialLoading}...` : "Creating account..."}
+        />
+      )}
       <Card sx={{ borderRadius: 3 }}>
         <CardContent>
           <Typography variant="h4" align="center" gutterBottom>

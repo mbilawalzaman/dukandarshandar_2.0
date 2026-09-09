@@ -24,6 +24,7 @@ import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
 import { signInWithSocial, type SocialProvider } from "@/lib/socialAuth";
 import { BRAND } from "@/lib/constants";
+import Loader from "@/app/components/loader/Loader";
 
 function LoginForm() {
   const router = useRouter();
@@ -134,6 +135,13 @@ function LoginForm() {
 
   return (
     <Container maxWidth="xs" sx={{ mt: 8, mb: 8 }}>
+      {(loading || !!socialLoading) && (
+        <Loader
+          overlay
+          size={180}
+          message={socialLoading ? `Connecting to ${socialLoading}...` : "Logging in..."}
+        />
+      )}
       <Card sx={{ borderRadius: 3 }}>
         <CardContent>
           <Typography variant="h4" align="center" gutterBottom>

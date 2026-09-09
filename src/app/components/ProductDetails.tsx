@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/constants";
+import Loader from "@/app/components/loader/Loader";
 import { authHeaders } from "@/lib/cart";
 import ProductImageGallery from "@/app/components/ProductImageGallery";
 import { getProductImageUrls, getProductThumbnail } from "@/lib/productImages";
@@ -176,11 +177,7 @@ const ProductDetails = () => {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Loader size={180} message="Loading product details..." />;
   }
 
   if (!product) {
