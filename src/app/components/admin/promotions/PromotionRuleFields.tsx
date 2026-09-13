@@ -285,17 +285,35 @@ export function BadgeFields({ badge, onChange }: { badge: PromotionBadge; onChan
   return (
     <Grid container spacing={2} alignItems="center">
       <Grid item xs={12} sm={5}>
-        <TextField fullWidth label="Badge label" placeholder="e.g. -20%, Flash Sale" value={badge.label} onChange={(e) => onChange({ ...badge, label: e.target.value })} />
+        <TextField
+          fullWidth
+          label="Badge label"
+          placeholder="e.g. -20%, Flash Sale"
+          value={badge.label || ""}
+          helperText="Leave blank to use discount value"
+          onChange={(e) => onChange({ ...badge, label: e.target.value })}
+        />
       </Grid>
       <Grid item xs={6} sm={3}>
-        <TextField fullWidth type="color" label="Badge colour" value={badge.color || "#dc2626"} InputLabelProps={{ shrink: true }} onChange={(e) => onChange({ ...badge, color: e.target.value })} />
+        <TextField
+          fullWidth
+          type="color"
+          label="Badge colour"
+          value={badge.color || "#dc2626"}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ style: { height: 38, padding: 4, cursor: "pointer" } }}
+          onChange={(e) => onChange({ ...badge, color: e.target.value })}
+        />
       </Grid>
       <Grid item xs={6} sm={4}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="caption" color="text.secondary">Preview</Typography>
-          <PromotionBadgeChip badge={badge} size="medium" />
+          <Typography variant="caption" color="text.secondary">
+            Preview
+          </Typography>
+          <PromotionBadgeChip badge={{ label: badge.label || "Sample Badge", color: badge.color || "#dc2626" }} size="medium" />
         </Box>
       </Grid>
     </Grid>
   );
 }
+

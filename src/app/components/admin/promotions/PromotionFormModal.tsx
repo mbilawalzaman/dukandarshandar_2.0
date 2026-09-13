@@ -92,7 +92,7 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
   const patch = (p: Partial<PromotionInput>) => setForm((f) => ({ ...f, ...p }));
   const kind = form.kind || "voucher";
 
-  const applyType = useCallback((id: string, availableTypes = types) => {
+  const applyTypeById = (id: string, availableTypes: PromotionType[]) => {
     setSelectedType(id);
     const t = availableTypes.find((x) => x._id === id);
     if (!t) return;
@@ -119,10 +119,13 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
       startAt: f.startAt || base.startAt,
       endAt: f.endAt || base.endAt,
     }));
-  }, [types]);
+  };
+
+  const applyType = (id: string) => applyTypeById(id, types);
 
   useEffect(() => {
     if (!open) return;
+    let isCancelled = false;
     setError("");
     setSelectedType("");
     setShowAdvanced(false);
@@ -142,19 +145,23 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
     fetch("/api/admin/promotion-types", { headers: authHeaders() })
       .then((r) => r.json())
       .then((d) => {
+        if (isCancelled) return;
         if (d.success && Array.isArray(d.types)) {
           setTypes(d.types);
-          // Preselect first matching type if creating new
           if (!promotion && d.types.length > 0) {
             const match = d.types.find((t: PromotionType) => t.kind === defaultKind) || d.types[0];
             if (match && match._id) {
-              applyType(match._id, d.types);
+              applyTypeById(match._id, d.types);
             }
           }
         }
       })
       .catch(() => undefined);
-  }, [open, promotion, defaultKind, applyType]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [open, promotion, defaultKind]);
 
   const changeKind = (next: PromotionKind) => {
     const base = emptyForm(next);
@@ -313,7 +320,7 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
             STOREFRONT PREVIEW
           </Typography>
           <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <PromotionBadge badge={form.badge?.label ? form.badge : { label: rewardLabel(form.reward) || "Deal", color: "#dc2626" }} size="medium" />
+            <PromotionBadge badge={{ label: form.badge?.label || rewardLabel(form.reward) || "Deal", color: form.badge?.color || "#dc2626" }} size="medium" />
             {usesProductPricing(kind) && <PriceTag price={samplePrice} salePrice={sampleSale} size="medium" />}
             {kind === "voucher" && form.code && (
               <Chip label={`Voucher: ${form.code} (${rewardLabel(form.reward)})`} sx={{ fontWeight: 700, backgroundColor: "#dcfce7", color: "#166534" }} />
