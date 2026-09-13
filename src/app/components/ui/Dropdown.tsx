@@ -1,17 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import type {
-  PopoverOrigin} from "@mui/material";
+import type { PopoverOrigin } from "@mui/material";
 import {
+  Button,
   IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
   Tooltip,
-  Divider
+  Divider,
 } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,8 +30,12 @@ export interface DropdownItem<T = unknown> {
 export type TableRowAction<T> = DropdownItem<T>;
 
 export interface DropdownProps<T = unknown> {
-  /** Optional custom trigger node (e.g. Button or Icon). Defaults to 3-dots icon button. */
+  /** Optional custom trigger node (e.g. Button or Icon). If omitted, renders standard "Actions ⌄" button. */
   trigger?: React.ReactNode;
+  /** Label for the default button trigger. Defaults to "Actions". */
+  buttonText?: string;
+  /** Set to true to use 3-dots icon button trigger instead of "Actions ⌄" button */
+  useIconButton?: boolean;
   /** Tooltip title for default trigger button */
   tooltipTitle?: string;
   /** Menu items list */
@@ -55,11 +60,13 @@ export interface DropdownProps<T = unknown> {
 
 /**
  * Reusable Global Dropdown Component.
- * Can be used as generic dropdown menu, action menu, or table row actions menu across the entire app.
+ * Displays a clean "Actions ⌄" dropdown button (or custom trigger/3-dots menu) across the entire application.
  */
 export default function Dropdown<T = unknown>({
   trigger,
-  tooltipTitle = "Actions",
+  buttonText = "Actions",
+  useIconButton = false,
+  tooltipTitle,
   items,
   row,
   onView,
@@ -92,7 +99,7 @@ export default function Dropdown<T = unknown>({
 
   if (!hasContent) return null;
 
-  const defaultTrigger = (
+  const defaultTrigger = useIconButton ? (
     <IconButton
       size="small"
       onClick={handleOpen}
@@ -100,6 +107,33 @@ export default function Dropdown<T = unknown>({
     >
       <MoreVertIcon fontSize="small" />
     </IconButton>
+  ) : (
+    <Button
+      size="small"
+      onClick={handleOpen}
+      endIcon={<KeyboardArrowDownIcon sx={{ fontSize: "1.1rem !important", color: "#64748b" }} />}
+      sx={{
+        textTransform: "none",
+        fontWeight: 600,
+        fontSize: "0.85rem",
+        color: "#334155",
+        backgroundColor: "#ffffff",
+        border: "1px solid #cbd5e1",
+        borderRadius: "10px",
+        px: 1.5,
+        py: 0.5,
+        minWidth: 95,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        transition: "all 0.15s ease-in-out",
+        "&:hover": {
+          backgroundColor: "#f8fafc",
+          borderColor: "#94a3b8",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+        },
+      }}
+    >
+      {buttonText}
+    </Button>
   );
 
   const triggerElement = trigger ? (
