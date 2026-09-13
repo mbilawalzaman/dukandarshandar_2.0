@@ -5,13 +5,12 @@ import { getDb } from "@/lib/db";
 import { getAuthUser, requireAdmin } from "@/lib/auth";
 import { attachSessionCookies } from "@/lib/session";
 import { syncCheckoutProfileToUser } from "@/lib/syncCheckoutProfile";
-import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
-import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail, orderStatusEmail, orderDeliveredEmail } from "@/lib/emailTemplates";
 import { safeNotify } from "@/lib/safeNotify";
 import { notifyAdmins, createNotification } from "@/services/notificationService";
 import { parsePageLimit, paginationMeta } from "@/lib/pagination";
+import { quoteCart, recordRedemptions, releaseRedemptions, redemptionQuoteFromOrder, toOrderDiscountLines } from "@/services/promotionService";
 
 async function enrichOrdersWithImages(
   db: Awaited<ReturnType<typeof getDb>>,
@@ -231,7 +230,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customer_name, customer_email, phone, province, city, area, address, items, payment_method } = body;
+    const { customer_name, customer_email, phone, province, city, area, address, items, payment_method, promo_code } = body;
     const user = getAuthUser(req);
 
     if (!user) {
@@ -263,6 +262,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Authoritative pricing: product prices, promotions and delivery fee all come from the server.
+    const quote = await quoteCart({
+      items,
+      voucherCode: promo_code || null,
+      customerId: user.userId || null,
+      customerEmail: customer_email || user.email || null,
+    });
+    if (quote.missingProductIds.length > 0) {
+      return NextResponse.json({ success: false, message: "Some items in your cart are no longer available" }, { status: 400 });
+    }
+    if (promo_code && quote.rejected.length > 0) {
+      return NextResponse.json({ success: false, message: quote.rejected[0].message }, { status: 400 });
+    }
+
+    const { subtotal, shipping, deliveryPromo: delivery_promo, discountTotal: discount_total, total: computedTotal } = quote;
+
     for (const item of items) {
       const result = await db.collection("products").updateOne(
         { _id: new ObjectId(item._id), quantity: { $gte: Number(item.quantity) } },
@@ -288,20 +303,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const subtotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
-    const deliverySettings = await getDeliverySettings();
-    const shipping = computeShipping(subtotal, deliverySettings);
-    const delivery_promo = isDeliveryPromoActive(deliverySettings, subtotal);
-    const computedTotal = subtotal + shipping;
-
-    const enrichedItems = [];
-    for (const item of items) {
-      const product = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
-      enrichedItems.push({
-        ...item,
-        image: product?.image || item.image || "",
-      });
-    }
+    const enrichedItems = quote.orderItems;
 
     const newOrder = {
       customer_name: customer_name || user?.userName || "Guest Customer",
@@ -316,6 +318,12 @@ export async function POST(req: NextRequest) {
       subtotal,
       shipping,
       delivery_promo,
+      discounts: toOrderDiscountLines(quote),
+      discount_total,
+      // legacy single-voucher fields kept for older UI/reports
+      discount_code: quote.voucher?.code || null,
+      discount_amount: quote.voucherDiscount,
+      promotions_recorded: false,
       total_amount: computedTotal,
       payment_method: payment_method || "cod",
       payment_status: payment_method === "cod" ? "unpaid" : "unpaid",
@@ -326,6 +334,19 @@ export async function POST(req: NextRequest) {
 
     const result = await db.collection("orders").insertOne(newOrder);
     const orderId = String(result.insertedId).slice(-8).toUpperCase();
+
+    if (quote.applied.length > 0) {
+      const kept = await recordRedemptions({
+        orderId: String(result.insertedId),
+        quote,
+        customerId: user.userId || null,
+        customerEmail: newOrder.customer_email,
+      });
+      await db.collection("orders").updateOne({ _id: result.insertedId }, { $set: { promotions_recorded: true } });
+      if (kept.length !== quote.applied.length) {
+        console.warn(`[orders] ${quote.applied.length - kept.length} promotion(s) hit their limit while order ${orderId} was placed`);
+      }
+    }
 
     await safeNotify(() =>
       notifyAdmins({
@@ -344,8 +365,11 @@ export async function POST(req: NextRequest) {
     const confirmationHtml = orderConfirmationEmail({
       name: newOrder.customer_name,
       orderId,
-      items,
+      items: enrichedItems,
       total: computedTotal,
+      subtotal,
+      shipping,
+      discounts: newOrder.discounts,
       province: newOrder.province,
       city: newOrder.city,
       area: newOrder.area,
@@ -423,6 +447,10 @@ export async function PUT(req: NextRequest) {
     const previousStatus = existingOrder.status;
 
     if (previousStatus !== "cancelled" && status === "cancelled") {
+      if (existingOrder.promotions_recorded) {
+        await releaseRedemptions(String(_id));
+        await db.collection("orders").updateOne({ _id: new ObjectId(_id) }, { $set: { promotions_recorded: false } });
+      }
       if (Array.isArray(existingOrder.items)) {
         for (const item of existingOrder.items) {
           if (item._id && ObjectId.isValid(item._id)) {
@@ -437,6 +465,15 @@ export async function PUT(req: NextRequest) {
         }
       }
     } else if (previousStatus === "cancelled" && status !== "cancelled") {
+      if (!existingOrder.promotions_recorded && Array.isArray(existingOrder.discounts) && existingOrder.discounts.length > 0) {
+        await recordRedemptions({
+          orderId: String(_id),
+          quote: redemptionQuoteFromOrder(existingOrder),
+          customerId: existingOrder.customer_id ? String(existingOrder.customer_id) : null,
+          customerEmail: existingOrder.customer_email ? String(existingOrder.customer_email) : null,
+        });
+        await db.collection("orders").updateOne({ _id: new ObjectId(_id) }, { $set: { promotions_recorded: true } });
+      }
       if (Array.isArray(existingOrder.items)) {
         for (const item of existingOrder.items) {
           if (item._id && ObjectId.isValid(item._id)) {

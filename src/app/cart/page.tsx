@@ -20,15 +20,29 @@ import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
+import { usePromotions } from "@/app/providers/PromotionProvider";
+import PriceTag from "@/app/components/promotions/PriceTag";
+import PromotionBadge from "@/app/components/promotions/PromotionBadge";
+import PromotionNudge from "@/app/components/promotions/PromotionNudge";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
 
 export default function CartPage() {
   const { items, updateQuantity, remove } = useCart();
   const { settings, getShipping, isPromoActive } = useDeliverySettings();
+  const { quoteLocal, promotions } = usePromotions();
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = getShipping(subtotal);
-  const promoActive = isPromoActive(subtotal);
-  const grandTotal = subtotal + shipping;
+  const storeDeliveryPromo = isPromoActive(subtotal);
+  // Instant client-side quote; checkout re-quotes on the server before charging.
+  const quote = quoteLocal(
+    items.map((i) => ({ productId: i._id, category: i.category, price: i.price, quantity: i.quantity, name: i.name })),
+    { shippingFee: getShipping(subtotal) }
+  );
+  const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
+  const shipping = quote.shipping;
+  const promoActive = storeDeliveryPromo || (subtotal > 0 && quote.shippingDiscount > 0);
+  const itemSavings = quote.itemDiscount + quote.bundleDiscount;
+  const grandTotal = quote.total;
+  const publicVoucherCount = promotions.filter((p) => p.kind === "voucher").length;
 
   return (
     <Box sx={{ minHeight: "70vh", backgroundColor: "#f8fafc" }}>
@@ -72,9 +86,9 @@ export default function CartPage() {
                           <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
                             {item.name}
                           </Typography>
-                          <Typography variant="body2" color="primary" sx={{ fontWeight: 600, mt: 0.5 }}>
-                            PKR {item.price.toLocaleString()}
-                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <PriceTag price={item.price} salePrice={lineById.get(item._id)?.unitPrice} badge={lineById.get(item._id)?.badge} />
+                          </Box>
                         </Box>
                       </Box>
 
@@ -99,7 +113,7 @@ export default function CartPage() {
                           </IconButton>
                         </Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, minWidth: { xs: "auto", sm: 90 }, textAlign: "right" }}>
-                          PKR {(item.price * item.quantity).toLocaleString()}
+                          PKR {(lineById.get(item._id)?.lineTotal ?? item.price * item.quantity).toLocaleString()}
                         </Typography>
                         <IconButton color="error" onClick={() => remove(item._id)} sx={{ p: 1 }}>
                           <DeleteIcon />
@@ -121,11 +135,23 @@ export default function CartPage() {
                   <Typography color="text.secondary">Subtotal</Typography>
                   <Typography sx={{ fontWeight: 600 }}>PKR {subtotal.toLocaleString()}</Typography>
                 </Box>
+                {itemSavings > 0 && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5, color: "#166534" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                      <Typography sx={{ fontWeight: 600 }}>Promotions</Typography>
+                      {quote.applied.filter((a) => a.kind !== "voucher" && a.kind !== "free_shipping").map((a) => (
+                        <PromotionBadge key={a.promotionId} badge={a.badge} />
+                      ))}
+                    </Box>
+                    <Typography sx={{ fontWeight: 700 }}>-PKR {itemSavings.toLocaleString()}</Typography>
+                  </Box>
+                )}
                 <DeliveryShippingLine
                   shipping={shipping}
                   isPromo={promoActive}
                   standardFee={settings.fee}
                 />
+                <PromotionNudge hints={quote.hints} voucherCount={publicVoucherCount} />
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
                   <Typography variant="h6">Total Amount</Typography>

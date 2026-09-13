@@ -9,6 +9,7 @@ import type { Options as OptionsOfCreateCache } from "@emotion/cache";
 import createCache from "@emotion/cache";
 import { BRAND } from "@/lib/constants";
 import { CartProvider } from "./providers/CartProvider";
+import { PromotionProvider } from "./providers/PromotionProvider";
 import { FirebaseProvider } from "./providers/FirebaseProvider";
 import { NotificationProvider } from "./providers/NotificationProvider";
 import { ChatWidgetProvider } from "./providers/ChatWidgetProvider";
@@ -108,6 +109,7 @@ export default function ThemeRegistry({
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <CartProvider>
+        <PromotionProvider>
           <FirebaseProvider>
             <NotificationProvider>
               <ChatWidgetProvider>
@@ -116,6 +118,7 @@ export default function ThemeRegistry({
               </ChatWidgetProvider>
             </NotificationProvider>
           </FirebaseProvider>
+        </PromotionProvider>
         </CartProvider>
       </ThemeProvider>
     </CacheProvider>

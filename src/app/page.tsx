@@ -6,16 +6,21 @@ import HomeFreeDeliveryBanner from "./components/HomeFreeDeliveryBanner";
 import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 import { isDeliveryPromoActive } from "@/lib/deliverySettings";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
+import { getPublicPromotions } from "@/services/promotionService";
+import PromotionBanner from "./components/promotions/PromotionBanner";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
-  const [settings, deliverySettings] = await Promise.all([
+  const [settings, deliverySettings, promotions] = await Promise.all([
     getGlobalPageSettings(),
     getDeliverySettings(),
+    getPublicPromotions().catch(() => []),
   ]);
   const showDeliveryPromo = isDeliveryPromoActive(deliverySettings);
+  // Highest-priority live public promotion drives the banner when the store-wide delivery toggle is off.
+  const featured = promotions.filter((p) => p.status === "active").sort((a, b) => b.priority - a.priority)[0] || null;
 
   return (
     <main>
@@ -25,7 +30,11 @@ export default async function Home() {
         bannerMode={settings.home.bannerMode}
         images={settings.home.bannerImages}
       />
-      {showDeliveryPromo && <HomeFreeDeliveryBanner savedAmount={deliverySettings.fee} />}
+      {showDeliveryPromo ? (
+        <HomeFreeDeliveryBanner savedAmount={deliverySettings.fee} />
+      ) : featured ? (
+        <PromotionBanner promotion={featured} deliveryFee={deliverySettings.fee} />
+      ) : null}
       <HeroSection />
       <TopRatedProducts count={settings.home.topRatedCount} />
       <ProductList productsPerPage={settings.home.productsPerPage} />

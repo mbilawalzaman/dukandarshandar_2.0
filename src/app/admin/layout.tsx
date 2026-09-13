@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import {
   Box,
   AppBar,
@@ -96,12 +96,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f1f5f9" }}>
-      <AdminSidebar
-        open={sidebarOpen}
-        onToggle={toggleSidebar}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <AdminSidebar
+          open={sidebarOpen}
+          onToggle={toggleSidebar}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+        />
+      </Suspense>
 
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
         <AppBar

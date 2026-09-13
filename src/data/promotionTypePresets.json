@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Storewide Percentage Off",
+    "kind": "product_discount",
+    "description": "Cut every product price by a percentage for the campaign window.",
+    "defaults": { "scope": { "type": "all" }, "reward": { "type": "percentage", "value": 10 }, "badge": { "label": "-10%", "color": "#dc2626" }, "stackable": false, "priority": 10 }
+  },
+  {
+    "name": "Category Sale",
+    "kind": "product_discount",
+    "description": "Percentage off one or more categories, e.g. Craft 20% Off.",
+    "defaults": { "scope": { "type": "categories", "categories": ["Craft"] }, "reward": { "type": "percentage", "value": 20 }, "badge": { "label": "-20%", "color": "#dc2626" }, "stackable": false, "priority": 20 }
+  },
+  {
+    "name": "Flash Sale",
+    "kind": "flash_sale",
+    "description": "Hand-picked products at a fixed sale price with limited stock and a countdown.",
+    "defaults": { "scope": { "type": "products" }, "reward": { "type": "fixed" }, "badge": { "label": "Flash Sale", "color": "#ea580c" }, "stackable": false, "priority": 50 }
+  },
+  {
+    "name": "Public Voucher",
+    "kind": "voucher",
+    "description": "A collectible code shown on product pages and at checkout.",
+    "defaults": { "visibility": "public", "scope": { "type": "all" }, "reward": { "type": "percentage", "value": 10, "maxDiscount": 500 }, "limits": { "perCustomer": 1 }, "badge": { "label": "Voucher", "color": "#16a34a" }, "stackable": true }
+  },
+  {
+    "name": "Private Promo Code",
+    "kind": "voucher",
+    "description": "A code sent by email to selected customers; never shown on the storefront.",
+    "defaults": { "visibility": "private", "scope": { "type": "all" }, "reward": { "type": "fixed", "value": 200 }, "conditions": { "minOrderAmount": 1000 }, "limits": { "perCustomer": 1 }, "badge": { "label": "Promo", "color": "#4f46e5" }, "stackable": true }
+  },
+  {
+    "name": "Free Delivery on 3+ Items",
+    "kind": "free_shipping",
+    "description": "Waive the delivery fee automatically when the cart has enough items.",
+    "defaults": { "scope": { "type": "all" }, "reward": { "type": "free_shipping" }, "conditions": { "minItemQuantity": 3 }, "badge": { "label": "Free Delivery", "color": "#0284c7" }, "stackable": true }
+  },
+  {
+    "name": "Buy 2 Get 1 Free",
+    "kind": "bundle",
+    "description": "Every third qualifying unit is free (cheapest unit in each group).",
+    "defaults": { "scope": { "type": "all" }, "reward": { "type": "bundle", "buyQty": 2, "getQty": 1, "getDiscountPercent": 100 }, "badge": { "label": "Buy 2 Get 1", "color": "#7c3aed" }, "stackable": false, "priority": 30 }
+  }
+]

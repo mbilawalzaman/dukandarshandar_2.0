@@ -22,10 +22,14 @@ export const PRICE_FILTERS = [0, 100, 200, 300, 500, 1000] as const;
 
 export const SHIPPING_FEE = 250;
 
+/** Store timezone for promotion day boundaries and customer-facing dates (Pakistan, no DST). */
+export const STORE_TIMEZONE = "Asia/Karachi";
+export const STORE_UTC_OFFSET_MINUTES = 5 * 60;
+
 export const TOKEN_COOKIE = "ds_token";
 export const REFRESH_TOKEN_COOKIE = "ds_refresh_token";
 
 /** Access JWT lifetime (seconds) */
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 15; // 15 minutes
 /** Refresh token lifetime (seconds) */
-export const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
+export const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24; // 1 day

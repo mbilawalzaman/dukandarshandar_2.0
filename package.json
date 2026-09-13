@@ -13,7 +13,10 @@
     "download:areas": "node --env-file=.env scripts/downloadDarazAreas.mjs",
     "apply:areas": "node --env-file=.env scripts/applyDarazAreas.mjs",
     "import:areas": "node --env-file=.env scripts/importDarazAreas.mjs",
-    "scrape:areas": "node --env-file=.env scripts/scrapeDarazBatched.mjs"
+    "scrape:areas": "node --env-file=.env scripts/scrapeDarazBatched.mjs",
+    "test:promotions": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "seed:promotion-types": "node --env-file=.env scripts/seedPromotionTypes.mjs",
+    "migrate:promotions": "node --env-file=.env scripts/migrateDiscountsToPromotions.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

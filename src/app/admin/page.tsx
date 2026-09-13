@@ -6,6 +6,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import type { ProductFormData } from "@/app/components/admin/ProductFormModal";
 import ProductFormModal from "@/app/components/admin/ProductFormModal";
 import DashboardMetricsGrid from "@/app/components/admin/DashboardMetricsGrid";
+import PromotionsOverview from "@/app/components/admin/promotions/PromotionsOverview";
 import InventoryAlertWidget from "@/app/components/admin/InventoryAlertWidget";
 import DashboardCharts from "@/app/components/admin/DashboardCharts";
 import RecentActivityFeed from "@/app/components/admin/RecentActivityFeed";
@@ -89,6 +90,9 @@ export default function AdminDashboardPage() {
 
       {/* Metric Cards */}
       <DashboardMetricsGrid stats={stats} loading={loading} />
+
+      {/* Promotions performance */}
+      <PromotionsOverview />
 
       {/* Inventory Alerts Banner */}
       <InventoryAlertWidget

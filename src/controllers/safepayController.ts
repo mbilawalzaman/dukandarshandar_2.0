@@ -49,7 +49,13 @@ export class SafepayController {
         return NextResponse.json({ success: false, message: "Invalid online payment method" }, { status: 400 });
       }
 
-      const pendingOrder = await OrderPaymentService.getOrCreatePendingOrder(body, user, paymentMethod);
+      let pendingOrder;
+      try {
+        pendingOrder = await OrderPaymentService.getOrCreatePendingOrder(body, user, paymentMethod);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Could not prepare the order";
+        return NextResponse.json({ success: false, message }, { status: 400 });
+      }
       const appBaseUrl = getAppBaseUrl(req);
 
       const session = await SafepayService.createCheckoutSession(

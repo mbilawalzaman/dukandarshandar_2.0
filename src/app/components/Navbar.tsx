@@ -337,6 +337,16 @@ export default function Navbar() {
                     >
                       My Orders
                     </MenuItem>
+                    {role !== "guest" && (
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorElUser(null);
+                          router.push("/vouchers");
+                        }}
+                      >
+                        My Vouchers
+                      </MenuItem>
+                    )}
                     {isChatEnabled() && role !== "guest" && (
                       <MenuItem
                         onClick={() => {
@@ -536,6 +546,25 @@ export default function Navbar() {
             >
               My Orders
             </Button>
+            {role !== "guest" && (
+              <Button
+                component={Link}
+                href="/vouchers"
+                variant="outlined"
+                fullWidth
+                onClick={() => setMobileDrawerOpen(false)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "#cbd5e1",
+                  color: BRAND.navy,
+                  py: 1,
+                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                }}
+              >
+                My Vouchers
+              </Button>
+            )}
             {isChatEnabled() && role !== "guest" && (
               <Button
                 component={Link}

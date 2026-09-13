@@ -101,6 +101,8 @@ export type CreatePaymentSessionBody = {
     image?: string;
   }>;
   total_amount?: number;
+  /** Promo code applied at checkout; re-validated server-side. */
+  promo_code?: string;
 };
 
 /** Client checkout Safepay session state */

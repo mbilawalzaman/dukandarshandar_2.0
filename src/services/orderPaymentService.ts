@@ -1,10 +1,9 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
-import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail } from "@/lib/emailTemplates";
 import type { CreatePaymentSessionBody } from "@/types/apps/paymentTypes";
+import { quoteCart, recordRedemptions, redemptionQuoteFromOrder, toOrderDiscountLines, type CartQuote } from "@/services/promotionService";
 
 export interface PendingOrderResult {
   orderId: string;
@@ -20,12 +19,28 @@ interface CartItem {
   image?: string;
 }
 
-function buildCartFingerprint(items: CartItem[], totalAmount: number): string {
+function buildCartFingerprint(items: CartItem[], totalAmount: number, promoCode?: string | null): string {
   const normalized = [...items]
     .map((item) => `${item._id}:${item.quantity}:${item.price}`)
     .sort()
     .join("|");
-  return `${normalized}::${totalAmount}`;
+  return `${normalized}::${totalAmount}::${(promoCode || "").toUpperCase()}`;
+}
+
+/** Authoritative pricing for a payment body: DB prices, live promotions, delivery fee. Throws on a rejected voucher. */
+async function priceCart(
+  body: CreatePaymentSessionBody,
+  user?: { userId?: string; email?: string } | null
+): Promise<CartQuote> {
+  const quote = await quoteCart({
+    items: body.items,
+    voucherCode: body.promo_code || null,
+    customerId: user?.userId || null,
+    customerEmail: body.customer_email || user?.email || null,
+  });
+  if (quote.missingProductIds.length > 0) throw new Error("Some items in your cart are no longer available");
+  if (body.promo_code && quote.rejected.length > 0) throw new Error(quote.rejected[0].message);
+  return quote;
 }
 
 /**
@@ -71,12 +86,9 @@ export class OrderPaymentService {
     }
 
     const db = await getDb();
-    const deliverySettings = await getDeliverySettings();
-    const subtotal = body.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shipping = computeShipping(subtotal, deliverySettings);
-    const totalAmount = subtotal + shipping;
+    const { total: totalAmount } = await priceCart(body, user);
     const customerEmail = body.customer_email || user?.email || "guest@example.com";
-    const cartFingerprint = buildCartFingerprint(body.items, totalAmount);
+    const cartFingerprint = buildCartFingerprint(body.items, totalAmount, body.promo_code);
     const reuseCutoff = new Date(Date.now() - 30 * 60 * 1000);
 
     const existingOrder = await db.collection("orders").findOne({
@@ -152,21 +164,11 @@ export class OrderPaymentService {
     }
 
     const db = await getDb();
-    const deliverySettings = await getDeliverySettings();
-    const subtotal = body.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shipping = computeShipping(subtotal, deliverySettings);
-    const delivery_promo = isDeliveryPromoActive(deliverySettings, subtotal);
-    const totalAmount = subtotal + shipping;
-    const fingerprint = cartFingerprint || buildCartFingerprint(body.items, totalAmount);
+    const quote = await priceCart(body, user);
+    const { subtotal, shipping, deliveryPromo: delivery_promo, discountTotal: discount_total, total: totalAmount } = quote;
+    const fingerprint = cartFingerprint || buildCartFingerprint(body.items, totalAmount, body.promo_code);
 
-    const enrichedItems = [];
-    for (const item of body.items) {
-      const product = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
-      enrichedItems.push({
-        ...item,
-        image: product?.image || item.image || "",
-      });
-    }
+    const enrichedItems = quote.orderItems;
 
     const customerEmail = body.customer_email || user?.email || "guest@example.com";
 
@@ -197,6 +199,12 @@ export class OrderPaymentService {
       subtotal,
       shipping,
       delivery_promo,
+      discounts: toOrderDiscountLines(quote),
+      discount_total,
+      discount_code: quote.voucher?.code || null,
+      discount_amount: quote.voucherDiscount,
+      // Redemptions are recorded only once payment is confirmed (see fulfillPaidOrder).
+      promotions_recorded: false,
       total_amount: totalAmount,
       cart_fingerprint: fingerprint,
       status: "pending_payment",
@@ -309,12 +317,28 @@ export class OrderPaymentService {
       }
     }
 
+    // The customer has paid, so the discount stands even if a limit was hit meanwhile; record what we can.
+    let promotionsRecorded = Boolean(order.promotions_recorded);
+    if (!promotionsRecorded && Array.isArray(order.discounts) && order.discounts.length > 0) {
+      const kept = await recordRedemptions({
+        orderId: String(orderId),
+        quote: redemptionQuoteFromOrder(order),
+        customerId: order.customer_id ? String(order.customer_id) : null,
+        customerEmail: order.customer_email ? String(order.customer_email) : null,
+      });
+      if (kept.length !== order.discounts.length) {
+        console.warn(`[OrderPaymentService] some promotions on order ${orderId} hit their limit before payment`);
+      }
+      promotionsRecorded = true;
+    }
+
     await db.collection("orders").updateOne(
       { _id: new ObjectId(orderId) },
       {
         $set: {
           payment_status: "paid",
           status: "pending",
+          promotions_recorded: promotionsRecorded,
           safepay_tracker: tracker || order.safepay_tracker || null,
           paid_at: new Date(),
           updated_at: new Date(),
@@ -328,6 +352,9 @@ export class OrderPaymentService {
       orderId: displayOrderId,
       items: order.items || [],
       total: Number(order.total_amount) || 0,
+      subtotal: typeof order.subtotal === "number" ? order.subtotal : undefined,
+      shipping: typeof order.shipping === "number" ? order.shipping : undefined,
+      discounts: Array.isArray(order.discounts) ? order.discounts : [],
       province: order.province || "",
       city: order.city || "",
       area: order.area || "",

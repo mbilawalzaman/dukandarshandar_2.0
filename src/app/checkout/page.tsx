@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -25,6 +25,10 @@ import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
+import VoucherPicker from "../components/checkout/VoucherPicker";
+import PromotionBadge from "@/app/components/promotions/PromotionBadge";
+import { usePromotions } from "@/app/providers/PromotionProvider";
+import type { EngineResult } from "@/lib/promotionEngine";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { isSyntheticEmail, isValidCustomerEmail } from "@/lib/userDisplay";
 import {
@@ -157,10 +161,89 @@ export default function CheckoutPage() {
     })();
   }, [router, toast]);
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = getShipping(subtotal);
-  const promoActive = isPromoActive(subtotal);
-  const grandTotal = subtotal + shipping;
+  const { quoteLocal } = usePromotions();
+  const localSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const engineItems = useMemo(
+    () => items.map((i) => ({ productId: i._id, category: i.category, price: i.price, quantity: i.quantity, name: i.name })),
+    [items]
+  );
+  const cartFingerprint = items.map((item) => `${item._id}:${item.quantity}`).join("|");
+
+  // Voucher + server-authoritative quote. The local engine gives an instant preview until the server answers.
+  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [serverQuote, setServerQuote] = useState<EngineResult | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const announceRef = useRef(false);
+
+  const requestQuote = useCallback(
+    async (code: string | null) => {
+      if (items.length === 0) return;
+      setQuoting(true);
+      try {
+        const res = await fetch("/api/promotions/quote", {
+          method: "POST",
+          headers: authHeaders(),
+          credentials: "include",
+          body: JSON.stringify({
+            items: items.map((i) => ({ _id: i._id, quantity: i.quantity })),
+            voucherCode: code,
+            customerEmail: form.customer_email.trim().toLowerCase() || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (code) toast(data.error || "Could not apply voucher", "error");
+          return;
+        }
+        const q = data.quote as EngineResult;
+        if (code && q.rejected.length > 0) {
+          toast(q.rejected[0].message, "error");
+          setAppliedCode(null);
+          return;
+        }
+        setServerQuote(q);
+        if (code && announceRef.current) toast("Voucher applied!", "success");
+      } catch {
+        if (code) toast("Could not apply voucher", "error");
+      } finally {
+        announceRef.current = false;
+        setQuoting(false);
+      }
+    },
+    [items, form.customer_email, toast]
+  );
+
+  useEffect(() => {
+    requestQuote(appliedCode);
+    // re-quote whenever the cart or the chosen voucher changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartFingerprint, appliedCode]);
+
+  // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("promo");
+    if (code) {
+      announceRef.current = true;
+      setAppliedCode(code.trim().toUpperCase());
+    }
+  }, []);
+
+  const applyVoucher = (code: string) => {
+    announceRef.current = true;
+    setAppliedCode(code.trim().toUpperCase());
+  };
+  const removeVoucher = () => {
+    setAppliedCode(null);
+    toast("Voucher removed", "info");
+  };
+
+  const quote = serverQuote ?? quoteLocal(engineItems, { shippingFee: getShipping(localSubtotal), voucherCode: appliedCode });
+  const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
+  const subtotal = quote.subtotal;
+  const shipping = quote.shipping;
+  const promoActive = isPromoActive(subtotal) || (subtotal > 0 && quote.shippingDiscount > 0);
+  const itemSavings = quote.itemDiscount + quote.bundleDiscount;
+  const grandTotal = quote.total;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -286,6 +369,7 @@ export default function CheckoutPage() {
           ...form,
           items,
           total_amount: grandTotal,
+          promo_code: appliedCode || undefined,
           payment_method: "cod",
         }),
       });
@@ -331,6 +415,7 @@ export default function CheckoutPage() {
           ...form,
           items,
           total_amount: grandTotal,
+          promo_code: appliedCode || undefined,
           payment_method: paymentMethod,
         }),
       });
@@ -533,16 +618,49 @@ export default function CheckoutPage() {
                     <Typography variant="body2">
                       {item.name} × {item.quantity}
                     </Typography>
-                    <Typography variant="body2">PKR {(item.price * item.quantity).toLocaleString()}</Typography>
+                    <Typography variant="body2">PKR {(lineById.get(item._id)?.lineTotal ?? item.price * item.quantity).toLocaleString()}</Typography>
                   </Box>
                 ))}
                 <Divider sx={{ my: 2 }} />
+
+                {/* PROMOTIONS & VOUCHERS */}
+                <VoucherPicker
+                  items={engineItems}
+                  shippingFee={getShipping(localSubtotal)}
+                  appliedCode={appliedCode}
+                  applying={quoting}
+                  onApply={applyVoucher}
+                  onRemove={removeVoucher}
+                />
+
+                {itemSavings > 0 && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#166534" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                      <Typography variant="body2" fontWeight={700}>Promotions</Typography>
+                      {quote.applied.filter((a) => a.kind !== "voucher" && a.kind !== "free_shipping").map((a) => (
+                        <PromotionBadge key={a.promotionId} badge={a.badge} />
+                      ))}
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>-PKR {itemSavings.toLocaleString()}</Typography>
+                  </Box>
+                )}
+
                 <DeliveryShippingLine
                   shipping={shipping}
                   isPromo={promoActive}
                   standardFee={settings.fee}
                   label="Shipping"
                 />
+                {quote.voucher && quote.voucher.kind === "voucher" && quote.voucherDiscount > 0 && quote.shippingDiscount === 0 && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#166534" }}>
+                    <Typography variant="body2" fontWeight={700}>
+                      Voucher ({quote.voucher.code})
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                      -PKR {quote.voucherDiscount.toLocaleString()}
+                    </Typography>
+                  </Box>
+                )}
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                   <Typography fontWeight={800}>Total</Typography>
                   <Typography fontWeight={800} color="primary">

@@ -4,6 +4,7 @@ export type CartItem = {
   price: number;
   quantity: number;
   image: string;
+  category?: string;
 };
 
 const CART_KEY = "cart";
@@ -22,6 +23,7 @@ export function getCart(): CartItem[] {
         price: Number(item.price) || 0,
         quantity: Number(item.quantity ?? item.selectedQuantity) || 1,
         image: String(item.image || "/images/logo.jpg"),
+        category: item.category ? String(item.category) : undefined,
       }))
       .filter((item: CartItem) => item._id);
   } catch {
@@ -35,14 +37,15 @@ export function saveCart(items: CartItem[]) {
   window.dispatchEvent(new Event("cartChange"));
 }
 
-export function addToCart(
-  product: { _id: string; name: string; price: number; image?: string },
-  quantity = 1
-): CartItem[] {
+export type AddToCartProduct = { _id: string; name: string; price: number; image?: string; category?: string };
+
+export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
   const cart = getCart();
   const existing = cart.find((item) => item._id === product._id);
   if (existing) {
     existing.quantity += quantity;
+    // Older carts were saved without a category; backfill so promotions can scope by it.
+    if (!existing.category && product.category) existing.category = product.category;
   } else {
     cart.push({
       _id: product._id,
@@ -50,6 +53,7 @@ export function addToCart(
       price: Number(product.price) || 0,
       quantity,
       image: product.image || "/images/logo.jpg",
+      category: product.category || undefined,
     });
   }
   saveCart(cart);

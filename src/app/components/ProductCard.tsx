@@ -13,6 +13,10 @@ import {
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/providers/CartProvider";
 import { getProductThumbnail } from "@/lib/productImages";
+import { usePromotions } from "@/app/providers/PromotionProvider";
+import PriceTag from "@/app/components/promotions/PriceTag";
+import PromotionBadge from "@/app/components/promotions/PromotionBadge";
+import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
 
 export type ProductCardData = {
   _id: string;
@@ -29,6 +33,8 @@ export type ProductCardData = {
 export default function ProductCard({ product }: { product: ProductCardData }) {
   const router = useRouter();
   const { add } = useCart();
+  const { dealFor } = usePromotions();
+  const deal = dealFor({ _id: product._id, price: Number(product.price) || 0, category: product.category });
   const outOfStock = Number(product.quantity) === 0;
 
   return (
@@ -68,6 +74,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         }}
         onClick={() => router.push(`/products/${product._id}`)}
       >
+        {deal && (
+          <PromotionBadge badge={{ label: `-${deal.percentOff}%`, color: deal.promotion.badge?.color || "#dc2626" }} sx={{ position: "absolute", top: 10, left: 10, zIndex: 1 }} />
+        )}
         <Box
           component="img"
           className="product-img"
@@ -140,19 +149,10 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           </Typography>
         </Box>
 
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            fontWeight: 700,
-            fontSize: "1.05rem",
-            color: "#0f172a",
-            mt: "auto",
-            pt: 0.5,
-          }}
-        >
-          PKR {Number(product.price).toLocaleString()}
-        </Typography>
+        <Box sx={{ mt: "auto", pt: 0.5 }}>
+          <PriceTag price={Number(product.price) || 0} salePrice={deal?.salePrice} badge={deal?.promotion.badge} />
+          {deal?.promotion.kind === "flash_sale" && <FlashSaleCountdown endAt={deal.promotion.endAt} />}
+        </Box>
       </CardContent>
 
       {/* Action Buttons */}
@@ -179,6 +179,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 name: product.name,
                 price: product.price,
                 image: getProductThumbnail(product),
+                category: product.category,
               },
               1
             )

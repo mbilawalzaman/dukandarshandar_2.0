@@ -10,13 +10,14 @@ import {
   removeFromCart,
   saveCart,
   updateCartQuantity,
+  type AddToCartProduct,
   type CartItem,
 } from "@/lib/cart";
 
 type CartContextValue = {
   items: CartItem[];
   count: number;
-  add: (product: { _id: string; name: string; price: number; image?: string }, quantity?: number) => void;
+  add: (product: AddToCartProduct, quantity?: number) => void;
   updateQuantity: (id: string, quantity: number) => void;
   remove: (id: string) => void;
   clear: () => void;

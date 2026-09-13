@@ -7,7 +7,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Divider,
   Rating,
   TextField,
@@ -19,6 +18,10 @@ import Loader from "@/app/components/loader/Loader";
 import { authHeaders } from "@/lib/cart";
 import ProductImageGallery from "@/app/components/ProductImageGallery";
 import { getProductImageUrls, getProductThumbnail } from "@/lib/productImages";
+import { usePromotions } from "@/app/providers/PromotionProvider";
+import PriceTag from "@/app/components/promotions/PriceTag";
+import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
+import VoucherStrip from "@/app/components/promotions/VoucherStrip";
 import type { ProductReview } from "@/types/apps/productReviewTypes";
 
 interface Product {
@@ -38,6 +41,7 @@ const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
   const { add } = useCart();
+  const { dealFor } = usePromotions();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -157,6 +161,7 @@ const ProductDetails = () => {
         name: product.name,
         price: product.price,
         image: getProductThumbnail(product),
+        category: product.category,
       },
       quantity
     );
@@ -170,6 +175,7 @@ const ProductDetails = () => {
         name: product.name,
         price: product.price,
         image: getProductThumbnail(product),
+        category: product.category,
       },
       quantity
     );
@@ -222,12 +228,23 @@ const ProductDetails = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
             Category: {product.category}
           </Typography>
-          <Typography variant="h5" sx={{ mt: 2, fontWeight: 800 }}>
-            PKR {Number(product.price).toLocaleString()}
-            <Typography component="sup" sx={{ ml: 1, fontSize: "0.8rem", color: "text.secondary" }}>
-              per piece
-            </Typography>
-          </Typography>
+          {(() => {
+            const deal = dealFor({ _id: product._id, price: Number(product.price) || 0, category: product.category });
+            return (
+              <Box sx={{ mt: 2 }}>
+                <PriceTag
+                  price={Number(product.price) || 0}
+                  salePrice={deal?.salePrice}
+                  badge={deal?.promotion.badge}
+                  size="large"
+                  suffix={<Typography component="span" sx={{ fontSize: "0.8rem", color: "text.secondary" }}>per piece</Typography>}
+                />
+                {deal?.promotion.kind === "flash_sale" && <FlashSaleCountdown endAt={deal.promotion.endAt} />}
+              </Box>
+            );
+          })()}
+
+          <VoucherStrip product={{ _id: product._id, price: Number(product.price) || 0, category: product.category }} />
 
           <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
             <Rating value={averageRating} max={5} precision={0.5} readOnly />

@@ -6,6 +6,7 @@ import { SafepayService } from "@/services/safepayService";
 import { isSafepayConfigured } from "@/lib/safepayConfig";
 import { sendMail, getShopInbox } from "@/lib/mail";
 import { orderStatusEmail } from "@/lib/emailTemplates";
+import { releaseRedemptions } from "@/services/promotionService";
 
 export type CancelOrderResult =
   | { success: true; orderId: string; refunded: boolean }
@@ -23,6 +24,13 @@ function ownsOrder(
     return user.email.trim().toLowerCase() === String(order.customer_email).trim().toLowerCase();
   }
   return false;
+}
+
+async function releaseOrderPromotions(order: { _id: ObjectId; promotions_recorded?: boolean }): Promise<void> {
+  if (!order.promotions_recorded) return;
+  await releaseRedemptions(String(order._id));
+  const db = await getDb();
+  await db.collection("orders").updateOne({ _id: order._id }, { $set: { promotions_recorded: false } });
 }
 
 async function restockOrderItems(
@@ -110,6 +118,7 @@ export async function cancelCustomerOrder(
   }
 
   await restockOrderItems(order.items);
+  await releaseOrderPromotions(order as { _id: ObjectId; promotions_recorded?: boolean });
 
   await db.collection("orders").updateOne(
     { _id: new ObjectId(orderId), status: "pending" },

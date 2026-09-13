@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "@/types/apps/paymentTypes";
+import type { OrderDiscountLine } from "@/types/apps/promotionTypes";
 
 export type { PaymentMethod };
 
@@ -15,7 +16,11 @@ export type OrderItemType = {
   _id?: string;
   name: string;
   quantity: number;
+  /** unit price charged (after item-level promotions) */
   price: number;
+  original_price?: number;
+  line_discount?: number;
+  applied_promotion_ids?: string[];
   image?: string;
 };
 
@@ -33,6 +38,12 @@ export type OrderType = {
   subtotal?: number;
   shipping?: number;
   delivery_promo?: boolean;
+  discounts?: OrderDiscountLine[];
+  discount_total?: number;
+  /** legacy: voucher only */
+  discount_code?: string | null;
+  discount_amount?: number;
+  promotions_recorded?: boolean;
   status: OrderStatusType;
   payment_status?: string;
   payment_method?: PaymentMethod | string;

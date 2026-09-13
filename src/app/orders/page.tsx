@@ -561,6 +561,11 @@ function OrdersContent() {
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
                                     Qty: <strong>{item.quantity}</strong> × PKR {Number(item.price).toLocaleString()}
+                                    {item.original_price && item.original_price > item.price && (
+                                      <Typography component="span" variant="caption" sx={{ ml: 0.5, textDecoration: "line-through", color: "#94a3b8" }}>
+                                        PKR {Number(item.original_price).toLocaleString()}
+                                      </Typography>
+                                    )}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -572,6 +577,19 @@ function OrdersContent() {
                             </Box>
                           ))}
                         </Box>
+
+                        {Array.isArray(order.discounts) && order.discounts.length > 0 && (
+                          <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            {order.discounts.map((d) => (
+                              <Box key={d.promotionId} sx={{ display: "flex", justifyContent: "space-between", color: "#166534" }}>
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                  {d.code ? `${d.code} · ` : ""}{d.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700 }}>-PKR {Number(d.amount).toLocaleString()}</Typography>
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
 
                         <Divider sx={{ my: 2 }} />
 
