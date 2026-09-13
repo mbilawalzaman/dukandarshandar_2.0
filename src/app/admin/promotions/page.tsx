@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Alert, Box, Button, Chip, IconButton, Tab, Tabs, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Tab, Tabs, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
@@ -168,29 +168,6 @@ function PromotionsPageInner() {
         </Box>
       ),
     },
-    {
-      id: "more",
-      label: "",
-      align: "right",
-      minWidth: 120,
-      format: (_v, row) => (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.25 }}>
-          <Tooltip title={row.isPaused ? "Resume" : "Pause"}>
-            <IconButton size="small" onClick={() => togglePause(row)} sx={{ color: row.isPaused ? "#16a34a" : "#f59e0b" }}>
-              {row.isPaused ? <PlayCircleOutlineIcon fontSize="small" /> : <PauseCircleOutlineIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Duplicate">
-            <IconButton size="small" onClick={() => duplicate(row)} sx={{ color: "#64748b" }}><ContentCopyIcon fontSize="small" /></IconButton>
-          </Tooltip>
-          {row.kind === "voucher" && (
-            <Tooltip title="Send by email">
-              <IconButton size="small" onClick={() => setSending(row)} sx={{ color: "#0284c7" }}><SendIcon fontSize="small" /></IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      ),
-    },
     { id: "actions", label: "Actions", align: "right" },
   ];
 
@@ -232,6 +209,29 @@ function PromotionsPageInner() {
         onView={(row) => setViewing(row)}
         onEdit={openEdit}
         onDelete={(row) => setDeleteTarget(row)}
+        extraActions={(row) => [
+          {
+            label: row.isPaused ? "Resume Promotion" : "Pause Promotion",
+            icon: row.isPaused ? <PlayCircleOutlineIcon fontSize="small" /> : <PauseCircleOutlineIcon fontSize="small" />,
+            color: row.isPaused ? "#16a34a" : "#f59e0b",
+            onClick: (r: Row) => togglePause(r),
+          },
+          {
+            label: "Duplicate",
+            icon: <ContentCopyIcon fontSize="small" />,
+            onClick: (r: Row) => duplicate(r),
+          },
+          ...(row.kind === "voucher"
+            ? [
+                {
+                  label: "Send Email",
+                  icon: <SendIcon fontSize="small" />,
+                  color: "#0284c7",
+                  onClick: (r: Row) => setSending(r),
+                },
+              ]
+            : []),
+        ]}
       />
 
       <PromotionFormModal open={formOpen} onClose={() => setFormOpen(false)} promotion={editing} defaultKind={kindFilter || "voucher"} onSaved={replaceRow} />

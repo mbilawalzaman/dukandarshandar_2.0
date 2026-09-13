@@ -29,15 +29,32 @@ const CODE_PATTERN = /^[A-Z0-9_-]{3,30}$/;
 let indexesReady: Promise<void> | null = null;
 export function ensurePromotionIndexes(db: Db): Promise<void> {
   if (!indexesReady) {
-    indexesReady = Promise.all([
-      db.collection(PROMOTIONS).createIndex({ code: 1 }, { unique: true, sparse: true }),
-      db.collection(PROMOTIONS).createIndex({ isDraft: 1, isPaused: 1, startAt: 1, endAt: 1 }),
-      db.collection(PROMOTIONS).createIndex({ kind: 1, createdAt: -1 }),
-      db.collection(REDEMPTIONS).createIndex({ promotionId: 1, customerId: 1 }),
-      db.collection(REDEMPTIONS).createIndex({ promotionId: 1, customerEmail: 1 }),
-      db.collection(REDEMPTIONS).createIndex({ orderId: 1 }),
-      db.collection("orders").createIndex({ "discounts.promotionId": 1 }),
-    ])
+    indexesReady = (async () => {
+      const col = db.collection(PROMOTIONS);
+      try {
+        await col.updateMany({ code: null }, { $unset: { code: "" } });
+      } catch (error) {
+        console.error("Error in promotionService ensurePromotionIndexes: ", error);
+      }
+      try {
+        const indexes = await col.indexes();
+        const codeIdx = indexes.find((i) => i.name === "code_1");
+        if (codeIdx && !codeIdx.partialFilterExpression) {
+          await col.dropIndex("code_1");
+        }
+      } catch(error) {
+        console.error("Error in promotionService ensurePromotionIndexes: ", error);
+      }
+      await Promise.all([
+        col.createIndex({ code: 1 }, { unique: true, partialFilterExpression: { code: { $type: "string" } } }),
+        col.createIndex({ isDraft: 1, isPaused: 1, startAt: 1, endAt: 1 }),
+        col.createIndex({ kind: 1, createdAt: -1 }),
+        db.collection(REDEMPTIONS).createIndex({ promotionId: 1, customerId: 1 }),
+        db.collection(REDEMPTIONS).createIndex({ promotionId: 1, customerEmail: 1 }),
+        db.collection(REDEMPTIONS).createIndex({ orderId: 1 }),
+        db.collection("orders").createIndex({ "discounts.promotionId": 1 }),
+      ]);
+    })()
       .then(() => undefined)
       .catch((err) => {
         indexesReady = null;

@@ -23,7 +23,7 @@ export default function GlobalLoader({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: fullScreen ? "70vh" : "250px",
+        minHeight: fullScreen ? "calc(100vh - 160px)" : "250px",
         width: "100%",
         py: 4,
         position: "relative",

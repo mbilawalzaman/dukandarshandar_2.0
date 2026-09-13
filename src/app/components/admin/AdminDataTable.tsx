@@ -13,13 +13,11 @@ import {
   TextField,
   Box,
   Typography,
-  IconButton,
-  Chip,
-  Tooltip,
+  Chip
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import Dropdown, { type TableRowAction } from "../ui/Dropdown";
+
+export type { TableRowAction };
 
 export interface ColumnDef<T> {
   id: keyof T | "actions";
@@ -38,6 +36,7 @@ interface AdminDataTableProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   onView?: (row: T) => void;
+  extraActions?: (row: T) => TableRowAction<T>[];
   loading?: boolean;
   serverPagination?: {
     total: number;
@@ -59,6 +58,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
   onEdit,
   onDelete,
   onView,
+  extraActions,
   loading = false,
   serverPagination,
 }: AdminDataTableProps<T>) {
@@ -187,53 +187,39 @@ export default function AdminDataTable<T extends { _id?: string }>({
               </TableRow>
             ) : (
               displayRows.map((row, index) => (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row._id || index}>
-                    {columns.map((column) => {
-                      if (column.id === "actions") {
-                        return (
-                          <TableCell key="actions" align={column.align || "center"} sx={{ py: 1.5 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: column.align === "right" ? "flex-end" : "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              {onView && (
-                                <Tooltip title="View">
-                                  <IconButton size="small" color="info" onClick={() => onView(row)}>
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                              {onEdit && (
-                                <Tooltip title="Edit">
-                                  <IconButton size="small" color="primary" onClick={() => onEdit(row)}>
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                              {onDelete && (
-                                <Tooltip title="Delete">
-                                  <IconButton size="small" color="error" onClick={() => onDelete(row)}>
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Box>
-                          </TableCell>
-                        );
-                      }
-
-                      const value = row[column.id as keyof T];
+                <TableRow hover role="checkbox" tabIndex={-1} key={row._id || index}>
+                  {columns.map((column) => {
+                    if (column.id === "actions") {
                       return (
-                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
-                          {column.format ? column.format(value, row) : String(value ?? "")}
+                        <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.5 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: column.align === "left" ? "flex-start" : column.align === "center" ? "center" : "flex-end",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Dropdown
+                              row={row}
+                              onView={onView}
+                              onEdit={onEdit}
+                              onDelete={onDelete}
+                              extraActions={extraActions}
+                            />
+                          </Box>
                         </TableCell>
                       );
-                    })}
-                  </TableRow>
-                ))
+                    }
+
+                    const value = row[column.id as keyof T];
+                    return (
+                      <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
+                        {column.format ? column.format(value, row) : String(value ?? "")}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
