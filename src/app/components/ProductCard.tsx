@@ -160,11 +160,25 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <Button
           size="small"
           variant="outlined"
+          color="primary"
           fullWidth
-          onClick={() => router.push(`/products/${product._id}`)}
-          sx={{ textTransform: "none", borderRadius: 2 }}
+          disabled={outOfStock}
+          onClick={() => {
+            add(
+              {
+                _id: product._id,
+                name: product.name,
+                price: product.price,
+                image: getProductThumbnail(product),
+                category: product.category,
+              },
+              1
+            );
+            router.push("/checkout");
+          }}
+          sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
         >
-          Details
+          Buy Now
         </Button>
         <Button
           size="small"

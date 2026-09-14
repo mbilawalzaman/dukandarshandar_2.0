@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 import Slider from "react-slick";
 import { Box } from "@mui/material";
@@ -31,6 +32,27 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
       return null;
     }
 
+    const goToLink = singleBanner?.goToLink || banners?.[0]?.goToLink;
+    const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
+
+    const singleContent = (
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: { xs: 240, sm: 380, md: 480 },
+          cursor: goToLink ? "pointer" : "default",
+        }}
+      >
+        <BannerMediaRenderer
+          media={mediaToRender}
+          alt={singleBanner?.title || "Dukandar Shandar"}
+          priority={true}
+          style={{ width: "100%", height: "100%" }}
+        />
+      </Box>
+    );
+
     return (
       <Box
         sx={{
@@ -41,20 +63,19 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
           backgroundColor: "#0f172a",
         }}
       >
-        <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            height: { xs: 240, sm: 380, md: 480 },
-          }}
-        >
-          <BannerMediaRenderer
-            media={mediaToRender}
-            alt={singleBanner?.title || "Dukandar Shandar"}
-            priority={true}
-            style={{ width: "100%", height: "100%" }}
-          />
-        </Box>
+        {goToLink ? (
+          <Box
+            component={Link}
+            href={goToLink}
+            target={isExternal ? "_blank" : undefined}
+            rel={isExternal ? "noopener noreferrer" : undefined}
+            sx={{ display: "block", textDecoration: "none" }}
+          >
+            {singleContent}
+          </Box>
+        ) : (
+          singleContent
+        )}
       </Box>
     );
   }
@@ -129,13 +150,17 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
       }}
     >
       <Slider {...settings}>
-        {activeBanners.map((banner, index) => (
-          <Box key={banner.id || index}>
+        {activeBanners.map((banner, index) => {
+          const goToLink = banner.goToLink;
+          const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
+
+          const slideContent = (
             <Box
               sx={{
                 position: "relative",
                 width: "100%",
                 height: { xs: 240, sm: 380, md: 480 },
+                cursor: goToLink ? "pointer" : "default",
               }}
             >
               <BannerMediaRenderer
@@ -145,8 +170,26 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
                 style={{ width: "100%", height: "100%" }}
               />
             </Box>
-          </Box>
-        ))}
+          );
+
+          return (
+            <Box key={banner.id || index}>
+              {goToLink ? (
+                <Box
+                  component={Link}
+                  href={goToLink}
+                  target={isExternal ? "_blank" : undefined}
+                  rel={isExternal ? "noopener noreferrer" : undefined}
+                  sx={{ display: "block", textDecoration: "none" }}
+                >
+                  {slideContent}
+                </Box>
+              ) : (
+                slideContent
+              )}
+            </Box>
+          );
+        })}
       </Slider>
     </Box>
   );

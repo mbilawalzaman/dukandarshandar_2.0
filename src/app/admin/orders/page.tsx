@@ -16,8 +16,11 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import PrintIcon from "@mui/icons-material/Print";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
 
 interface OrderItem {
   name: string;
@@ -101,6 +104,13 @@ export default function AdminOrdersPage() {
   const [summary, setSummary] = useState<OrderSummary>({ totalOrders: 0, statusCounts: {} });
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
+  const [selectedOrderForLabel, setSelectedOrderForLabel] = useState<Order | null>(null);
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+
+  const handleOpenLabelModal = (order: Order) => {
+    setSelectedOrderForLabel(order);
+    setLabelModalOpen(true);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
@@ -137,7 +147,7 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (orderId: string, newStatus: string, targetOrder?: Order) => {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const res = await fetch("/api/orders", {
@@ -151,6 +161,9 @@ export default function AdminOrdersPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         fetchOrders();
+        if (newStatus === "shipped" && targetOrder) {
+          handleOpenLabelModal(targetOrder);
+        }
       } else {
         alert(data.message || "Failed to update order status");
       }
@@ -245,25 +258,58 @@ export default function AdminOrdersPage() {
     {
       id: "status",
       label: "Fulfillment",
-      minWidth: 160,
+      minWidth: 200,
       format: (val, row) => (
-        <FormControl size="small" variant="outlined" sx={{ minWidth: 140 }}>
-          <Select
-            value={val || "pending"}
-            onChange={(e) => handleStatusChange(row._id as string, e.target.value as string)}
-            sx={{ fontSize: "0.85rem", height: 32 }}
-            renderValue={(selected) => fulfillmentLabel(String(selected), row)}
-          >
-            <MenuItem value="pending_payment" disabled={row.payment_status === "paid"}>
-              Awaiting Payment
-            </MenuItem>
-            <MenuItem value="payment_failed">Payment Failed</MenuItem>
-            <MenuItem value="pending">Confirmed / Pending</MenuItem>
-            <MenuItem value="shipped">Shipped</MenuItem>
-            <MenuItem value="delivered">Delivered</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <FormControl size="small" variant="outlined" sx={{ minWidth: 140 }}>
+            <Select
+              value={val || "pending"}
+              onChange={(e) => handleStatusChange(row._id as string, e.target.value as string, row)}
+              sx={{ fontSize: "0.85rem", height: 32 }}
+              renderValue={(selected) => fulfillmentLabel(String(selected), row)}
+            >
+              <MenuItem value="pending_payment" disabled={row.payment_status === "paid"}>
+                Awaiting Payment
+              </MenuItem>
+              <MenuItem value="payment_failed">Payment Failed</MenuItem>
+              <MenuItem value="pending">Confirmed / Pending</MenuItem>
+              <MenuItem value="shipped">Shipped</MenuItem>
+              <MenuItem value="delivered">Delivered</MenuItem>
+              <MenuItem value="cancelled">Cancelled</MenuItem>
+            </Select>
+          </FormControl>
+          {(() => {
+            const isShipped = row.status === "shipped";
+            return (
+              <Tooltip title={isShipped ? "Print Shipping Label (DS)" : "Available when order is Shipped"}>
+                <span>
+                  <IconButton
+                    size="small"
+                    disabled={!isShipped}
+                    onClick={() => handleOpenLabelModal(row)}
+                    sx={{
+                      border: `1px solid ${isShipped ? "#f59e0b" : "#cbd5e1"}`,
+                      backgroundColor: isShipped ? "#fffbe5" : "#ffffff",
+                      color: isShipped ? "#d97706" : "#94a3b8",
+                      borderRadius: "50%",
+                      p: 0.6,
+                      "&:hover": {
+                        backgroundColor: isShipped ? "#fef3c7" : "#ffffff",
+                      },
+                      "&.Mui-disabled": {
+                        borderColor: "#e2e8f0",
+                        backgroundColor: "#f8fafc",
+                        color: "#94a3b8",
+                      },
+                    }}
+                  >
+                    <PrintIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            );
+          })()}
+        </Box>
       ),
     },
     {
@@ -364,6 +410,19 @@ export default function AdminOrdersPage() {
         data={paymentFilter === "all" ? orders : filteredOrders}
         searchPlaceholder="Search by customer name..."
         loading={loading}
+        extraActions={(row) => [
+          {
+            label: "Print Shipping Label",
+            icon: <LocalShippingIcon fontSize="small" />,
+            disabled: row.status !== "shipped",
+            onClick: () => {
+              if (row.status === "shipped") {
+                handleOpenLabelModal(row);
+              }
+            },
+            color: row.status === "shipped" ? "#0284c7" : "#94a3b8",
+          },
+        ]}
         serverPagination={{
           total: paymentFilter === "all" ? total : filteredOrders.length,
           page,
@@ -387,6 +446,12 @@ export default function AdminOrdersPage() {
         onClose={() => setCopiedTracker(null)}
         message="Safepay tracker copied"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
+
+      <ShippingLabelModal
+        open={labelModalOpen}
+        onClose={() => setLabelModalOpen(false)}
+        order={selectedOrderForLabel}
       />
     </Box>
   );

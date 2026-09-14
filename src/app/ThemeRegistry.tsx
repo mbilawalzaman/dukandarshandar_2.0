@@ -14,6 +14,7 @@ import { FirebaseProvider } from "./providers/FirebaseProvider";
 import { NotificationProvider } from "./providers/NotificationProvider";
 import { ChatWidgetProvider } from "./providers/ChatWidgetProvider";
 import FloatingChatWidget from "./components/chat/FloatingChatWidget";
+import FloatingWhatsAppWidget from "./components/chat/FloatingWhatsAppWidget";
 
 const theme = createTheme({
   palette: {
@@ -114,6 +115,7 @@ export default function ThemeRegistry({
             <NotificationProvider>
               <ChatWidgetProvider>
                 {children}
+                <FloatingWhatsAppWidget />
                 <FloatingChatWidget />
               </ChatWidgetProvider>
             </NotificationProvider>

@@ -76,6 +76,7 @@ export default function AdminManagePages() {
   const [modalUploading, setModalUploading] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalSubtitle, setModalSubtitle] = useState("");
+  const [modalGoToLink, setModalGoToLink] = useState("");
   const [slideImageUploads, setSlideImageUploads] = useState<Record<string, string>>({});
 
   const fetchSettings = useCallback(async () => {
@@ -214,6 +215,7 @@ export default function AdminManagePages() {
     setModalType(preferVideo ? "video" : "image");
     setModalTitle("");
     setModalSubtitle("");
+    setModalGoToLink("");
     setModalOpen(true);
   };
 
@@ -283,6 +285,7 @@ export default function AdminManagePages() {
             id: `banner-${Date.now()}`,
             title: modalTitle.trim() || `Slide #${nextIdx}`,
             subtitle: modalSubtitle.trim() || "",
+            goToLink: modalGoToLink.trim() || undefined,
             order: nextIdx,
             isActive: true,
             activeMedia: { type: "image", url: modalMediaPayload },
@@ -560,7 +563,7 @@ export default function AdminManagePages() {
                                 </Box>
                               )}
                             </Box>
-                            <Box sx={{ p: 1.5 }}>
+                            <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
                               <TextField
                                 label="Slide Title"
                                 size="small"
@@ -573,6 +576,23 @@ export default function AdminManagePages() {
                                     home: {
                                       ...prev.home,
                                       banners: prev.home.banners.map((s) => (s.id === slide.id ? { ...s, title: val } : s)),
+                                    },
+                                  }));
+                                }}
+                              />
+                              <TextField
+                                label="GoTo Link / URL (Optional)"
+                                size="small"
+                                fullWidth
+                                placeholder="e.g. /shop or https://..."
+                                value={slide.goToLink || ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSettings((prev) => ({
+                                    ...prev,
+                                    home: {
+                                      ...prev.home,
+                                      banners: prev.home.banners.map((s) => (s.id === slide.id ? { ...s, goToLink: val } : s)),
                                     },
                                   }));
                                 }}
@@ -1021,6 +1041,7 @@ export default function AdminManagePages() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField label="Banner Title (Optional)" size="small" fullWidth value={modalTitle} onChange={(e) => setModalTitle(e.target.value)} />
             <TextField label="Banner Subtitle (Optional)" size="small" fullWidth value={modalSubtitle} onChange={(e) => setModalSubtitle(e.target.value)} />
+            <TextField label="GoTo Link / URL (Optional)" size="small" fullWidth placeholder="e.g. /shop or https://..." value={modalGoToLink} onChange={(e) => setModalGoToLink(e.target.value)} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>

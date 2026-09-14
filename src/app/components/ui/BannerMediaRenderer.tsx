@@ -50,6 +50,11 @@ export default function BannerMediaRenderer({
     return null;
   }
 
+  // Filter out deleted local static image fallbacks
+  if (mediaUrl.startsWith("/images/") && !["/images/store-qr-code.png"].includes(mediaUrl)) {
+    return null;
+  }
+
   if (isLegacyLottieUrl(mediaUrl, mediaType)) {
     return (
       <Box

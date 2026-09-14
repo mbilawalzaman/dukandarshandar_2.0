@@ -5,6 +5,7 @@ import type { AuthProviderType, UserRoleType } from "@/types/shared/authTypes";
 export type UserProfileType = {
   id: string;
   name: string;
+  storeName?: string;
   email: string;
   needsEmail: boolean;
   phone: string;
@@ -28,6 +29,7 @@ export type UserDisplayType = {
 
 export type UserProfileUpdateType = {
   name?: string;
+  storeName?: string;
   email?: string;
   phone?: string;
   province?: string;

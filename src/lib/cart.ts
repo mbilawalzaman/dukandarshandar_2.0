@@ -22,7 +22,7 @@ export function getCart(): CartItem[] {
         name: String(item.name || ""),
         price: Number(item.price) || 0,
         quantity: Number(item.quantity ?? item.selectedQuantity) || 1,
-        image: String(item.image || "/images/logo.jpg"),
+        image: String(item.image || ""),
         category: item.category ? String(item.category) : undefined,
       }))
       .filter((item: CartItem) => item._id);
@@ -52,7 +52,7 @@ export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
       name: product.name,
       price: Number(product.price) || 0,
       quantity,
-      image: product.image || "/images/logo.jpg",
+      image: product.image || "",
       category: product.category || undefined,
     });
   }

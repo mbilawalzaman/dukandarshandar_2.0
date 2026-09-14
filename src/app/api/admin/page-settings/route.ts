@@ -44,6 +44,9 @@ async function resolveImageMedia(
   }
 
   if (existing?.url) {
+    if (existing.url.startsWith("/images/") && !["/images/store-qr-code.png"].includes(existing.url)) {
+      return { type: "image", url: "" };
+    }
     if (looksLikeVideo(existing)) {
       return {
         type: "video",
@@ -98,6 +101,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     id?: string;
     title?: string;
     subtitle?: string;
+    goToLink?: string;
     order?: number;
     isActive?: boolean;
     activeMedia?: MediaAsset;
@@ -113,6 +117,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
       id: bannerId,
       title: b.title || "",
       subtitle: b.subtitle || "",
+      goToLink: typeof b.goToLink === "string" ? b.goToLink.trim() : undefined,
       order: typeof b.order === "number" ? b.order : i + 1,
       isActive: b.isActive !== false,
       activeMedia,
@@ -165,6 +170,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     id: (typeof rawSingle.id === "string" && rawSingle.id) || "single-banner-1",
     title: (typeof rawSingle.title === "string" && rawSingle.title) || "Dukandar Shandar",
     subtitle: (typeof rawSingle.subtitle === "string" && rawSingle.subtitle) || "",
+    goToLink: (typeof rawSingle.goToLink === "string" && rawSingle.goToLink.trim()) || undefined,
     order: 1,
     isActive: rawSingle.isActive !== false,
     activeMedia: singleActiveMedia,

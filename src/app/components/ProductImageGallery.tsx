@@ -15,7 +15,7 @@ type ProductImageGalleryProps = {
 export default function ProductImageGallery({
   images,
   alt,
-  fallback = "/images/logo.jpg",
+  fallback = "",
 }: ProductImageGalleryProps) {
   const galleryImages = images.length > 0 ? images : [fallback];
   const [activeIndex, setActiveIndex] = useState(0);

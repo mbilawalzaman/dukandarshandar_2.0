@@ -17,13 +17,13 @@ import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PageBanner from "../components/PageBanner";
 import { useCart } from "@/app/providers/CartProvider";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import type { PageSettings } from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 
-const WHATSAPP_URL = "https://wa.me/923009437476";
-
 export default function ContactPage() {
   const { toast } = useCart();
+  const { whatsAppUrl } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
@@ -120,7 +120,7 @@ export default function ContactPage() {
                 </Box>
                 <Button
                   component="a"
-                  href={WHATSAPP_URL}
+                  href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="contained"

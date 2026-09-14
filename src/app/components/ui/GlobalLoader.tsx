@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import Image from "next/image";
 import { BRAND } from "@/lib/constants";
 
 interface GlobalLoaderProps {
@@ -91,13 +90,9 @@ export default function GlobalLoader({
             },
           }}
         >
-          <Image
-            src="/images/ds-icon.png"
-            alt="Dukandar Shandar"
-            width={32}
-            height={32}
-            style={{ objectFit: "contain" }}
-          />
+          <Typography sx={{ fontWeight: 800, color: BRAND.gold, fontSize: "1rem", letterSpacing: "-0.5px" }}>
+            DS
+          </Typography>
         </Box>
       </Box>
 

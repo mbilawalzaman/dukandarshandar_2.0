@@ -112,7 +112,7 @@ export const deleteImage = deleteAsset;
 
 /** @deprecated use uploadImage */
 export async function persistImage(image: string | undefined | null): Promise<string> {
-  if (!image) return "/images/logo.jpg";
+  if (!image) return "";
   const uploaded = await uploadImage(image);
   return uploaded.url;
 }

@@ -26,7 +26,6 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import Image from "next/image";
 import { jwtDecode } from "jwt-decode";
 import { BRAND } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
@@ -38,6 +37,7 @@ import { clearChatSessionState } from "@/lib/chatSync";
 import { ensureFreshAccessToken, logoutClientSession } from "@/lib/authFetch";
 import { getDisplayName } from "@/lib/userDisplay";
 import UserAvatar from "@/app/components/ui/UserAvatar";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import { signOut } from "firebase/auth";
 
 type DecodedToken = { userName?: string; role?: string; email?: string; userId?: string };
@@ -62,6 +62,8 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { count } = useCart();
+  const { settings } = useDeliverySettings();
+  const storeLogo = settings.storeLogo || "";
 
   useEffect(() => {
     setMounted(true);
@@ -171,48 +173,50 @@ export default function Navbar() {
                 <MenuIcon fontSize="medium" />
               </IconButton>
 
-              {/* Brand Logo Link: DS icon on mobile, full logo on desktop */}
+              {/* Brand Logo Link: Uploaded Cloudinary logo or dynamic DS badge */}
               <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-                {/* Mobile: Compact DS icon */}
-                <Box
-                  style={{ position: "relative", width: 38, height: 38 }}
-                  sx={{
-                    display: { xs: "block", md: "none" },
-                    width: 38,
-                    height: 38,
-                    position: "relative",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Image
-                    src="/images/ds-icon.png"
-                    alt="DS Logo"
-                    fill
-                    priority
-                    style={{ objectFit: "contain" }}
-                  />
-                </Box>
-
-                {/* Desktop: Full Banner Logo */}
-                <Box
-                  style={{ position: "relative", width: 140, height: 46 }}
-                  sx={{
-                    display: { xs: "none", md: "block" },
-                    width: 140,
-                    height: 46,
-                    position: "relative",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Image
-                    src="/images/logo.jpg"
-                    alt="Dukandar Shandar"
-                    fill
-                    priority
-                    style={{ objectFit: "contain", objectPosition: "left center" }}
-                  />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, cursor: "pointer" }}>
+                  {storeLogo ? (
+                    <Box
+                      component="img"
+                      src={storeLogo}
+                      alt="Store Logo"
+                      sx={{ height: { xs: 36, md: 44 }, maxWidth: 180, objectFit: "contain" }}
+                    />
+                  ) : (
+                    <>
+                      <Box
+                        sx={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: "10px",
+                          background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: BRAND.gold,
+                          fontWeight: 800,
+                          fontSize: "1.05rem",
+                          boxShadow: "0 3px 10px rgba(2, 132, 199, 0.25)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        DS
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 800,
+                          color: BRAND.navy,
+                          fontSize: { xs: "1.1rem", md: "1.25rem" },
+                          letterSpacing: "-0.4px",
+                          lineHeight: 1,
+                        }}
+                      >
+                        Dukandar Shandar
+                      </Typography>
+                    </>
+                  )}
                 </Box>
               </Link>
             </Box>
@@ -442,8 +446,32 @@ export default function Navbar() {
       >
         {/* Drawer Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexShrink: 0 }}>
-          <Box style={{ position: "relative", width: 120, height: 40 }} sx={{ width: 120, height: 40, position: "relative", flexShrink: 0 }}>
-            <Image src="/images/logo.jpg" alt="Dukandar Shandar" fill style={{ objectFit: "contain" }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {storeLogo ? (
+              <Box component="img" src={storeLogo} alt="Store Logo" sx={{ height: 32, maxWidth: 140, objectFit: "contain" }} />
+            ) : (
+              <>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: BRAND.gold,
+                    fontWeight: 800,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  DS
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: BRAND.navy }}>
+                  Dukandar Shandar
+                </Typography>
+              </>
+            )}
           </Box>
           <IconButton onClick={() => setMobileDrawerOpen(false)} size="small" aria-label="close navigation drawer">
             <CloseIcon />

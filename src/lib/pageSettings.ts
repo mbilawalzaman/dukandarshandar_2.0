@@ -19,6 +19,7 @@ export interface BannerItem {
   id: string;
   title?: string;
   subtitle?: string;
+  goToLink?: string;
   order: number;
   isActive: boolean;
   activeMedia: MediaAsset;
@@ -102,6 +103,14 @@ function normalizeMediaAsset(media?: MediaAsset | null): MediaAsset {
   const lower = url.toLowerCase();
   let type: BannerMediaType = media.type === "video" ? "video" : "image";
 
+  // Filter out deleted local static image fallbacks (e.g., /images/banner2.jpg, /images/ds-icon.png)
+  if (url.startsWith("/images/")) {
+    const validStaticImages = ["/images/store-qr-code.png"];
+    if (!validStaticImages.includes(url)) {
+      return { type: "image", url: "" };
+    }
+  }
+
   // Legacy Lottie assets are ignored for playback; admin should re-upload MP4/image.
   if (
     (media.type as string) === "lottie" ||
@@ -150,6 +159,7 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
       id: b.id || `banner-${idx + 1}`,
       title: b.title || "",
       subtitle: b.subtitle || "",
+      goToLink: typeof b.goToLink === "string" ? b.goToLink : undefined,
       order: typeof b.order === "number" ? b.order : idx + 1,
       isActive: b.isActive !== false,
       activeMedia: normalizeMediaAsset(b.activeMedia),

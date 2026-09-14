@@ -78,7 +78,7 @@ export default function CartPage() {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flex: 1, minWidth: 0 }}>
                         <Box
                           component="img"
-                          src={item.image || "/images/logo.jpg"}
+                          src={item.image || ""}
                           alt={item.name}
                           sx={{ width: 80, height: 80, borderRadius: 2, objectFit: "cover", flexShrink: 0 }}
                         />

@@ -8,16 +8,24 @@ import {
   TextField,
   Button,
   Grid,
+  IconButton,
   Link as MuiLink,
 } from "@mui/material";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import YouTubeIcon from "@mui/icons-material/YouTube";
 import Link from "next/link";
 import { BRAND } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const { toast } = useCart();
+  const { settings } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
+
+  const social = settings.socialLinks || {};
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +62,7 @@ export default function Footer() {
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", mb: 2 }}>
               Discover stationery, craft supplies, and hassle-free shopping at Dukandar Shandar.
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
               <MuiLink component={Link} href="/shop" color="inherit" underline="hover">
                 Shop
               </MuiLink>
@@ -64,9 +72,46 @@ export default function Footer() {
               <MuiLink component={Link} href="/contact" color="inherit" underline="hover">
                 Contact
               </MuiLink>
-              {/* <MuiLink component={Link} href="/blog" color="inherit" underline="hover">
-                Blog
-              </MuiLink> */}
+
+              {/* Social Link Icons */}
+              <Box sx={{ display: "flex", gap: 1, ml: { xs: 0, sm: 2 } }}>
+                {social.instagram && (
+                  <IconButton
+                    component="a"
+                    href={social.instagram.startsWith("http") ? social.instagram : `https://${social.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{ color: "#fff", "&:hover": { color: "#E4405F", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                  >
+                    <InstagramIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {social.facebook && (
+                  <IconButton
+                    component="a"
+                    href={social.facebook.startsWith("http") ? social.facebook : `https://${social.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{ color: "#fff", "&:hover": { color: "#1877F2", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                  >
+                    <FacebookIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {social.youtube && (
+                  <IconButton
+                    component="a"
+                    href={social.youtube.startsWith("http") ? social.youtube : `https://${social.youtube}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{ color: "#fff", "&:hover": { color: "#FF0000", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                  >
+                    <YouTubeIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>

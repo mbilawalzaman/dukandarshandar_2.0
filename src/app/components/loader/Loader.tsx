@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import "./loader.css";
 
 export interface LoaderProps {
@@ -27,13 +26,9 @@ export default function Loader({
         <div className="gooey-ring-2" />
         <div className="gooey-ring-3" />
         <div className="gooey-core">
-          <Image
-            src="/images/ds-icon.png"
-            alt="Dukandar Shandar"
-            width={Math.max(24, Math.round(size * 0.22))}
-            height={Math.max(24, Math.round(size * 0.22))}
-            priority
-          />
+          <span style={{ fontWeight: 800, color: "#d97706", fontSize: Math.max(14, Math.round(size * 0.16)) }}>
+            DS
+          </span>
         </div>
       </div>
       {message && <div className="loader-message">{message}</div>}

@@ -6,6 +6,8 @@ import { uploadImage } from "@/lib/cloudinary";
 import { attachSessionCookies, issueSessionForUser } from "@/lib/session";
 import { getDisplayEmail, isSyntheticEmail, isValidCustomerEmail } from "@/lib/userDisplay";
 
+import { updateDeliverySettings } from "@/lib/deliverySettings.server";
+
 export const dynamic = "force-dynamic";
 
 function publicProfile(user: Record<string, unknown>) {
@@ -13,6 +15,7 @@ function publicProfile(user: Record<string, unknown>) {
   return {
     id: String(user._id),
     name: user.name || "",
+    storeName: user.storeName || "",
     email: getDisplayEmail({ email }),
     rawEmail: email,
     needsEmail: Boolean(user.needsEmail) || isSyntheticEmail(email),
@@ -22,6 +25,7 @@ function publicProfile(user: Record<string, unknown>) {
     area: user.area || "",
     address: user.address || "",
     image: user.image || "",
+    storeLogo: user.storeLogo || "",
     role: user.role || "user",
     authProvider: user.authProvider || "password",
   };
@@ -76,6 +80,9 @@ export async function PUT(req: Request) {
     if (typeof body.name === "string" && body.name.trim()) {
       updates.name = body.name.trim();
     }
+    if (typeof body.storeName === "string") {
+      updates.storeName = body.storeName.trim();
+    }
 
     if (typeof body.phone === "string") {
       updates.phone = body.phone.trim();
@@ -122,6 +129,16 @@ export async function PUT(req: Request) {
 
     if (body.image === null || body.image === "") {
       updates.image = "";
+    }
+
+    if (typeof body.storeLogo === "string") {
+      let logoUrl = body.storeLogo;
+      if (logoUrl.startsWith("data:image/")) {
+        const uploaded = await uploadImage(logoUrl, "dukandarshandar/logos");
+        logoUrl = uploaded.url;
+      }
+      updates.storeLogo = logoUrl;
+      await updateDeliverySettings({ storeLogo: logoUrl }, String(existing.name || existing.userName || "admin"));
     }
 
     await db.collection("users").updateOne({ _id: userId }, { $set: updates });

@@ -534,7 +534,7 @@ function OrdersContent() {
                                   }}
                                 >
                                   <Image
-                                    src={item.image || "/images/ds-icon.png"}
+                                    src={item.image || ""}
                                     alt={item.name}
                                     fill
                                     style={{ objectFit: "contain", padding: 4 }}

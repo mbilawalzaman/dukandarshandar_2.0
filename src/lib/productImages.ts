@@ -21,7 +21,7 @@ export function getProductImages(product: {
 
 export function getProductThumbnail(
   product: { image?: string; images?: ProductImage[]; image_public_id?: string },
-  fallback = "/images/ds-icon.png"
+  fallback = ""
 ): string {
   return getProductImages(product)[0]?.url || fallback;
 }

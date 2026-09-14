@@ -37,6 +37,7 @@ export default function ProfileEditor({
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [form, setForm] = useState({
     name: "",
+    storeName: "",
     email: "",
     phone: "",
     province: "",
@@ -44,6 +45,7 @@ export default function ProfileEditor({
     area: "",
     address: "",
     image: "",
+    storeLogo: "",
   });
 
   const loadProfile = useCallback(async () => {
@@ -65,10 +67,11 @@ export default function ProfileEditor({
         setError(data.message || "Failed to load profile");
         return;
       }
-      const p = data.profile as ProfileData & { province?: string; area?: string };
+      const p = data.profile as ProfileData & { storeName?: string; province?: string; area?: string; storeLogo?: string };
       setProfile(p);
       setForm({
         name: p.name || "",
+        storeName: p.storeName || "",
         email: p.email || "",
         phone: p.phone || "",
         province: p.province || "",
@@ -76,6 +79,7 @@ export default function ProfileEditor({
         area: p.area || "",
         address: p.address || "",
         image: p.image || "",
+        storeLogo: p.storeLogo || "",
       });
       if (p.image) localStorage.setItem("userImage", p.image);
       else localStorage.removeItem("userImage");
@@ -116,6 +120,21 @@ export default function ProfileEditor({
     reader.readAsDataURL(file);
   };
 
+  const handleStoreLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Store Logo image must be under 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, storeLogo: String(reader.result || "") }));
+      setSuccess("");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -136,6 +155,7 @@ export default function ProfileEditor({
         method: "PUT",
         body: JSON.stringify({
           name: form.name.trim(),
+          storeName: form.storeName.trim(),
           email: form.email.trim().toLowerCase(),
           phone: form.phone.trim(),
           province: form.province.trim(),
@@ -143,6 +163,7 @@ export default function ProfileEditor({
           area: form.area.trim(),
           address: form.address.trim(),
           image: form.image,
+          storeLogo: form.storeLogo,
         }),
       });
       const data = await res.json();
@@ -153,10 +174,11 @@ export default function ProfileEditor({
       if (data.token) {
         persistAccessToken(data.token);
       }
-      const p = data.profile as ProfileData & { province?: string; area?: string };
+      const p = data.profile as ProfileData & { storeName?: string; province?: string; area?: string; storeLogo?: string };
       setProfile(p);
       setForm({
         name: p.name || "",
+        storeName: p.storeName || "",
         email: p.email || "",
         phone: p.phone || "",
         province: p.province || "",
@@ -164,6 +186,7 @@ export default function ProfileEditor({
         area: p.area || "",
         address: p.address || "",
         image: p.image || "",
+        storeLogo: p.storeLogo || "",
       });
       if (p.image) localStorage.setItem("userImage", p.image);
       else localStorage.removeItem("userImage");
@@ -280,9 +303,48 @@ export default function ProfileEditor({
       {showDelivery && (
         <>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
-            Delivery address
+            Delivery & Store address
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                name="storeName"
+                label="Store / Business Name"
+                placeholder="e.g. DukandarShandar Store"
+                value={form.storeName}
+                onChange={handleChange}
+                helperText="Used as Brand & Sender name on printed shipping labels"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                Store Logo (Displayed on Storefront Header & Printed Labels)
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                {form.storeLogo && (
+                  <Box
+                    component="img"
+                    src={form.storeLogo}
+                    alt="Store Logo Preview"
+                    sx={{ width: 64, height: 64, borderRadius: 2, objectFit: "contain", border: "1px solid #cbd5e1", p: 0.5, backgroundColor: "#fff" }}
+                  />
+                )}
+                <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none" }}>
+                  Upload store logo
+                  <input type="file" hidden accept="image/*" onChange={handleStoreLogoSelect} />
+                </Button>
+                {form.storeLogo && (
+                  <Button
+                    sx={{ textTransform: "none" }}
+                    color="inherit"
+                    onClick={() => setForm((prev) => ({ ...prev, storeLogo: "" }))}
+                  >
+                    Remove logo
+                  </Button>
+                )}
+              </Box>
+            </Grid>
             <Grid item xs={12}>
               <TextField fullWidth name="phone" label="Phone" value={form.phone} onChange={handleChange} />
             </Grid>
