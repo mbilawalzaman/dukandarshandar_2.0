@@ -137,6 +137,13 @@ export default function Navbar() {
   };
 
   const avatarUser = { name: userName, email: userEmail, image: userImage, role };
+  const storeName = settings.shopName || "";
+  const storeInitials = storeName
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
 
   return (
     <>
@@ -173,14 +180,14 @@ export default function Navbar() {
                 <MenuIcon fontSize="medium" />
               </IconButton>
 
-              {/* Brand Logo Link: Uploaded Cloudinary logo or dynamic DS badge */}
+              {/* Brand Logo Link: Uploaded Cloudinary logo or dynamic store badge */}
               <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, cursor: "pointer" }}>
                   {storeLogo ? (
                     <Box
                       component="img"
                       src={storeLogo}
-                      alt="Store Logo"
+                      alt={storeName}
                       sx={{ height: { xs: 36, md: 44 }, maxWidth: 180, objectFit: "contain" }}
                     />
                   ) : (
@@ -201,7 +208,7 @@ export default function Navbar() {
                           flexShrink: 0,
                         }}
                       >
-                        DS
+                        {storeInitials}
                       </Box>
                       <Typography
                         variant="h6"
@@ -213,7 +220,7 @@ export default function Navbar() {
                           lineHeight: 1,
                         }}
                       >
-                        Dukandar Shandar
+                        {storeName}
                       </Typography>
                     </>
                   )}
@@ -451,25 +458,29 @@ export default function Navbar() {
               <Box component="img" src={storeLogo} alt="Store Logo" sx={{ height: 32, maxWidth: 140, objectFit: "contain" }} />
             ) : (
               <>
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "8px",
-                    background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: BRAND.gold,
-                    fontWeight: 800,
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  DS
-                </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: BRAND.navy }}>
-                  Dukandar Shandar
-                </Typography>
+                {storeInitials ? (
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "8px",
+                      background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: BRAND.gold,
+                      fontWeight: 800,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {storeInitials}
+                  </Box>
+                ) : null}
+                {storeName ? (
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: BRAND.navy }}>
+                    {storeName}
+                  </Typography>
+                ) : null}
               </>
             )}
           </Box>

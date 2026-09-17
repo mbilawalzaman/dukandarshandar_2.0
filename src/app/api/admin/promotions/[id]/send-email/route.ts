@@ -6,6 +6,8 @@ import { getPromotionById } from "@/services/promotionService";
 import { promoCodeEmailTemplate } from "@/lib/emailTemplates";
 import { sendMail } from "@/lib/mail";
 import type { SendPromoEmailInput } from "@/types/apps/promotionTypes";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
+
 
 const BATCH_SIZE = 5;
 const MAX_RECIPIENTS = 2000;
@@ -92,6 +94,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const failed: string[] = [];
     let sentCount = 0;
 
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+
     const send = async ([email, name]: [string, string]) => {
       try {
         const html = promoCodeEmailTemplate({
@@ -103,8 +108,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           minOrderAmount: promotion.conditions.minOrderAmount,
           minItemQuantity: promotion.conditions.minItemQuantity,
           customMessage,
+          shopName: storeName,
         });
-        await sendMail({ to: email, subject: `Special Offer: ${promotion.code} - Dukandar Shandar`, html });
+        const subject = storeName
+          ? `Special Offer: ${promotion.code} - ${storeName}`
+          : `Special Offer: ${promotion.code}`;
+        await sendMail({ to: email, subject, html });
         sentCount += 1;
       } catch (err) {
         console.error(`Failed to send promo email to ${email}:`, err);

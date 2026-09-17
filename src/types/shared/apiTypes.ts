@@ -1,5 +1,5 @@
 /**
- * Shared API response shapes for Dukandar Shandar.
+ * Shared API response shapes for the application.
  * Prefer these over ad-hoc `{ success, message }` inline types.
  */
 

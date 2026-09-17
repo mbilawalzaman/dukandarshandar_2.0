@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { orderConfirmationEmail } from "@/lib/emailTemplates";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import type { CreatePaymentSessionBody } from "@/types/apps/paymentTypes";
 import { quoteCart, recordRedemptions, redemptionQuoteFromOrder, toOrderDiscountLines, type CartQuote } from "@/services/promotionService";
 
@@ -347,6 +348,9 @@ export class OrderPaymentService {
     );
 
     const displayOrderId = String(orderId).slice(-8).toUpperCase();
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+
     const confirmationHtml = orderConfirmationEmail({
       name: order.customer_name || "Customer",
       orderId: displayOrderId,
@@ -359,13 +363,14 @@ export class OrderPaymentService {
       city: order.city || "",
       area: order.area || "",
       address: order.address || "",
+      shopName: storeName,
     });
 
     await Promise.all([
       order.customer_email
         ? sendMail({
             to: order.customer_email,
-            subject: `Order #${displayOrderId} confirmed Dukandar Shandar`,
+            subject: `Order #${displayOrderId} confirmed - ${storeName}`,
             html: confirmationHtml,
           })
         : Promise.resolve(),

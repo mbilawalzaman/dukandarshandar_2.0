@@ -89,7 +89,7 @@ export default function AdminSidebar({
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const searchParams = useSearchParams();
   const currentHref = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Promotions: true });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Promotions: false });
   const isHrefActive = (href: string) => {
     if (href.includes("?")) return currentHref === href;
     return pathname === href && !searchParams.get("kind");

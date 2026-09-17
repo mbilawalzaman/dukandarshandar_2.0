@@ -12,6 +12,7 @@ import DashboardCharts from "@/app/components/admin/DashboardCharts";
 import RecentActivityFeed from "@/app/components/admin/RecentActivityFeed";
 import DashboardQuickActions from "@/app/components/admin/DashboardQuickActions";
 import type { AdminDashboardStats } from "@/types/apps/adminDashboardTypes";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminDashboardStats>({
@@ -34,6 +35,9 @@ export default function AdminDashboardPage() {
   // Quick Restock modal state
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [restockProduct, setRestockProduct] = useState<ProductFormData | null>(null);
+
+  const { settings: deliverySettings } = useDeliverySettings();
+  const storeName = deliverySettings.shopName || "";
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -74,7 +78,7 @@ export default function AdminDashboardPage() {
             Admin Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Overview of your Dukandar Shandar ecommerce store, inventory health, and analytics.
+            Overview of your {storeName || "ecommerce store"}, inventory health, and analytics.
           </Typography>
         </Box>
         <Button

@@ -6,6 +6,7 @@ import { SafepayService } from "@/services/safepayService";
 import { isSafepayConfigured } from "@/lib/safepayConfig";
 import { sendMail, getShopInbox } from "@/lib/mail";
 import { orderStatusEmail } from "@/lib/emailTemplates";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { releaseRedemptions } from "@/services/promotionService";
 
 export type CancelOrderResult =
@@ -151,13 +152,17 @@ export async function cancelCustomerOrder(
   );
 
   if (order.customer_email) {
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+
     await sendMail({
       to: order.customer_email,
-      subject: `Order #${displayOrderId} cancelled Dukandar Shandar`,
+      subject: `Order #${displayOrderId} cancelled - ${storeName}`,
       html: orderStatusEmail({
         name: order.customer_name || "Customer",
         orderId: displayOrderId,
         status: refunded ? "cancelled (refund initiated)" : "cancelled",
+        shopName: storeName,
       }),
     }).catch(() => undefined);
   }

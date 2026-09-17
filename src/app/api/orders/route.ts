@@ -11,6 +11,7 @@ import { safeNotify } from "@/lib/safeNotify";
 import { notifyAdmins, createNotification } from "@/services/notificationService";
 import { parsePageLimit, paginationMeta } from "@/lib/pagination";
 import { quoteCart, recordRedemptions, releaseRedemptions, redemptionQuoteFromOrder, toOrderDiscountLines } from "@/services/promotionService";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 
 async function enrichOrdersWithImages(
   db: Awaited<ReturnType<typeof getDb>>,
@@ -362,6 +363,9 @@ export async function POST(req: NextRequest) {
       })
     );
 
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+
     const confirmationHtml = orderConfirmationEmail({
       name: newOrder.customer_name,
       orderId,
@@ -374,12 +378,13 @@ export async function POST(req: NextRequest) {
       city: newOrder.city,
       area: newOrder.area,
       address: newOrder.address,
+      shopName: storeName,
     });
 
     await Promise.all([
       sendMail({
         to: newOrder.customer_email,
-        subject: `Order #${orderId} confirmed Dukandar Shandar`,
+        subject: storeName ? `Order #${orderId} confirmed - ${storeName}` : `Order #${orderId} confirmed`,
         html: confirmationHtml,
       }),
       getShopInbox()
@@ -499,23 +504,27 @@ export async function PUT(req: NextRequest) {
     }
 
     if (existingOrder.customer_email) {
+      const deliverySettings = await getDeliverySettings().catch(() => null);
+      const storeName = deliverySettings?.shopName || "";
       const orderId = String(existingOrder._id).slice(-8).toUpperCase();
       const isDelivered = status === "delivered";
       await sendMail({
         to: existingOrder.customer_email,
         subject: isDelivered
-          ? `Order #${orderId} delivered! Rate & Review Your Products - Dukandar Shandar`
-          : `Order #${orderId} is ${status} Dukandar Shandar`,
+          ? (storeName ? `Order #${orderId} delivered! Rate & Review Your Products - ${storeName}` : `Order #${orderId} delivered! Rate & Review Your Products`)
+          : (storeName ? `Order #${orderId} is ${status} - ${storeName}` : `Order #${orderId} is ${status}`),
         html: isDelivered
           ? orderDeliveredEmail({
               name: existingOrder.customer_name || "Customer",
               orderId,
               fullOrderId: String(existingOrder._id),
+              shopName: storeName,
             })
           : orderStatusEmail({
               name: existingOrder.customer_name || "Customer",
               orderId,
               status,
+              shopName: storeName,
             }),
       });
     }

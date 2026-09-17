@@ -37,6 +37,40 @@ export interface PageBannerConfig {
   productsPerPage?: number;
 }
 
+export interface HeroFeatureItem {
+  id: string;
+  icon: "verified" | "craft" | "shipping" | "security";
+  title: string;
+  desc1: string;
+  desc2: string;
+}
+
+export interface HeroSectionConfig {
+  enabled: boolean;
+  features: HeroFeatureItem[];
+}
+
+export interface AboutHighlightItem {
+  id: string;
+  icon: "time" | "craft" | "shipping" | "security";
+  title: string;
+  text: string;
+}
+
+export interface AboutStoryConfig {
+  title: string;
+  text: string;
+  image: string;
+  buttonText: string;
+  buttonLink: string;
+}
+
+export interface AboutPageSettingsConfig extends PageBannerConfig {
+  highlights?: AboutHighlightItem[];
+  story?: AboutStoryConfig;
+  quotes?: string[];
+}
+
 export interface PageSettings {
   home: {
     bannerMode: HomeBannerMode;
@@ -45,9 +79,10 @@ export interface PageSettings {
     bannerImages?: string[];
     topRatedCount: number;
     productsPerPage: number;
+    heroSection?: HeroSectionConfig;
   };
   shop: PageBannerConfig & { productsPerPage: number };
-  about: PageBannerConfig;
+  about: AboutPageSettingsConfig;
   contact: PageBannerConfig;
 }
 
@@ -58,23 +93,70 @@ export const DEFAULT_PAGE_SETTINGS: PageSettings = {
     singleBanner: undefined,
     topRatedCount: 4,
     productsPerPage: 9,
+    heroSection: {
+      enabled: true,
+      features: [
+        {
+          id: "feature-1",
+          icon: "verified",
+          title: "",
+          desc1: "",
+          desc2: "",
+        },
+        {
+          id: "feature-2",
+          icon: "craft",
+          title: "",
+          desc1: "",
+          desc2: "",
+        },
+        {
+          id: "feature-3",
+          icon: "shipping",
+          title: "",
+          desc1: "",
+          desc2: "",
+        },
+        {
+          id: "feature-4",
+          icon: "security",
+          title: "",
+          desc1: "",
+          desc2: "",
+        },
+      ],
+    },
   },
   shop: {
     bannerTitle: "Shop Catalog",
-    bannerSubtitle: "Explore all stationery, crafts, and creative essentials",
+    bannerSubtitle: "",
     bannerType: "image",
     bannerImage: "",
     productsPerPage: 9,
   },
   about: {
     bannerTitle: "ABOUT US",
-    bannerSubtitle: "Where creativity meets convenience",
+    bannerSubtitle: "",
     bannerType: "image",
     bannerImage: "",
+    highlights: [
+      { id: "hl-1", icon: "time", title: "", text: "" },
+      { id: "hl-2", icon: "craft", title: "", text: "" },
+      { id: "hl-3", icon: "shipping", title: "", text: "" },
+      { id: "hl-4", icon: "security", title: "", text: "" },
+    ],
+    story: {
+      title: "",
+      text: "",
+      image: "",
+      buttonText: "View products",
+      buttonLink: "/shop",
+    },
+    quotes: [],
   },
   contact: {
     bannerTitle: "CONTACT",
-    bannerSubtitle: "We would love to hear from you",
+    bannerSubtitle: "",
     bannerType: "image",
     bannerImage: "",
   },
@@ -88,9 +170,10 @@ export interface RawMongoPageSettingsDoc {
     singleBanner?: BannerItem;
     topRatedCount?: number;
     productsPerPage?: number;
+    heroSection?: HeroSectionConfig;
   };
   shop?: Partial<PageSettings["shop"]>;
-  about?: Partial<PageSettings["about"]>;
+  about?: Partial<AboutPageSettingsConfig>;
   contact?: Partial<PageSettings["contact"]>;
 }
 
@@ -220,12 +303,33 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
       bannerMode: normalizeBannerMode(homeDoc.bannerMode),
       banners,
       singleBanner,
+      heroSection: {
+        enabled: homeDoc.heroSection?.enabled !== false,
+        features: Array.isArray(homeDoc.heroSection?.features) && homeDoc.heroSection!.features.length > 0
+          ? homeDoc.heroSection!.features
+          : DEFAULT_PAGE_SETTINGS.home.heroSection!.features,
+      },
     },
     shop: {
       ...normalizePageBanner(safeDoc.shop, DEFAULT_PAGE_SETTINGS.shop),
       productsPerPage: Number(safeDoc.shop?.productsPerPage) || DEFAULT_PAGE_SETTINGS.shop.productsPerPage,
     },
-    about: normalizePageBanner(safeDoc.about, DEFAULT_PAGE_SETTINGS.about),
+    about: {
+      ...normalizePageBanner(safeDoc.about, DEFAULT_PAGE_SETTINGS.about),
+      highlights: Array.isArray(safeDoc.about?.highlights) && safeDoc.about!.highlights!.length > 0
+        ? safeDoc.about!.highlights
+        : DEFAULT_PAGE_SETTINGS.about.highlights,
+      story: {
+        title: safeDoc.about?.story?.title ?? DEFAULT_PAGE_SETTINGS.about.story?.title ?? "",
+        text: safeDoc.about?.story?.text ?? DEFAULT_PAGE_SETTINGS.about.story?.text ?? "",
+        image: safeDoc.about?.story?.image ?? DEFAULT_PAGE_SETTINGS.about.story?.image ?? "",
+        buttonText: safeDoc.about?.story?.buttonText ?? DEFAULT_PAGE_SETTINGS.about.story?.buttonText ?? "View products",
+        buttonLink: safeDoc.about?.story?.buttonLink ?? DEFAULT_PAGE_SETTINGS.about.story?.buttonLink ?? "/shop",
+      },
+      quotes: Array.isArray(safeDoc.about?.quotes) && safeDoc.about!.quotes!.length > 0
+        ? safeDoc.about!.quotes
+        : DEFAULT_PAGE_SETTINGS.about.quotes,
+    },
     contact: normalizePageBanner(safeDoc.contact, DEFAULT_PAGE_SETTINGS.contact),
   };
 }

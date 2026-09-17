@@ -9,6 +9,14 @@ export type SocialLinks = {
 export type DeliverySettings = {
   feeEnabled: boolean;
   fee: number;
+  shopName?: string;
+  shopPhone?: string;
+  storeEmail?: string;
+  shopAddress?: string;
+  province?: string;
+  city?: string;
+  area?: string;
+  address?: string;
   qrCodeImage?: string;
   whatsAppNumber?: string;
   storeLogo?: string;
@@ -22,6 +30,14 @@ export const DELIVERY_SETTINGS_KEY = "delivery";
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   feeEnabled: true,
   fee: SHIPPING_FEE,
+  shopName: "",
+  shopPhone: "",
+  storeEmail: "",
+  shopAddress: "",
+  province: "",
+  city: "",
+  area: "",
+  address: "",
   qrCodeImage: "",
   whatsAppNumber: "",
   storeLogo: "",

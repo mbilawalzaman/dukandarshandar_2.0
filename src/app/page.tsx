@@ -1,5 +1,5 @@
 import Banner from "./components/Banner";
-// import HeroSection from "./components/HeroSection";
+import HeroSection from "./components/HeroSection";
 import TopRatedProducts from "./components/TopRatedProducts";
 import ProductList from "./components/ProductList";
 import HomeFreeDeliveryBanner from "./components/HomeFreeDeliveryBanner";
@@ -35,7 +35,7 @@ export default async function Home() {
       ) : featured ? (
         <PromotionBanner promotion={featured} deliveryFee={deliverySettings.fee} />
       ) : null}
-      {/* <HeroSection /> */}
+      <HeroSection />
       <TopRatedProducts count={settings.home.topRatedCount} />
       <ProductList productsPerPage={settings.home.productsPerPage} />
     </main>

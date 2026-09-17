@@ -1,6 +1,6 @@
 /** Shared user/avatar display helpers — use everywhere instead of inline logic. */
 
-export const SYNTHETIC_EMAIL_SUFFIX = "@users.dukandarshandar.local";
+export const SYNTHETIC_EMAIL_SUFFIX = "@users.ecommerce.local";
 
 export type UserDisplayInput = {
   name?: string | null;

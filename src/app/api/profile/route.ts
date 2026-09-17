@@ -120,7 +120,7 @@ export async function PUT(req: Request) {
 
     if (typeof body.image === "string" && body.image) {
       if (body.image.startsWith("data:image/")) {
-        const uploaded = await uploadImage(body.image, "dukandarshandar/avatars");
+        const uploaded = await uploadImage(body.image, "");
         updates.image = uploaded.url;
       } else if (body.image.startsWith("http")) {
         updates.image = body.image;
@@ -134,7 +134,7 @@ export async function PUT(req: Request) {
     if (typeof body.storeLogo === "string") {
       let logoUrl = body.storeLogo;
       if (logoUrl.startsWith("data:image/")) {
-        const uploaded = await uploadImage(logoUrl, "dukandarshandar/logos");
+        const uploaded = await uploadImage(logoUrl, "");
         logoUrl = uploaded.url;
       }
       updates.storeLogo = logoUrl;

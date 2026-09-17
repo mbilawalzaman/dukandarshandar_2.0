@@ -99,18 +99,18 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
 
   if (!order) return null;
 
-  const brandName = storeProfile?.storeName || storeProfile?.name || "DukandarShandar";
-  const senderName = storeProfile?.storeName || storeProfile?.name || "DukandarShandar Store";
+  const brandName = settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
+  const senderName = settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
   const senderAddressParts = [
-    storeProfile?.address,
-    storeProfile?.area,
-    storeProfile?.city,
-    storeProfile?.province,
+    settings.address || storeProfile?.address,
+    settings.area || storeProfile?.area,
+    settings.city || storeProfile?.city,
+    settings.province || storeProfile?.province,
   ].filter(Boolean);
-  const senderAddress = senderAddressParts.length > 0
+  const senderAddress = settings.shopAddress || (senderAddressParts.length > 0
     ? senderAddressParts.join(", ")
-    : "Main Boulevard, Gulberg III, Lahore, Punjab, Pakistan";
-  const senderPhone = storeProfile?.phone || "+92 300 8495148";
+    : "N/A");
+  const senderPhone = settings.shopPhone || storeProfile?.phone || "N/A";
 
   const isCOD = order.payment_method === "cod" || !order.payment_method;
   const orderIdShort = order._id.slice(-8).toUpperCase();

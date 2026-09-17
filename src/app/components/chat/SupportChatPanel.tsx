@@ -29,6 +29,7 @@ import { getFirebaseDb } from "@/lib/firebaseClient";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 const PAGE_SIZE = 30;
 
@@ -97,6 +98,8 @@ export default function SupportChatPanel({
   customerTheme = false,
 }: SupportChatPanelProps) {
   const { firebaseUser, ready } = useFirebase();
+  const { settings: deliverySettings } = useDeliverySettings();
+  const storeName = deliverySettings.shopName || "";
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
   const [olderMessages, setOlderMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
@@ -352,7 +355,7 @@ export default function SupportChatPanel({
                 }}
               >
                 <Typography variant="body2" sx={{ color: "#374151", lineHeight: 1.6 }}>
-                  Hello! I am your Dukandar Shandar Support Assistant. How can I help you today?
+                  Hello! I am your {storeName ? `${storeName} ` : ""}Support Assistant. How can I help you today?
                 </Typography>
               </Box>
             </Box>

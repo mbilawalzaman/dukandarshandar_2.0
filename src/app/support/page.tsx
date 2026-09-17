@@ -11,12 +11,16 @@ import { isChatEnabled } from "@/lib/firebaseConfig";
 import { useFirebase } from "../providers/FirebaseProvider";
 import Loader from "../components/loader/Loader";
 
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+
 function SupportContent() {
   const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get("orderId");
   const presetConversation = params.get("c");
   const { firebaseUser, ready, error: firebaseError } = useFirebase();
+  const { settings: deliverySettings } = useDeliverySettings();
+  const storeName = deliverySettings.shopName || "";
 
   const [conversationId, setConversationId] = useState<string | null>(presetConversation);
   const [userId, setUserId] = useState<string | null>(null);
@@ -87,7 +91,7 @@ function SupportContent() {
 
   return (
     <Box>
-      <PageBanner title="Support" subtitle="Chat with Dukandar Shandar order help and questions" />
+      <PageBanner title="Support" subtitle={storeName ? `Chat with ${storeName} for order help and questions` : "Chat with us for order help and questions"} />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Send a message to our support team for order help, product questions, or account issues.

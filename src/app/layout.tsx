@@ -11,7 +11,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Dukandar Shandar",
+  title: process.env.NEXT_PUBLIC_STORE_NAME || "Store",
   description: "Stationery and craft ecommerce quality supplies for every project.",
 };
 

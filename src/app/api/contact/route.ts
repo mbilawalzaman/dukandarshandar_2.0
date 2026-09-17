@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { contactCustomerEmail, contactShopEmail } from "@/lib/emailTemplates";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 
 export async function POST(req: Request) {
   try {
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
       created_at: new Date(),
     });
 
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const shopName = deliverySettings?.shopName || "";
+
     const shopInbox = getShopInbox();
     await Promise.all([
       shopInbox
@@ -31,8 +35,8 @@ export async function POST(req: Request) {
         : Promise.resolve(),
       sendMail({
         to: email,
-        subject: "We received your message, Dukandar Shandar",
-        html: contactCustomerEmail(name),
+        subject: shopName ? `We received your message - ${shopName}` : "We received your message",
+        html: contactCustomerEmail(name, shopName),
       }),
     ]);
 

@@ -50,7 +50,7 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
   const projectId =
     process.env.FIREBASE_PROJECT_ID ||
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-    "dukandarshandar-134ff";
+    "";
 
   const decodedHeader = jwt.decode(idToken, { complete: true });
   if (!decodedHeader || typeof decodedHeader === "string" || !decodedHeader.header.kid) {

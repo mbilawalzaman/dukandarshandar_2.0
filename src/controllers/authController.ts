@@ -6,6 +6,7 @@ import { safeNotify } from "@/lib/safeNotify";
 // dynamically imported in socialLoginController
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
+import { SYNTHETIC_EMAIL_SUFFIX, isSyntheticEmail } from "@/lib/userDisplay";
 
 export async function signupController(name: string, email: string, password: string, role: string) {
   const db = await getDb();
@@ -108,7 +109,7 @@ function mapFirebaseProvider(signInProvider?: string): "google" | "facebook" | "
 
 function syntheticSocialEmail(firebaseUid: string, provider: "google" | "facebook" | "firebase") {
   const prefix = provider === "facebook" ? "fb" : provider === "google" ? "google" : "social";
-  return `${prefix}_${firebaseUid}@users.dukandarshandar.local`.toLowerCase();
+  return `${prefix}_${firebaseUid}${SYNTHETIC_EMAIL_SUFFIX}`.toLowerCase();
 }
 
 export async function socialLoginController(
@@ -182,7 +183,7 @@ export async function socialLoginController(
     if (
       emailFromProvider &&
       user.email &&
-      String(user.email).endsWith("@users.dukandarshandar.local") &&
+      isSyntheticEmail(String(user.email)) &&
       user.email !== email
     ) {
       setFields.email = email;

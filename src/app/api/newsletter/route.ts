@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { newsletterWelcomeEmail } from "@/lib/emailTemplates";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 
 export async function POST(req: Request) {
   try {
@@ -21,10 +22,13 @@ export async function POST(req: Request) {
       created_at: new Date(),
     });
 
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const shopName = deliverySettings?.shopName || "";
+
     await sendMail({
       to: email.toLowerCase(),
-      subject: "Welcome to Dukandar Shandar",
-      html: newsletterWelcomeEmail(),
+      subject: shopName ? `Welcome to ${shopName}` : "Welcome to our store",
+      html: newsletterWelcomeEmail(shopName),
     });
 
     return NextResponse.json({ success: true, message: "Subscribed successfully" });

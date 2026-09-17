@@ -41,7 +41,7 @@ export function isCloudinaryUrl(value: string): boolean {
  */
 export async function uploadImage(
   image: string,
-  folder = "dukandarshandar/products"
+  folder = "products"
 ): Promise<CloudinaryUpload> {
   if (!image) {
     throw new Error("No image provided");
@@ -92,7 +92,7 @@ export function getSignedUploadParams(options?: {
 }) {
   configure();
 
-  const folder = options?.folder || "dukandarshandar/banners/videos";
+  const folder = options?.folder || "banners/videos";
   const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = { timestamp, folder };
   const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);

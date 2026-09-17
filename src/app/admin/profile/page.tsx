@@ -32,8 +32,7 @@ export default function AdminProfilePage() {
           </Typography>
         </Box>
       </Paper>
-
-      <ProfileEditor loginNextPath="/admin/profile" showDelivery />
+      <ProfileEditor loginNextPath="/admin/profile" />
     </Box>
   );
 }

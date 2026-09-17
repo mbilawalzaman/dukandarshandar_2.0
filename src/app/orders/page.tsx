@@ -44,6 +44,7 @@ import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/constants";
 import Loader from "@/app/components/loader/Loader";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import type { OrderType } from "@/types/apps/orderTypes";
 
 type Order = OrderType;
@@ -87,6 +88,8 @@ function getOrderStatusInfo(order: Order) {
 }
 
 function OrdersContent() {
+  const { settings: deliverySettings } = useDeliverySettings();
+  const storeName = deliverySettings.shopName || "";
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -265,7 +268,7 @@ function OrdersContent() {
       <Container maxWidth="xl" sx={{ mt: { xs: 3, md: 4 } }}>
         {placed && (
           <Alert severity="success" sx={{ mb: 4, borderRadius: 3, fontWeight: 600 }}>
-            🎉 Your order has been placed successfully! Thank you for shopping with Dukandar Shandar.
+            🎉 Your order has been placed successfully! Thank you for shopping with {storeName}.
           </Alert>
         )}
 

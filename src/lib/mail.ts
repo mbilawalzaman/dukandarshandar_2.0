@@ -53,7 +53,7 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
       auth: { user, pass },
     });
 
-    const from = process.env.MAIL_FROM || `Dukandar Shandar <${user}>`;
+    const from = process.env.MAIL_FROM || user;
 
     await transporter.sendMail({
       from,

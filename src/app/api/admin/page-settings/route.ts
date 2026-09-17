@@ -33,7 +33,7 @@ async function resolveImageMedia(
   existing?: MediaAsset | null
 ): Promise<MediaAsset> {
   if (mediaUpload?.startsWith("data:image/")) {
-    const uploaded = await uploadImage(mediaUpload, "dukandarshandar/banners");
+    const uploaded = await uploadImage(mediaUpload, "");
     return {
       type: "image",
       url: uploaded.url,
@@ -168,7 +168,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
 
   const singleBanner: BannerItem = {
     id: (typeof rawSingle.id === "string" && rawSingle.id) || "single-banner-1",
-    title: (typeof rawSingle.title === "string" && rawSingle.title) || "Dukandar Shandar",
+    title: (typeof rawSingle.title === "string" && rawSingle.title) || "",
     subtitle: (typeof rawSingle.subtitle === "string" && rawSingle.subtitle) || "",
     goToLink: (typeof rawSingle.goToLink === "string" && rawSingle.goToLink.trim()) || undefined,
     order: 1,
@@ -184,6 +184,20 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     singleBanner,
     topRatedCount: Math.max(1, Math.min(24, Number(rawHome.topRatedCount) || 4)),
     productsPerPage: Math.max(1, Math.min(48, Number(rawHome.productsPerPage) || 9)),
+    heroSection: rawHome.heroSection && typeof rawHome.heroSection === "object"
+      ? {
+          enabled: (rawHome.heroSection as Record<string, unknown>).enabled !== false,
+          features: Array.isArray((rawHome.heroSection as Record<string, unknown>).features)
+            ? ((rawHome.heroSection as Record<string, unknown>).features as Array<Record<string, unknown>>).map((f, idx) => ({
+                id: (f.id as string) || `feature-${idx + 1}`,
+                icon: (f.icon as "verified" | "craft" | "shipping" | "security") || (idx === 0 ? "verified" : idx === 1 ? "craft" : idx === 2 ? "shipping" : "security"),
+                title: typeof f.title === "string" ? f.title.trim() : "",
+                desc1: typeof f.desc1 === "string" ? f.desc1.trim() : "",
+                desc2: typeof f.desc2 === "string" ? f.desc2.trim() : "",
+              }))
+            : [],
+        }
+      : undefined,
   } satisfies PageSettings["home"];
 }
 
@@ -220,7 +234,7 @@ async function processSubpageSettings(
 
   const result = {
     bannerTitle:
-      (typeof rawPage.bannerTitle === "string" && rawPage.bannerTitle.trim()) || defaults.bannerTitle,
+      typeof rawPage.bannerTitle === "string" ? rawPage.bannerTitle.trim() : defaults.bannerTitle,
     bannerSubtitle:
       typeof rawPage.bannerSubtitle === "string" ? rawPage.bannerSubtitle.trim() : defaults.bannerSubtitle,
     bannerType,
@@ -233,6 +247,37 @@ async function processSubpageSettings(
       ...result,
       productsPerPage: Math.max(1, Math.min(48, Number(rawPage.productsPerPage) || DEFAULT_PAGE_SETTINGS.shop.productsPerPage)),
     } satisfies PageSettings["shop"];
+  }
+
+  if (pageKey === "about") {
+    const highlights = Array.isArray(rawPage.highlights)
+      ? (rawPage.highlights as Array<Record<string, unknown>>).map((h, idx) => ({
+          id: (h.id as string) || `hl-${idx + 1}`,
+          icon: (h.icon as "time" | "craft" | "shipping" | "security") || (idx === 0 ? "time" : idx === 1 ? "craft" : idx === 2 ? "shipping" : "security"),
+          title: typeof h.title === "string" ? h.title.trim() : "",
+          text: typeof h.text === "string" ? h.text.trim() : "",
+        }))
+      : undefined;
+
+    const storyRaw = (rawPage.story || {}) as Record<string, unknown>;
+    const story = {
+      title: typeof storyRaw.title === "string" ? storyRaw.title.trim() : "",
+      text: typeof storyRaw.text === "string" ? storyRaw.text.trim() : "",
+      image: typeof storyRaw.image === "string" ? storyRaw.image.trim() : "",
+      buttonText: typeof storyRaw.buttonText === "string" && storyRaw.buttonText.trim() ? storyRaw.buttonText.trim() : "View products",
+      buttonLink: typeof storyRaw.buttonLink === "string" && storyRaw.buttonLink.trim() ? storyRaw.buttonLink.trim() : "/shop",
+    };
+
+    const quotes = Array.isArray(rawPage.quotes)
+      ? rawPage.quotes.map((q) => (typeof q === "string" ? q.trim() : "")).filter(Boolean)
+      : undefined;
+
+    return {
+      ...result,
+      highlights,
+      story,
+      quotes,
+    } satisfies PageSettings["about"];
   }
 
   return result satisfies PageSettings["about"];

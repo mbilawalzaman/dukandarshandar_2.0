@@ -12,19 +12,20 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
-function layout(title: string, body: string) {
+function layout(title: string, body: string, shopName = "") {
+  const store = escapeHtml(shopName);
   return `
   <div style="font-family: Poppins, Arial, sans-serif; background:#f8fafc; padding:24px;">
     <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden;">
       <div style="background:${navy}; color:#fff; padding:20px 24px;">
-        <h1 style="margin:0; font-size:20px;">Dukandar Shandar</h1>
+        <h1 style="margin:0; font-size:20px;">${store || "Store Notification"}</h1>
         <p style="margin:6px 0 0; color:${gold}; font-size:13px;">${title}</p>
       </div>
       <div style="padding:24px; color:${navy}; font-size:15px; line-height:1.6;">
         ${body}
       </div>
       <div style="padding:16px 24px; font-size:12px; color:#64748b; border-top:1px solid #e2e8f0;">
-        Stationery &amp; craft supplies
+        Store updates and notifications
       </div>
     </div>
   </div>`;
@@ -39,20 +40,24 @@ export function contactShopEmail(input: { name: string; email: string; subject?:
   );
 }
 
-export function contactCustomerEmail(name: string) {
+export function contactCustomerEmail(name: string, shopName = "") {
+  const store = escapeHtml(shopName);
   return layout(
     "We received your message",
     `<p>Hi ${escapeHtml(name)},</p>
-     <p>Thanks for contacting Dukandar Shandar. We have your message and will reply as soon as we can.</p>
-     <p>Warm regards,<br/>The Dukandar Shandar team</p>`
+     <p>Thanks for contacting ${store || "us"}. We have your message and will reply as soon as we can.</p>
+     <p>Warm regards,<br/>The ${store || "Support"} team</p>`,
+    shopName
   );
 }
 
-export function newsletterWelcomeEmail() {
+export function newsletterWelcomeEmail(shopName = "") {
+  const store = escapeHtml(shopName);
   return layout(
     "Welcome to the list",
-    `<p>You are subscribed to Dukandar Shandar updates, new stationery, craft finds, and shop news.</p>
-     <p>We will only send useful notes, never spam.</p>`
+    `<p>You are subscribed to ${store || "our store"} updates and news.</p>
+     <p>We will only send useful notes, never spam.</p>`,
+    shopName
   );
 }
 
@@ -68,7 +73,9 @@ export function orderConfirmationEmail(input: {
   city?: string;
   area?: string;
   address?: string;
+  shopName?: string;
 }) {
+  const storeName = input.shopName || "";
   const rows = input.items
     .map(
       (item) =>
@@ -94,21 +101,25 @@ export function orderConfirmationEmail(input: {
        .join("")}
      <p style="margin-top:12px;"><strong>Total: PKR ${input.total.toLocaleString()}</strong></p>
      ${fullLocation ? `<p>Shipping to: ${fullLocation}</p>` : ""}
-     <p>We will email you again when the status changes.</p>`
+     <p>We will email you again when the status changes.</p>`,
+    storeName
   );
 }
 
-export function orderStatusEmail(input: { name: string; orderId: string; status: string }) {
+export function orderStatusEmail(input: { name: string; orderId: string; status: string; shopName?: string }) {
+  const storeName = input.shopName || "";
   return layout(
     `Order ${input.status}`,
     `<p>Hi ${escapeHtml(input.name)},</p>
      <p>Your order <strong>#${escapeHtml(input.orderId)}</strong> is now <strong>${escapeHtml(input.status)}</strong>.</p>
-     <p>Thank you for shopping with Dukandar Shandar.</p>`
+     <p>Thank you for shopping with ${escapeHtml(storeName || "us")}.</p>`,
+    storeName
   );
 }
 
-export function orderDeliveredEmail(input: { name: string; orderId: string; fullOrderId: string }) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dukandarshandar.com";
+export function orderDeliveredEmail(input: { name: string; orderId: string; fullOrderId: string; shopName?: string }) {
+  const storeName = input.shopName || "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const reviewUrl = `${baseUrl}/orders?orderId=${encodeURIComponent(input.fullOrderId)}&action=review`;
 
   return layout(
@@ -123,7 +134,8 @@ export function orderDeliveredEmail(input: { name: string; orderId: string; full
      </div>
      <p style="font-size:13px; color:#64748b;">If the button above does not work, copy and paste this link into your browser:<br/>
      <a href="${reviewUrl}" style="color:${navy};">${reviewUrl}</a></p>
-     <p>Thank you for shopping with Dukandar Shandar!</p>`
+     <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
+    storeName
   );
 }
 
@@ -138,8 +150,10 @@ export function promoCodeEmailTemplate(input: {
   minOrderAmount?: number;
   minItemQuantity?: number;
   customMessage?: string;
+  shopName?: string;
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dukandarshandar.netlify.app";
+  const storeName = input.shopName || "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const shopUrl = `${baseUrl}/checkout?promo=${encodeURIComponent(input.code)}`;
   const discountValue = rewardValueLabel({ rewardType: input.type, rewardValue: input.value });
   const validityText = input.endDate
@@ -155,7 +169,7 @@ export function promoCodeEmailTemplate(input: {
   return layout(
     `Special Offer: ${promoCode}`,
     `<p>Hi ${customerName},</p>
-     <p>We're excited to offer you a special discount of <strong>${discountValue}</strong> on Dukandar Shandar, ${validityText}. Don't miss out on this limited-time promotion!</p>
+     <p>We're excited to offer you a special discount of <strong>${discountValue}</strong> on ${escapeHtml(storeName)}, ${validityText}. Don't miss out on this limited-time promotion!</p>
      ${input.customMessage ? `<p style="background:#f1f5f9; padding:12px 16px; border-left:4px solid ${gold}; font-style:italic; margin:16px 0;">${escapeHtml(input.customMessage)}</p>` : ""}
      <div style="background:#f8fafc; border:2px dashed ${gold}; border-radius:10px; padding:20px; text-align:center; margin:24px 0;">
        <p style="margin:0 0 6px; font-size:13px; color:#64748b; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Your Exclusive Promo Code</p>
@@ -170,6 +184,7 @@ export function promoCodeEmailTemplate(input: {
        </a>
      </div>
      <p style="font-size:13px; color:#64748b;">Simply enter promo code <strong>"${promoCode}"</strong> at checkout to claim your savings.</p>
-     <p>Warm regards,<br/>The Dukandar Shandar Team</p>`
+     <p>Warm regards,<br/>The ${escapeHtml(storeName || "Store")} Team</p>`,
+    storeName
   );
 }

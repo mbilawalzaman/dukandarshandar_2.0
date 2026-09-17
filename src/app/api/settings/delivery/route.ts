@@ -12,6 +12,14 @@ export async function GET() {
       settings: {
         feeEnabled: settings.feeEnabled,
         fee: settings.fee,
+        shopName: settings.shopName || "",
+        shopPhone: settings.shopPhone || "",
+        storeEmail: settings.storeEmail || "",
+        shopAddress: settings.shopAddress || "",
+        province: settings.province || "",
+        city: settings.city || "",
+        area: settings.area || "",
+        address: settings.address || "",
         qrCodeImage: settings.qrCodeImage || "",
         whatsAppNumber: settings.whatsAppNumber || "",
         storeLogo: settings.storeLogo || "",
@@ -33,15 +41,24 @@ export async function PUT(req: NextRequest) {
     const feeEnabled = Boolean(body.feeEnabled);
     const fee = Math.max(0, Number(body.fee) || 0);
 
+    const shopName = typeof body.shopName === "string" ? body.shopName : undefined;
+    const shopPhone = typeof body.shopPhone === "string" ? body.shopPhone : undefined;
+    const storeEmail = typeof body.storeEmail === "string" ? body.storeEmail : undefined;
+    const shopAddress = typeof body.shopAddress === "string" ? body.shopAddress : undefined;
+    const province = typeof body.province === "string" ? body.province : undefined;
+    const city = typeof body.city === "string" ? body.city : undefined;
+    const area = typeof body.area === "string" ? body.area : undefined;
+    const address = typeof body.address === "string" ? body.address : undefined;
+
     let qrCodeImage = typeof body.qrCodeImage === "string" ? body.qrCodeImage : undefined;
     if (qrCodeImage?.startsWith("data:image/")) {
-      const uploaded = await uploadImage(qrCodeImage, "dukandarshandar/qrcode");
+      const uploaded = await uploadImage(qrCodeImage, "");
       qrCodeImage = uploaded.url;
     }
 
     let storeLogo = typeof body.storeLogo === "string" ? body.storeLogo : undefined;
     if (storeLogo?.startsWith("data:image/")) {
-      const uploaded = await uploadImage(storeLogo, "dukandarshandar/logos");
+      const uploaded = await uploadImage(storeLogo, "");
       storeLogo = uploaded.url;
     }
 
@@ -57,7 +74,7 @@ export async function PUT(req: NextRequest) {
         : undefined;
 
     const settings = await updateDeliverySettings(
-      { feeEnabled, fee, qrCodeImage, whatsAppNumber, storeLogo, socialLinks },
+      { feeEnabled, fee, shopName, shopPhone, storeEmail, shopAddress, province, city, area, address, qrCodeImage, whatsAppNumber, storeLogo, socialLinks },
       admin.user.userName
     );
 
@@ -67,6 +84,14 @@ export async function PUT(req: NextRequest) {
       settings: {
         feeEnabled: settings.feeEnabled,
         fee: settings.fee,
+        shopName: settings.shopName || "",
+        shopPhone: settings.shopPhone || "",
+        storeEmail: settings.storeEmail || "",
+        shopAddress: settings.shopAddress || "",
+        province: settings.province || "",
+        city: settings.city || "",
+        area: settings.area || "",
+        address: settings.address || "",
         qrCodeImage: settings.qrCodeImage || "",
         whatsAppNumber: settings.whatsAppNumber || "",
         storeLogo: settings.storeLogo || "",

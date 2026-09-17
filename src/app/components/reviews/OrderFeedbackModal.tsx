@@ -25,6 +25,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import { BRAND } from "@/lib/constants";
 import { authHeaders } from "@/lib/cart";
 import Loader from "@/app/components/loader/Loader";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 export interface OrderItemReviewState {
   _id: string;
@@ -60,6 +61,8 @@ export default function OrderFeedbackModal({
   orderId,
   onReviewSubmitted,
 }: OrderFeedbackModalProps) {
+  const { settings } = useDeliverySettings();
+  const storeName = settings.shopName || "";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [orderDisplayId, setOrderDisplayId] = useState("");
@@ -246,7 +249,7 @@ export default function OrderFeedbackModal({
                   Order Delivered Successfully
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#047857" }}>
-                  Please rate each product to help other buyers on Dukandar Shandar. ({reviewedCount}/{items.length} reviewed)
+                  Please rate each product to help other buyers{storeName ? ` on ${storeName}` : ""}. ({reviewedCount}/{items.length} reviewed)
                 </Typography>
               </Box>
             </Box>

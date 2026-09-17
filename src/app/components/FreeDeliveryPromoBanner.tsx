@@ -4,12 +4,17 @@ import { Alert, Box, Typography } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import { BRAND } from "@/lib/constants";
 
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+
 type FreeDeliveryPromoBannerProps = {
   savedAmount?: number;
   compact?: boolean;
 };
 
 export default function FreeDeliveryPromoBanner({ savedAmount, compact = false }: FreeDeliveryPromoBannerProps) {
+  const { settings } = useDeliverySettings();
+  const storeName = settings.shopName || "";
+
   return (
     <Alert
       icon={<LocalShippingIcon fontSize="inherit" />}
@@ -31,7 +36,7 @@ export default function FreeDeliveryPromoBanner({ savedAmount, compact = false }
         <Typography variant="body2" sx={{ color: BRAND.muted, mt: 0.25 }}>
           {savedAmount && savedAmount > 0
             ? `We've waived the delivery fee on your order save PKR ${savedAmount.toLocaleString()} today.`
-            : "We've waived the delivery fee on your order a little thank you from Dukandar Shandar."}
+            : `We've waived the delivery fee on your order ${storeName ? `— a little thank you from ${storeName}.` : "as a special offer."}`}
         </Typography>
       </Box>
     </Alert>

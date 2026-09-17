@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
       typeof body.folder === "string" && body.folder.trim()
         ? body.folder.trim()
         : resourceType === "video"
-          ? "dukandarshandar/banners/videos"
-          : "dukandarshandar/banners";
+          ? ""
+          : "";
 
     const signed = getSignedUploadParams({ folder, resourceType });
 

@@ -9,6 +9,8 @@ import BannerMediaRenderer from "./ui/BannerMediaRenderer";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+
 interface BannerProps {
   banners?: BannerItem[];
   singleBanner?: BannerItem;
@@ -17,6 +19,8 @@ interface BannerProps {
 }
 
 const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: BannerProps) => {
+  const { settings: storeDeliverySettings } = useDeliverySettings();
+  const storeName = storeDeliverySettings.shopName || "";
   const mode: HomeBannerMode =
     bannerMode === "single_video" || bannerMode === "single_lottie" ? "single_video" : "image_slider";
 
@@ -46,7 +50,7 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
       >
         <BannerMediaRenderer
           media={mediaToRender}
-          alt={singleBanner?.title || "Dukandar Shandar"}
+          alt={singleBanner?.title || storeName}
           priority={true}
           style={{ width: "100%", height: "100%" }}
         />

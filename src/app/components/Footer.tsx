@@ -25,6 +25,7 @@ export default function Footer() {
   const { settings } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
 
+  const storeName = settings.shopName || "";
   const social = settings.socialLinks || {};
 
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -60,7 +61,7 @@ export default function Footer() {
               Visit our website and enjoy fast shipping
             </Typography>
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", mb: 2 }}>
-              Discover stationery, craft supplies, and hassle-free shopping at Dukandar Shandar.
+              Discover stationery, craft supplies, and hassle free shopping{storeName ? ` at ${storeName}` : ""}.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
               <MuiLink component={Link} href="/shop" color="inherit" underline="hover">
@@ -150,7 +151,7 @@ export default function Footer() {
           </Grid>
         </Grid>
         <Typography variant="caption" sx={{ display: "block", mt: 4, color: "rgba(255,255,255,0.5)" }}>
-          © {new Date().getFullYear()} Dukandar Shandar. All rights reserved.
+          © {new Date().getFullYear()} {storeName}. All rights reserved.
         </Typography>
       </Container>
     </Box>

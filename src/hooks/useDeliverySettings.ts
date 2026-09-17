@@ -8,7 +8,23 @@ import {
   type DeliverySettings,
 } from "@/lib/deliverySettings";
 
-type PublicDeliverySettings = Pick<DeliverySettings, "feeEnabled" | "fee" | "qrCodeImage" | "whatsAppNumber" | "storeLogo" | "socialLinks">;
+type PublicDeliverySettings = Pick<
+  DeliverySettings,
+  | "feeEnabled"
+  | "fee"
+  | "shopName"
+  | "shopPhone"
+  | "storeEmail"
+  | "shopAddress"
+  | "province"
+  | "city"
+  | "area"
+  | "address"
+  | "qrCodeImage"
+  | "whatsAppNumber"
+  | "storeLogo"
+  | "socialLinks"
+>;
 
 export function useDeliverySettings() {
   const [settings, setSettings] = useState<PublicDeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
@@ -24,6 +40,14 @@ export function useDeliverySettings() {
           setSettings({
             feeEnabled: Boolean(data.settings.feeEnabled),
             fee: Number(data.settings.fee) || 0,
+            shopName: data.settings.shopName || "",
+            shopPhone: data.settings.shopPhone || "",
+            storeEmail: data.settings.storeEmail || "",
+            shopAddress: data.settings.shopAddress || "",
+            province: data.settings.province || "",
+            city: data.settings.city || "",
+            area: data.settings.area || "",
+            address: data.settings.address || "",
             qrCodeImage: data.settings.qrCodeImage || "",
             whatsAppNumber: data.settings.whatsAppNumber || "",
             storeLogo: data.settings.storeLogo || "",

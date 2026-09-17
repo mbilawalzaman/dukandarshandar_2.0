@@ -37,6 +37,7 @@ import {
   subscribeSelectedConversation,
   openChatInNewWindow,
 } from "@/lib/chatSync";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 interface MessagesWorkspaceProps {
   variant?: "page" | "popup";
@@ -100,6 +101,8 @@ export default function MessagesWorkspace({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { firebaseUser, ready } = useFirebase();
+  const { settings } = useDeliverySettings();
+  const storeName = settings.shopName || "";
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -306,7 +309,7 @@ export default function MessagesWorkspace({
                 lineHeight: 1.3,
               }}
             >
-              {isAdmin ? "All customer chats · syncs across windows" : "Dukandar Shandar · we're here to help"}
+              {isAdmin ? "All customer chats · syncs across windows" : (storeName ? `${storeName} · we're here to help` : "Store Support · we're here to help")}
             </Typography>
           </Box>
           <IconButton

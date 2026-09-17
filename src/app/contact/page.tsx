@@ -21,12 +21,18 @@ import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import type { PageSettings } from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 
+
 export default function ContactPage() {
   const { toast } = useCart();
-  const { whatsAppUrl } = useDeliverySettings();
+  const { whatsAppUrl, settings: deliverySettings} = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+
+ 
+
+  const storeName = deliverySettings.shopName || "";
+  const storeEmail = deliverySettings.storeEmail || "";
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -85,8 +91,7 @@ export default function ContactPage() {
               Get in touch
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Questions about an order, a product, or a custom craft request? Send us a message and we will reply
-              as soon as we can.
+              Questions about an order, a product, or a custom craft request? Send {storeName ? `${storeName} ` : ""}a message and we will reply as soon as we can.
             </Typography>
             <Card sx={{ mb: 2, borderRadius: 3 }}>
               <CardContent sx={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -94,7 +99,7 @@ export default function ContactPage() {
                 <Box>
                   <Typography fontWeight={700}>Email</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    dukandarshandar@gmail.com
+                    {storeEmail || "N/A"}
                   </Typography>
                 </Box>
               </CardContent>
@@ -114,7 +119,7 @@ export default function ContactPage() {
                   <Box>
                     <Typography fontWeight={700}>WhatsApp</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Chat with us on WhatsApp
+                      {deliverySettings.shopPhone || "N/A"}
                     </Typography>
                   </Box>
                 </Box>
@@ -143,7 +148,7 @@ export default function ContactPage() {
                 <Box>
                   <Typography fontWeight={700}>Location</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Pakistan nationwide shipping
+                    {deliverySettings.shopAddress || "N/A"}
                   </Typography>
                 </Box>
               </CardContent>

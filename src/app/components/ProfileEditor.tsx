@@ -27,7 +27,7 @@ export type { ProfileData };
 
 export default function ProfileEditor({
   loginNextPath = "/profile",
-  showDelivery = true,
+  showDelivery = false,
 }: ProfileEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -120,20 +120,6 @@ export default function ProfileEditor({
     reader.readAsDataURL(file);
   };
 
-  const handleStoreLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Store Logo image must be under 5MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, storeLogo: String(reader.result || "") }));
-      setSuccess("");
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,50 +289,11 @@ export default function ProfileEditor({
       {showDelivery && (
         <>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
-            Delivery & Store address
+            Delivery Address
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                name="storeName"
-                label="Store / Business Name"
-                placeholder="e.g. DukandarShandar Store"
-                value={form.storeName}
-                onChange={handleChange}
-                helperText="Used as Brand & Sender name on printed shipping labels"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                Store Logo (Displayed on Storefront Header & Printed Labels)
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                {form.storeLogo && (
-                  <Box
-                    component="img"
-                    src={form.storeLogo}
-                    alt="Store Logo Preview"
-                    sx={{ width: 64, height: 64, borderRadius: 2, objectFit: "contain", border: "1px solid #cbd5e1", p: 0.5, backgroundColor: "#fff" }}
-                  />
-                )}
-                <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none" }}>
-                  Upload store logo
-                  <input type="file" hidden accept="image/*" onChange={handleStoreLogoSelect} />
-                </Button>
-                {form.storeLogo && (
-                  <Button
-                    sx={{ textTransform: "none" }}
-                    color="inherit"
-                    onClick={() => setForm((prev) => ({ ...prev, storeLogo: "" }))}
-                  >
-                    Remove logo
-                  </Button>
-                )}
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth name="phone" label="Phone" value={form.phone} onChange={handleChange} />
+              <TextField fullWidth name="phone" label="Phone Number" value={form.phone} onChange={handleChange} />
             </Grid>
             <Grid item xs={12}>
               <PakistanLocationFields
