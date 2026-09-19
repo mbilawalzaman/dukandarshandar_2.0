@@ -189,7 +189,7 @@ export function promoCodeEmailTemplate(input: {
 }
 
 export function passwordResetEmail(input: { name?: string; resetUrl: string; shopName?: string }) {
-  const storeName = input.shopName || "Dukandar Shandar";
+  const storeName = input.shopName || "Ecommerce Store";
   const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
 
   return layout(
@@ -209,7 +209,7 @@ export function passwordResetEmail(input: { name?: string; resetUrl: string; sho
 }
 
 export function emailVerificationEmail(input: { name?: string; verifyUrl: string; newEmail: string; shopName?: string }) {
-  const storeName = input.shopName || "Dukandar Shandar";
+  const storeName = input.shopName || "Ecommerce Store";
   const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
 
   return layout(

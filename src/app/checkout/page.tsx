@@ -65,6 +65,8 @@ export default function CheckoutPage() {
     address: "",
   });
 
+  const storeName = settings.shopName || "Ecommerce Store";
+
   const safepayEnabled =
     process.env.NEXT_PUBLIC_SAFEPAY_ENV === "sandbox" || process.env.NEXT_PUBLIC_SAFEPAY_ENV === "production";
 
@@ -603,7 +605,7 @@ export default function CheckoutPage() {
                     {submitLabel}
                   </Button>
                   <Typography variant="caption" align="center" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
-                    By placing your order, you agree to Dukandar Shandar’s{" "}
+                    By placing your order, you agree to {storeName}’s{" "}
                     <Link href="/terms-of-service" style={{ color: BRAND.navy, fontWeight: 600 }}>
                       Terms of Service
                     </Link>{" "}

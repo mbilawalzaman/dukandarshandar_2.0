@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { passwordResetEmail } from "@/lib/emailTemplates";
 import { sendMail } from "@/lib/mail";
 import { throttleRequest } from "@/lib/rateLimit.server";
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const email = String(body.email || "").trim().toLowerCase();
 
+    const { shopName } = await getDeliverySettings();
+    const storeName = shopName || "Ecommerce Store";
+
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { success: false, message: "Please enter a valid email address" },
@@ -25,12 +29,18 @@ export async function POST(req: NextRequest) {
     const db = await getDb();
     const user = await db.collection("users").findOne({ email });
 
-    // Always respond with success to prevent user enumeration attacks
-    if (!user || user.authProvider === "google" || !user.password) {
-      return NextResponse.json({
-        success: true,
-        message: "If an account with that email exists, password reset instructions have been sent.",
-      });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: `Not a registered email on ${storeName}` },
+        { status: 404 }
+      );
+    }
+
+    if (user.authProvider === "google" || !user.password) {
+      return NextResponse.json(
+        { success: false, message: "This email is registered via Google Login. Please sign in with Google." },
+        { status: 400 }
+      );
     }
 
     const token = randomBytes(32).toString("hex");
@@ -57,18 +67,18 @@ export async function POST(req: NextRequest) {
     const html = passwordResetEmail({
       name: user.name,
       resetUrl,
-      shopName: "Dukandar Shandar",
+      shopName: storeName,
     });
 
     await sendMail({
       to: email,
-      subject: "Reset your password - Dukandar Shandar",
+      subject: `Reset your password - ${storeName}`,
       html,
     });
 
     return NextResponse.json({
       success: true,
-      message: "If an account with that email exists, password reset instructions have been sent.",
+      message: `Password reset instructions have been sent to ${email}.`,
     });
   } catch (error) {
     console.error("Forgot password error:", error);
@@ -78,3 +88,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

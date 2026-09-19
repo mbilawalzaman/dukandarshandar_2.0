@@ -12,6 +12,7 @@ import {
   Box,
   Alert,
   CircularProgress,
+  Snackbar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockResetIcon from "@mui/icons-material/LockReset";
@@ -23,16 +24,20 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [toastOpen, setToastOpen] = useState(false);
   const { settings } = useDeliverySettings();
-  const shopName = settings.shopName || "our store";
+  const shopName = settings.shopName || "Ecommerce Store";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
 
-    if (!email.trim()) {
-      setError("Please enter your email address.");
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      const errMsg = "Please enter your email address.";
+      setError(errMsg);
+      setToastOpen(true);
       return;
     }
 
@@ -41,19 +46,22 @@ export default function ForgotPasswordPage() {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmedEmail }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setMessage(
-          `If ${email.trim()} is registered at ${shopName}, password reset instructions have been sent. If you do not receive an email, check the address or create an account first.`
-        );
+        setMessage(data.message || `Password reset instructions have been sent to ${trimmedEmail}.`);
+        setToastOpen(true);
       } else {
-        setError(data.message || "Could not process password reset request.");
+        const errMsg = data.message || `Not a registered email on ${shopName}`;
+        setError(errMsg);
+        setToastOpen(true);
       }
     } catch {
-      setError("Network error. Please try again.");
+      const errMsg = "Network error. Please try again.";
+      setError(errMsg);
+      setToastOpen(true);
     } finally {
       setLoading(false);
     }
@@ -86,55 +94,52 @@ export default function ForgotPasswordPage() {
             Enter your registered email address below and we will send you instructions to reset your password.
           </Typography>
 
-          {message ? (
-            <Alert
-              severity="info"
-              sx={{ mb: 3 }}
-              action={
-                <Button component={Link} href="/signup" color="inherit" size="small" sx={{ whiteSpace: "nowrap" }}>
-                  Sign up
-                </Button>
-              }
-            >
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {message && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
               {message}
             </Alert>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <Box display="flex" flexDirection="column" gap={2}>
-                <TextField
-                  label="Email address"
-                  type="email"
-                  fullWidth
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                />
-                {error && (
-                  <Typography color="error" variant="body2" align="center">
-                    {error}
-                  </Typography>
-                )}
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  disabled={loading}
-                  sx={{
-                    py: 1.2,
-                    backgroundColor: BRAND.gold,
-                    color: BRAND.navy,
-                    fontWeight: 700,
-                    textTransform: "none",
-                    fontSize: "0.95rem",
-                    "&:hover": { backgroundColor: BRAND.goldHover },
-                  }}
-                >
-                  {loading ? <CircularProgress size={22} color="inherit" /> : "Send Reset Link"}
-                </Button>
-              </Box>
-            </form>
           )}
+
+          <form onSubmit={handleSubmit}>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <TextField
+                label="Email address"
+                type="email"
+                fullWidth
+                required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError("");
+                  if (message) setMessage("");
+                }}
+                disabled={loading}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={loading}
+                sx={{
+                  py: 1.2,
+                  backgroundColor: BRAND.gold,
+                  color: BRAND.navy,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                  "&:hover": { backgroundColor: BRAND.goldHover },
+                }}
+              >
+                {loading ? <CircularProgress size={22} color="inherit" /> : "Send Reset Link"}
+              </Button>
+            </Box>
+          </form>
 
           <Box sx={{ mt: 3, textAlign: "center" }}>
             <Link
@@ -154,6 +159,23 @@ export default function ForgotPasswordPage() {
           </Box>
         </CardContent>
       </Card>
+
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={6000}
+        onClose={() => setToastOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToastOpen(false)}
+          severity={error ? "error" : "success"}
+          variant="filled"
+          sx={{ width: "100%", color: "#fff", fontWeight: 600 }}
+        >
+          {error || message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
+

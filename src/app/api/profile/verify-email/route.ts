@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { emailVerificationEmail } from "@/lib/emailTemplates";
 import { sendMail } from "@/lib/mail";
 import { throttleRequest } from "@/lib/rateLimit.server";
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const { shopName } = await getDeliverySettings();
+    const storeName = shopName || "Ecommerce Store";
     const body = await req.json();
     const action = String(body.action || "request");
     const db = await getDb();
@@ -72,12 +75,12 @@ export async function POST(req: NextRequest) {
         name: user?.name,
         verifyUrl,
         newEmail,
-        shopName: "Dukandar Shandar",
+        shopName: storeName,
       });
 
       await sendMail({
         to: newEmail,
-        subject: "Verify your new email address - Dukandar Shandar",
+        subject: `Verify your new email address - ${storeName}`,
         html,
       });
 
