@@ -16,12 +16,15 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import { BRAND } from "@/lib/constants";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { settings } = useDeliverySettings();
+  const shopName = settings.shopName || "our store";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +46,9 @@ export default function ForgotPasswordPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setMessage(data.message || "Password reset link sent to your email!");
+        setMessage(
+          `If ${email.trim()} is registered at ${shopName}, password reset instructions have been sent. If you do not receive an email, check the address or create an account first.`
+        );
       } else {
         setError(data.message || "Could not process password reset request.");
       }
@@ -82,7 +87,15 @@ export default function ForgotPasswordPage() {
           </Typography>
 
           {message ? (
-            <Alert severity="success" sx={{ mb: 3 }}>
+            <Alert
+              severity="info"
+              sx={{ mb: 3 }}
+              action={
+                <Button component={Link} href="/signup" color="inherit" size="small" sx={{ whiteSpace: "nowrap" }}>
+                  Sign up
+                </Button>
+              }
+            >
               {message}
             </Alert>
           ) : (
