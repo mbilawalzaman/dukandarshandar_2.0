@@ -199,7 +199,7 @@ export default function AdminSidebar({
                           <ListItemText
                             primary={sub.label}
                             primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: isSubActive ? 700 : 400 }}
-                            sx={{ color: isSubActive ? "var(--theme-primary-light, #38bdf8)" : "#cbd5e1" }}
+                            sx={{ color: isSubActive ? "var(--theme-primary-main, #febe4c)" : "#cbd5e1" }}
                           />
                         </ListItemButton>
                       );
@@ -221,8 +221,8 @@ export default function AdminSidebar({
                   minHeight: 48,
                   justifyContent: !isMobileView && !open ? "center" : "initial",
                   px: 2.5,
-                  backgroundColor: isActive ? "rgba(56, 189, 248, 0.15)" : "transparent",
-                  borderLeft: isActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
+                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                  borderLeft: isActive ? "4px solid var(--theme-primary-main, #febe4c)" : "4px solid transparent",
                   "&:hover": {
                     backgroundColor: "rgba(255, 255, 255, 0.08)",
                   },
@@ -233,7 +233,7 @@ export default function AdminSidebar({
                     minWidth: 0,
                     mr: !isMobileView && !open ? "auto" : 2,
                     justifyContent: "center",
-                    color: isActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
+                    color: isActive ? "var(--theme-primary-main, #febe4c)" : "#94a3b8",
                   }}
                 >
                   {item.icon}
@@ -242,7 +242,7 @@ export default function AdminSidebar({
                   primary={item.label}
                   sx={{
                     opacity: !isMobileView && !open ? 0 : 1,
-                    color: isActive ? "var(--theme-primary-light, #38bdf8)" : "#e2e8f0",
+                    color: isActive ? "var(--theme-primary-main, #febe4c)" : "#e2e8f0",
                     fontWeight: isActive ? 600 : 400,
                   }}
                 />
@@ -266,9 +266,10 @@ export default function AdminSidebar({
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "var(--theme-bg-footer, #1e293b)",
+            backgroundColor: "var(--theme-bg-footer, #0f172a)",
             color: "var(--theme-bg-default, #f8fafc)",
-            borderRight: "1px solid #334155",
+            borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+            transition: "background-color 0.3s ease",
           },
         }}
       >
@@ -288,11 +289,11 @@ export default function AdminSidebar({
         boxSizing: "border-box",
         "& .MuiDrawer-paper": {
           width: open ? drawerWidth : 64,
-          transition: "width 0.2s ease-in-out",
+          transition: "width 0.2s ease-in-out, background-color 0.3s ease",
           overflowX: "hidden",
-          backgroundColor: "var(--theme-bg-footer, #1e293b)",
+          backgroundColor: "var(--theme-bg-footer, #0f172a)",
           color: "var(--theme-bg-default, #f8fafc)",
-          borderRight: "1px solid #334155",
+          borderRight: "1px solid rgba(255, 255, 255, 0.1)",
         },
       }}
     >

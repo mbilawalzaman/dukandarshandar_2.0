@@ -52,7 +52,7 @@ export default function Footer() {
   };
 
   return (
-    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #111111)", color: "#fff" }}>
+    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #0f172a)", color: "#fff", transition: "background-color 0.3s ease" }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>

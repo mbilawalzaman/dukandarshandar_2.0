@@ -5,7 +5,8 @@ import { Box, Chip, Grid, Paper, Typography } from "@mui/material";
 import PaletteIcon from "@mui/icons-material/Palette";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { ThemeKey } from "@/lib/themePresets";
-import { THEME_KEYS, THEME_PRESETS } from "@/lib/themePresets";
+import { THEME_KEYS, THEME_PRESETS, getThemePresetName } from "@/lib/themePresets";
+import { useSafeStoreSettings } from "@/app/providers/StoreSettingsProvider";
 
 interface ThemeSelectorSectionProps {
   selectedThemeKey: ThemeKey;
@@ -20,6 +21,9 @@ export default function ThemeSelectorSection({
   onSelectTheme,
   onClearPreview,
 }: ThemeSelectorSectionProps) {
+  const { settings } = useSafeStoreSettings();
+  const shopName = settings.shopName;
+
   return (
     <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, flexWrap: "wrap", gap: 1 }}>
@@ -31,7 +35,7 @@ export default function ThemeSelectorSection({
         </Box>
         {previewThemeKey && (
           <Chip
-            label={`Previewing ${THEME_PRESETS[previewThemeKey].name}`}
+            label={`Previewing ${getThemePresetName(previewThemeKey, shopName)}`}
             color="warning"
             size="small"
             onDelete={onClearPreview}
@@ -45,6 +49,7 @@ export default function ThemeSelectorSection({
       <Grid container spacing={2}>
         {THEME_KEYS.map((key) => {
           const preset = THEME_PRESETS[key];
+          const displayName = getThemePresetName(key, shopName);
           const isSelected = selectedThemeKey === key;
           return (
             <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
@@ -89,7 +94,7 @@ export default function ThemeSelectorSection({
                   }}
                 />
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, pr: 3 }}>
-                  {preset.name}
+                  {displayName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.82rem", mb: 2, height: 38, overflow: "hidden" }}>
                   {preset.subtitle}

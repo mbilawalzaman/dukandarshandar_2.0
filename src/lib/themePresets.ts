@@ -53,7 +53,7 @@ export interface ThemePreset {
 export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
   default: {
     key: "default",
-    name: "Default (Dukandar Shandar)",
+    name: "Default Store Theme",
     subtitle: "Classic Gold & Premium Dark Navy Palette",
     badgeTag: "ORIGINAL",
     palette: {
@@ -73,7 +73,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#ffffff",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#111111",
+        footer: "#0f172a",
       },
       marketplace: {
         accentRed: "#ef4444",
@@ -190,7 +190,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#f7f7f7",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#191919",
+        footer: "#121824",
       },
       marketplace: {
         accentRed: "#E53238",
@@ -268,7 +268,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#f4f4f4",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#191919",
+        footer: "#1f0909",
       },
       marketplace: {
         accentRed: "#FF4747",
@@ -341,3 +341,14 @@ export function getThemePreset(key?: unknown): ThemePreset {
   const normalizedKey = normalizeThemeKey(key);
   return THEME_PRESETS[normalizedKey];
 }
+
+export function getThemePresetName(key?: unknown, shopName?: string): string {
+  const normalizedKey = normalizeThemeKey(key);
+  const preset = THEME_PRESETS[normalizedKey];
+  if (normalizedKey === "default") {
+    const storeName = shopName?.trim();
+    return storeName ? `Default (${storeName})` : "Default Store Theme";
+  }
+  return preset.name;
+}
+
