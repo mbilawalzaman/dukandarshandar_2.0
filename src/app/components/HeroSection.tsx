@@ -26,12 +26,12 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
   const { settings: deliverySettings } = useDeliverySettings();
   const storeName = deliverySettings.shopName || "";
 
-  const [heroConfig, setHeroConfig] = useState<HeroSectionConfig>(
-    propConfig || DEFAULT_PAGE_SETTINGS.home.heroSection!
+  const [heroConfig, setHeroConfig] = useState<HeroSectionConfig | null>(
+    propConfig !== undefined ? propConfig : null
   );
 
   useEffect(() => {
-    if (propConfig) {
+    if (propConfig !== undefined) {
       setHeroConfig(propConfig);
       return;
     }
@@ -42,6 +42,8 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
         const data = await res.json();
         if (data.success && data.settings?.home?.heroSection) {
           setHeroConfig(data.settings.home.heroSection);
+        } else {
+          setHeroConfig(DEFAULT_PAGE_SETTINGS.home.heroSection!);
         }
       } catch (err) {
         console.error("Error loading hero section settings:", err);
@@ -50,7 +52,7 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
     loadSettings();
   }, [propConfig]);
 
-  if (heroConfig.enabled === false) {
+  if (!heroConfig || heroConfig.enabled === false) {
     return null;
   }
 

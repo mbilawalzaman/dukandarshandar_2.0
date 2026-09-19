@@ -35,7 +35,7 @@ export default async function Home() {
       ) : featured ? (
         <PromotionBanner promotion={featured} deliveryFee={deliverySettings.fee} />
       ) : null}
-      <HeroSection />
+      <HeroSection config={settings.home.heroSection} />
       <TopRatedProducts count={settings.home.topRatedCount} />
       <ProductList productsPerPage={settings.home.productsPerPage} />
     </main>
