@@ -1,32 +1,14 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { Container, Typography, Box, Paper, Divider } from "@mui/material";
 import GavelIcon from "@mui/icons-material/Gavel";
 import { BRAND } from "@/lib/constants";
 import PageBanner from "../components/PageBanner";
-import type { PageSettings } from "@/lib/pageSettings";
-import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
+import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
-export default function TermsOfServicePage() {
-  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await fetch("/api/page-settings");
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Error loading terms of service page settings:", err);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const config = settings.terms || DEFAULT_PAGE_SETTINGS.terms;
+export default async function TermsOfServicePage() {
+  const settings = await getGlobalPageSettings();
+  const config = settings.terms;
 
   return (
     <Box>
@@ -74,3 +56,4 @@ export default function TermsOfServicePage() {
     </Box>
   );
 }
+

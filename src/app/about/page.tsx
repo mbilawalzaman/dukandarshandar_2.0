@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -10,20 +7,20 @@ import {
   CardContent,
   Button,
   Avatar,
-  IconButton,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ColorLensIcon from "@mui/icons-material/ColorLens";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SecurityIcon from "@mui/icons-material/Security";
 import Link from "next/link";
 import PageBanner from "../components/PageBanner";
+import AboutQuotesCarousel from "../components/about/AboutQuotesCarousel";
 import { BRAND } from "@/lib/constants";
-import type { PageSettings, AboutHighlightItem } from "@/lib/pageSettings";
-import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
-import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import type { AboutHighlightItem } from "@/lib/pageSettings";
+import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
+
+export const dynamic = "force-dynamic";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   time: <AccessTimeIcon />,
@@ -32,26 +29,13 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   security: <SecurityIcon />,
 };
 
-export default function AboutPage() {
-  const [index, setIndex] = useState(0);
-  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
-  const { settings: deliverySettings } = useDeliverySettings();
-  const storeName = deliverySettings.shopName || "";
+export default async function AboutPage() {
+  const [settings, deliverySettings] = await Promise.all([
+    getGlobalPageSettings(),
+    getDeliverySettings(),
+  ]);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await fetch("/api/page-settings");
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Error loading about page settings:", err);
-      }
-    };
-    loadSettings();
-  }, []);
+  const storeName = deliverySettings.shopName || "";
 
   const rawHighlights = settings.about.highlights || [];
   const highlights = rawHighlights
@@ -144,29 +128,9 @@ export default function AboutPage() {
           </Grid>
         )}
 
-        {quotes.length > 0 && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              backgroundColor: BRAND.surface,
-              borderRadius: 4,
-              p: { xs: 3, md: 5 },
-            }}
-          >
-            <IconButton onClick={() => setIndex((i) => (i === 0 ? quotes.length - 1 : i - 1))} aria-label="Previous">
-              <ArrowBackIosNewIcon />
-            </IconButton>
-            <Typography variant="body1" sx={{ textAlign: "center", flexGrow: 1, lineHeight: 1.8 }}>
-              {quotes[index % quotes.length]}
-            </Typography>
-            <IconButton onClick={() => setIndex((i) => (i === quotes.length - 1 ? 0 : i + 1))} aria-label="Next">
-              <ArrowForwardIosIcon />
-            </IconButton>
-          </Box>
-        )}
+        {quotes.length > 0 && <AboutQuotesCarousel quotes={quotes} />}
       </Container>
     </Box>
   );
 }
+

@@ -1,32 +1,14 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { Container, Typography, Box, Paper, Divider } from "@mui/material";
 import AssignmentReturnIcon from "@mui/icons-material/AssignmentReturn";
 import { BRAND } from "@/lib/constants";
 import PageBanner from "../components/PageBanner";
-import type { PageSettings } from "@/lib/pageSettings";
-import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
+import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
-export default function ReturnsAndRefundsPage() {
-  const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await fetch("/api/page-settings");
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Error loading returns and refunds page settings:", err);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const config = settings.returns || DEFAULT_PAGE_SETTINGS.returns;
+export default async function ReturnsAndRefundsPage() {
+  const settings = await getGlobalPageSettings();
+  const config = settings.returns;
 
   return (
     <Box>
@@ -74,3 +56,4 @@ export default function ReturnsAndRefundsPage() {
     </Box>
   );
 }
+
