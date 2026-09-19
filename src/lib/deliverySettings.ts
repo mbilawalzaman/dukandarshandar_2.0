@@ -1,4 +1,5 @@
 import { SHIPPING_FEE } from "@/lib/constants";
+import type { ThemeKey } from "@/lib/themePresets";
 
 export type SocialLinks = {
   instagram?: string;
@@ -9,6 +10,7 @@ export type SocialLinks = {
 export type DeliverySettings = {
   feeEnabled: boolean;
   fee: number;
+  activeThemeKey?: ThemeKey;
   shopName?: string;
   shopPhone?: string;
   storeEmail?: string;
@@ -30,6 +32,7 @@ export const DELIVERY_SETTINGS_KEY = "delivery";
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   feeEnabled: true,
   fee: SHIPPING_FEE,
+  activeThemeKey: "default",
   shopName: "",
   shopPhone: "",
   storeEmail: "",

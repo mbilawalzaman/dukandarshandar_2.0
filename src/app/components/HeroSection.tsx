@@ -76,7 +76,7 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
   );
 
   return (
-    <Box sx={{ py: 6, backgroundColor: "#f8fafc" }}>
+    <Box sx={{ py: 6, backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
       <Container maxWidth="lg">
         <Grid container spacing={3}>
           {features.map((feature, idx) => (

@@ -23,7 +23,7 @@ import GoogleIcon from "@mui/icons-material/Google";
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
 import { signInWithSocial, type SocialProvider } from "@/lib/socialAuth";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 
 function LoginForm() {

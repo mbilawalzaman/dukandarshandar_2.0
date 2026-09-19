@@ -28,7 +28,7 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { jwtDecode } from "jwt-decode";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { useCart } from "@/app/providers/CartProvider";
 import { useWishlist } from "@/app/providers/WishlistProvider";
 import NotificationBell from "@/app/components/notifications/NotificationBell";
@@ -154,9 +154,10 @@ export default function Navbar() {
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: "#ffffff",
-          color: BRAND.navy,
-          borderBottom: "1px solid #e2e8f0",
+          backgroundColor: "marketplace.header",
+          color: "var(--theme-header-text, #0f172a)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
           zIndex: 1100,
         }}
       >
@@ -200,14 +201,14 @@ export default function Navbar() {
                           width: 38,
                           height: 38,
                           borderRadius: "10px",
-                          background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
+                          backgroundColor: "primary.main",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: BRAND.gold,
+                          color: "primary.contrastText",
                           fontWeight: 800,
                           fontSize: "1.05rem",
-                          boxShadow: "0 3px 10px rgba(2, 132, 199, 0.25)",
+                          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
                           flexShrink: 0,
                         }}
                       >
@@ -217,7 +218,7 @@ export default function Navbar() {
                         variant="h6"
                         sx={{
                           fontWeight: 800,
-                          color: BRAND.navy,
+                          color: "inherit",
                           fontSize: { xs: "1.1rem", md: "1.25rem" },
                           letterSpacing: "-0.4px",
                           lineHeight: 1,
@@ -241,16 +242,17 @@ export default function Navbar() {
                     component={Link}
                     href={page.path}
                     sx={{
-                      color: isActive ? BRAND.navy : "#475569",
+                      color: "inherit",
                       fontWeight: isActive ? 700 : 500,
                       fontSize: "0.95rem",
                       px: 1.5,
-                      borderBottom: isActive ? `2px solid ${BRAND.gold}` : "2px solid transparent",
+                      borderBottom: "2px solid",
+                      borderColor: isActive ? "primary.main" : "transparent",
                       borderRadius: 0,
                       "&:hover": {
-                        color: BRAND.navy,
-                        backgroundColor: "rgba(0,0,0,0.02)",
-                        borderBottom: `2px solid ${BRAND.goldHover}`,
+                        color: "primary.dark",
+                        backgroundColor: "action.hover",
+                        borderColor: "primary.dark",
                       },
                     }}
                   >
@@ -270,15 +272,15 @@ export default function Navbar() {
                 aria-label="shopping cart"
                 sx={{
                   p: { xs: 0.75, sm: 1 },
-                  "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
+                  "&:hover": { backgroundColor: "action.hover" },
                 }}
               >
                 <Badge
                   badgeContent={mounted ? count : 0}
                   sx={{
                     "& .MuiBadge-badge": {
-                      backgroundColor: BRAND.gold,
-                      color: "#1a1a1a",
+                      backgroundColor: "primary.main",
+                      color: "primary.contrastText",
                       fontWeight: 700,
                       fontSize: "0.75rem",
                     },
@@ -344,7 +346,7 @@ export default function Navbar() {
                           {getDisplayName(avatarUser)}
                         </Typography>
                         {role === "admin" && (
-                          <Typography variant="caption" sx={{ color: "#0284c7", fontWeight: 600 }}>
+                          <Typography variant="caption" sx={{ color: "var(--theme-primary-main, #0284c7)", fontWeight: 600 }}>
                             Administrator
                           </Typography>
                         )}
@@ -575,7 +577,7 @@ export default function Navbar() {
                 alignItems: "center",
                 gap: 1.5,
                 p: 1.5,
-                backgroundColor: "#f8fafc",
+                backgroundColor: "var(--theme-bg-default, #f8fafc)",
                 borderRadius: 2,
                 border: "1px solid #e2e8f0",
               }}

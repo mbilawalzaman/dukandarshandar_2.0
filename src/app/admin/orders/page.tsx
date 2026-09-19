@@ -300,7 +300,7 @@ export default function AdminOrdersPage() {
                       },
                       "&.Mui-disabled": {
                         borderColor: "#e2e8f0",
-                        backgroundColor: "#f8fafc",
+                        backgroundColor: "var(--theme-bg-default, #f8fafc)",
                         color: "#94a3b8",
                       },
                     }}
@@ -422,7 +422,7 @@ export default function AdminOrdersPage() {
                 handleOpenLabelModal(row);
               }
             },
-            color: row.status === "shipped" ? "#0284c7" : "#94a3b8",
+            color: row.status === "shipped" ? "var(--theme-primary-main, #0284c7)" : "#94a3b8",
           },
         ]}
         serverPagination={{

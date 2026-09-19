@@ -150,8 +150,8 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
       <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
         <Table aria-label="admin data table" sx={{ minWidth: 600 }}>
-          <TableHead sx={{ backgroundColor: "#f8fafc", display: "table-header-group" }}>
-            <TableRow sx={{ backgroundColor: "#f8fafc" }}>
+          <TableHead sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", display: "table-header-group" }}>
+            <TableRow sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
               {columns.map((column) => (
                 <TableCell
                   key={String(column.id)}
@@ -160,7 +160,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     minWidth: column.minWidth || 120,
                     fontWeight: 700,
                     fontSize: "0.85rem",
-                    backgroundColor: "#f8fafc",
+                    backgroundColor: "var(--theme-bg-default, #f8fafc)",
                     color: "#334155",
                     borderBottom: "2px solid #e2e8f0",
                     whiteSpace: "nowrap",

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Box, IconButton } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 type ProductImageGalleryProps = {
   images: string[];

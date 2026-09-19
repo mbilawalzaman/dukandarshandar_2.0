@@ -1,6 +1,6 @@
 import { Container, Typography, Box, Paper, Divider } from "@mui/material";
 import SecurityIcon from "@mui/icons-material/Security";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import PageBanner from "../components/PageBanner";
 import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
@@ -56,4 +56,3 @@ export default async function PrivacyPolicyPage() {
     </Box>
   );
 }
-

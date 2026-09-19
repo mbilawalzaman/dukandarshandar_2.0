@@ -317,7 +317,7 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
       </DialogTitle>
       <Divider />
 
-      <DialogContent sx={{ backgroundColor: "#f8fafc", py: 3, display: "flex", justifyContent: "center" }}>
+      <DialogContent sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", py: 3, display: "flex", justifyContent: "center" }}>
         {/* Printable Shipping Label Container */}
         <Box
           ref={printRef}
@@ -402,7 +402,7 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
                   textAlign: "center",
                   fontWeight: 900,
                   fontSize: "13px",
-                  backgroundColor: isCOD ? "#000000" : "#f1f5f9",
+                  backgroundColor: isCOD ? "#000000" : "var(--theme-bg-default, #f1f5f9)",
                   color: isCOD ? "#ffffff" : "#000000",
                   borderBottom: "1px solid #000",
                 }}

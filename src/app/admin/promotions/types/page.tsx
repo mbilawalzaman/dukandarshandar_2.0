@@ -12,7 +12,7 @@ import ConfirmDeleteModal from "@/app/components/admin/ConfirmDeleteModal";
 import PromotionTypeFormModal from "@/app/components/admin/promotions/PromotionTypeFormModal";
 import PromotionBadge from "@/app/components/promotions/PromotionBadge";
 
-const primaryButtonSx = { textTransform: "none", fontWeight: 700, borderRadius: "24px", px: 3, backgroundColor: "#0284c7", color: "#fff", "&:hover": { backgroundColor: "#0369a1" } } as const;
+const primaryButtonSx = { textTransform: "none", fontWeight: 700, borderRadius: "24px", px: 3, backgroundColor: "var(--theme-primary-main, #0284c7)", color: "#fff", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } } as const;
 
 export default function AdminPromotionTypesPage() {
   const [types, setTypes] = useState<PromotionType[]>([]);

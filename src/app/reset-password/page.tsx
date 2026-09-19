@@ -19,7 +19,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import KeyIcon from "@mui/icons-material/Key";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 function ResetPasswordForm() {
   const router = useRouter();

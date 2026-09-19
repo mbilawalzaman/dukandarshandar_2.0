@@ -30,7 +30,7 @@ const STATUS_TABS: Array<PromotionStatus | "all"> = ["all", "active", "scheduled
 /** Row type: Promotion plus a virtual column for the extra action icons. */
 type Row = Promotion & { more?: never };
 
-const primaryButtonSx = { textTransform: "none", fontWeight: 700, borderRadius: "24px", px: 3, backgroundColor: "#0284c7", color: "#fff", "&:hover": { backgroundColor: "#0369a1" } } as const;
+const primaryButtonSx = { textTransform: "none", fontWeight: 700, borderRadius: "24px", px: 3, backgroundColor: "var(--theme-primary-main, #0284c7)", color: "#fff", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } } as const;
 
 function PromotionsPageInner() {
   const router = useRouter();
@@ -226,7 +226,7 @@ function PromotionsPageInner() {
                 {
                   label: "Send Email",
                   icon: <SendIcon fontSize="small" />,
-                  color: "#0284c7",
+                  color: "var(--theme-primary-main, #0284c7)",
                   onClick: (r: Row) => setSending(r),
                 },
               ]

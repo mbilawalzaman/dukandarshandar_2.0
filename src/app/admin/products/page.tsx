@@ -199,7 +199,7 @@ export default function AdminProductsPage() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenAddModal}
-          sx={{ borderRadius: 2, px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0284c7" }}
+          sx={{ borderRadius: 2, px: 3, py: 1.2, fontWeight: 600, backgroundColor: "var(--theme-primary-main, #0284c7)" }}
         >
           Add Product
         </Button>

@@ -4,7 +4,7 @@ import React, { Suspense, useCallback, useRef, useState } from "react";
 import { Box, Button, CircularProgress, Dialog, DialogContent, Typography } from "@mui/material";
 import { CardCapture, Environment, PayerAuthentication } from "@sfpy/atoms";
 import "@sfpy/atoms/styles";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 interface PayerAuthSession {
   accessToken: string;

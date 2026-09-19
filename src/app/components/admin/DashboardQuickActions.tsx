@@ -87,7 +87,7 @@ export default function DashboardQuickActions() {
           btnText="Go to Products"
           icon={<ShoppingBagIcon />}
           iconBg="#e0f2fe"
-          iconColor="#0284c7"
+          iconColor="var(--theme-primary-main, #0284c7)"
         />
         <QuickActionTile
           title="Process Orders"

@@ -103,7 +103,7 @@ export default function Dropdown<T = unknown>({
     <IconButton
       size="small"
       onClick={handleOpen}
-      sx={{ color: "#475569", "&:hover": { backgroundColor: "#f1f5f9" } }}
+      sx={{ color: "#475569", "&:hover": { backgroundColor: "var(--theme-bg-default, #f1f5f9)" } }}
     >
       <MoreVertIcon fontSize="small" />
     </IconButton>
@@ -126,7 +126,7 @@ export default function Dropdown<T = unknown>({
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         transition: "all 0.15s ease-in-out",
         "&:hover": {
-          backgroundColor: "#f8fafc",
+          backgroundColor: "var(--theme-bg-default, #f8fafc)",
           borderColor: "#94a3b8",
           boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
         },
@@ -174,7 +174,7 @@ export default function Dropdown<T = unknown>({
             }}
             sx={{ gap: 1.5, fontSize: "0.85rem" }}
           >
-            <ListItemIcon sx={{ minWidth: "auto", color: "#0284c7" }}>
+            <ListItemIcon sx={{ minWidth: "auto", color: "var(--theme-primary-main, #0284c7)" }}>
               <VisibilityIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="View Details" />

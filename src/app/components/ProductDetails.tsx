@@ -16,7 +16,7 @@ import {
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCart } from "@/app/providers/CartProvider";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { authHeaders } from "@/lib/cart";
 import ProductImageGallery from "@/app/components/ProductImageGallery";
@@ -312,7 +312,7 @@ const ProductDetails = () => {
               variant="contained"
               disabled={outOfStock}
               fullWidth
-              sx={{ py: 1.4, backgroundColor: BRAND.goldHover, color: "#fff", "&:hover": { backgroundColor: BRAND.goldDark } }}
+              sx={{ py: 1.4, backgroundColor: "primary.main", color: "primary.contrastText", "&:hover": { backgroundColor: "primary.dark" } }}
             >
               Buy Now
             </Button>

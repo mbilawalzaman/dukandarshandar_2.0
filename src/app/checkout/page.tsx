@@ -20,7 +20,7 @@ import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector"
 import PakistanLocationFields from "../components/checkout/PakistanLocationFields";
 import { useCart } from "@/app/providers/CartProvider";
 import { authHeaders } from "@/lib/cart";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
@@ -492,7 +492,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <Box sx={{ backgroundColor: "#f8fafc", minHeight: "70vh" }}>
+    <Box sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", minHeight: "70vh" }}>
       {submitting && <Loader overlay message="Processing order..." />}
       <PageBanner title="Checkout" subtitle="Choose how you want to pay and confirm your order" />
       <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -598,7 +598,7 @@ export default function CheckoutPage() {
                     sx={{
                       fontWeight: 700,
                       backgroundColor: BRAND.gold,
-                      color: BRAND.navy,
+                      color: "primary.contrastText",
                       "&:hover": { backgroundColor: BRAND.goldHover },
                     }}
                   >

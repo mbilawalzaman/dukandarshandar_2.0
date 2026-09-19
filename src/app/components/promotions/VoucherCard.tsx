@@ -2,7 +2,7 @@
 
 import { Box, Button, Chip, Typography } from "@mui/material";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { conditionsLabel, formatPromoDate, rewardLabel } from "@/lib/promotionDisplay";
 import type { PublicPromotion } from "@/types/apps/promotionTypes";
 
@@ -33,7 +33,7 @@ export default function VoucherCard({ voucher, actionLabel, onAction, actionDisa
         alignItems: "stretch",
         borderRadius: 2.5,
         border: `1px ${selected ? "solid" : "dashed"} ${selected ? BRAND.gold : "#cbd5e1"}`,
-        backgroundColor: inactive ? "#f8fafc" : selected ? "#fffbeb" : "#fff",
+        backgroundColor: inactive ? "var(--theme-bg-default, #f8fafc)" : selected ? "#fffbeb" : "#fff",
         opacity: inactive ? 0.7 : 1,
         overflow: "hidden",
         minWidth: compact ? 240 : undefined,

@@ -19,7 +19,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import UserAvatar from "@/app/components/ui/UserAvatar";
 import PakistanLocationFields from "@/app/components/checkout/PakistanLocationFields";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { isValidCustomerEmail } from "@/lib/userDisplay";
 import type { ProfileData, ProfileEditorProps } from "@/types/apps/profileTypes";
 

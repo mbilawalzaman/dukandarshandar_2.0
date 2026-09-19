@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 type DeliveryShippingLineProps = {
   shipping: number;

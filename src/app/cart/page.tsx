@@ -45,7 +45,7 @@ export default function CartPage() {
   const publicVoucherCount = promotions.filter((p) => p.kind === "voucher").length;
 
   return (
-    <Box sx={{ minHeight: "70vh", backgroundColor: "#f8fafc" }}>
+    <Box sx={{ minHeight: "70vh", backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
       <PageBanner title="Shopping Cart" subtitle="Review your selected products and proceed to checkout" />
       <Container maxWidth="lg" sx={{ py: 6 }}>
         {items.length === 0 ? (

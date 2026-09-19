@@ -2,19 +2,25 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
+import { useSafeStoreSettings, getStoreInitials } from "@/app/providers/StoreSettingsProvider";
 
 interface GlobalLoaderProps {
   fullScreen?: boolean;
   message?: string;
   size?: number;
+  initials?: string;
 }
 
 export default function GlobalLoader({
   fullScreen = true,
   message,
   size = 120,
+  initials: customInitials,
 }: GlobalLoaderProps) {
+  const { settings } = useSafeStoreSettings();
+  const displayInitials = customInitials || getStoreInitials(settings.shopName, "DS");
+
   return (
     <Box
       sx={{
@@ -91,7 +97,7 @@ export default function GlobalLoader({
           }}
         >
           <Typography sx={{ fontWeight: 800, color: BRAND.gold, fontSize: "1rem", letterSpacing: "-0.5px" }}>
-            DS
+            {displayInitials}
           </Typography>
         </Box>
       </Box>

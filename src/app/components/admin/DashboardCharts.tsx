@@ -66,7 +66,7 @@ export default function DashboardCharts({
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUpIcon sx={{ color: "#0284c7" }} />
+                <TrendingUpIcon sx={{ color: "var(--theme-primary-main, #0284c7)" }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
                   Revenue & Order Volume Trend
                 </Typography>
@@ -87,15 +87,15 @@ export default function DashboardCharts({
                   <AreaChart data={salesTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#0284c7" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--theme-primary-main, #0284c7)" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="var(--theme-primary-main, #0284c7)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
                         <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
                     <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#64748b" }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "#64748b" }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "#64748b" }} />
@@ -112,7 +112,7 @@ export default function DashboardCharts({
                       type="monotone"
                       dataKey="revenue"
                       name="Revenue (PKR)"
-                      stroke="#0284c7"
+                      stroke="var(--theme-primary-main, #0284c7)"
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#colorRevenue)"
@@ -240,7 +240,7 @@ export default function DashboardCharts({
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="35%"
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
                     <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
                     <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
                     <RechartsTooltip
@@ -252,7 +252,7 @@ export default function DashboardCharts({
                     />
                     <Bar dataKey="count" maxBarSize={48} radius={[6, 6, 0, 0]}>
                       {orderStatusBreakdown.map((entry, index) => (
-                        <Cell key={`status-cell-${index}`} fill={STATUS_COLORS[entry.status.toLowerCase()] || "#0284c7"} />
+                        <Cell key={`status-cell-${index}`} fill={STATUS_COLORS[entry.status.toLowerCase()] || "var(--theme-primary-main, #0284c7)"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -282,7 +282,7 @@ export default function DashboardCharts({
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PaymentsIcon sx={{ color: "#0284c7" }} />
+                <PaymentsIcon sx={{ color: "var(--theme-primary-main, #0284c7)" }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
                   Payment Overview
                 </Typography>
@@ -313,7 +313,7 @@ export default function DashboardCharts({
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="35%"
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
                     <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
                     <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
                     <RechartsTooltip
@@ -327,7 +327,7 @@ export default function DashboardCharts({
                       {paymentBreakdown.map((entry, index) => (
                         <Cell
                           key={`payment-cell-${index}`}
-                          fill={PAYMENT_COLORS[entry.status.toLowerCase()] || "#0284c7"}
+                          fill={PAYMENT_COLORS[entry.status.toLowerCase()] || "var(--theme-primary-main, #0284c7)"}
                         />
                       ))}
                     </Bar>

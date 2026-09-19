@@ -151,7 +151,7 @@ export default function PromotionTypeFormModal({ open, onClose, type, onSaved }:
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose} disabled={saving} sx={{ textTransform: "none" }}>Cancel</Button>
-        <Button variant="contained" onClick={submit} disabled={saving} startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null} sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "#0284c7", color: "#fff", "&:hover": { backgroundColor: "#0369a1" } }}>
+        <Button variant="contained" onClick={submit} disabled={saving} startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null} sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "var(--theme-primary-main, #0284c7)", color: "#fff", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } }}>
           {type ? "Save changes" : "Create preset"}
         </Button>
       </DialogActions>
@@ -164,7 +164,7 @@ function Block({ title, children, last }: { title: string; children: React.React
     <Box>
       <Typography variant="subtitle2" fontWeight={700} color="#334155" sx={{ mb: 1.5 }}>{title}</Typography>
       {children}
-      {!last && <Divider sx={{ mt: 2.5, borderColor: "#f1f5f9" }} />}
+      {!last && <Divider sx={{ mt: 2.5, borderColor: "var(--theme-bg-default, #f1f5f9)" }} />}
     </Box>
   );
 }

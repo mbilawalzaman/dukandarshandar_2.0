@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Container, Card, CardContent, Typography, Box, CircularProgress, Button, Alert } from "@mui/material";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();

@@ -42,7 +42,7 @@ import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
 import OrderFeedbackModal from "../components/reviews/OrderFeedbackModal";
 import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 import type { OrderType } from "@/types/apps/orderTypes";
@@ -265,7 +265,7 @@ function OrdersContent() {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#f8fafc", minHeight: "100vh", pb: 8 }}>
+    <Box sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", minHeight: "100vh", pb: 8 }}>
       <PageBanner title="My Orders" subtitle="Track deliveries, view receipts, and manage your purchase history" />
 
       <Container maxWidth="xl" sx={{ mt: { xs: 3, md: 4 } }}>
@@ -280,7 +280,7 @@ function OrdersContent() {
           <Grid container spacing={2.5} sx={{ mb: 4 }}>
             <Grid item xs={6} sm={3}>
               <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#eff6ff", color: "#0284c7" }}>
+                <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#eff6ff", color: "var(--theme-primary-main, #0284c7)" }}>
                   <ShoppingBagOutlinedIcon fontSize="medium" />
                 </Box>
                 <Box>
@@ -468,7 +468,7 @@ function OrdersContent() {
                       <Box
                         sx={{
                           p: { xs: 2, sm: 2.5 },
-                          backgroundColor: "#f8fafc",
+                          backgroundColor: "var(--theme-bg-default, #f8fafc)",
                           borderBottom: "1px solid #e2e8f0",
                           display: "flex",
                           justifyContent: "space-between",

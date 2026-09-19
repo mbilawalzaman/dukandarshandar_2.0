@@ -20,7 +20,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import TuneIcon from "@mui/icons-material/Tune";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { BRAND, PRODUCT_CATEGORIES } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
+import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export interface FilterState {
   searchInput: string;
@@ -133,7 +134,7 @@ export default function FilterSidebar({
             <Chip
               label={categoryCounts.all || 0}
               size="small"
-              sx={{ height: 20, fontSize: "0.75rem", backgroundColor: category === "all" ? BRAND.gold : "#f1f5f9" }}
+              sx={{ height: 20, fontSize: "0.75rem", backgroundColor: category === "all" ? BRAND.gold : "var(--theme-bg-default, #f1f5f9)" }}
             />
           </ListItemButton>
 
@@ -164,7 +165,7 @@ export default function FilterSidebar({
                 <Chip
                   label={count}
                   size="small"
-                  sx={{ height: 20, fontSize: "0.75rem", backgroundColor: isSelected ? BRAND.gold : "#f1f5f9" }}
+                  sx={{ height: 20, fontSize: "0.75rem", backgroundColor: isSelected ? BRAND.gold : "var(--theme-bg-default, #f1f5f9)" }}
                 />
               </ListItemButton>
             );

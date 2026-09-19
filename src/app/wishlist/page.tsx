@@ -6,7 +6,7 @@ import { Alert, Box, Button, CircularProgress, Container, Grid, Typography } fro
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ProductCard, { type ProductCardData } from "@/app/components/ProductCard";
 import { authFetch } from "@/lib/authFetch";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { useWishlist } from "@/app/providers/WishlistProvider";
 
 export default function WishlistPage() {

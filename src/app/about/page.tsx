@@ -15,7 +15,7 @@ import SecurityIcon from "@mui/icons-material/Security";
 import Link from "next/link";
 import PageBanner from "../components/PageBanner";
 import AboutQuotesCarousel from "../components/about/AboutQuotesCarousel";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import type { AboutHighlightItem } from "@/lib/pageSettings";
 import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
@@ -133,4 +133,3 @@ export default async function AboutPage() {
     </Box>
   );
 }
-

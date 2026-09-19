@@ -22,7 +22,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { authHeaders } from "@/lib/cart";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
@@ -213,7 +213,7 @@ export default function OrderFeedbackModal({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, backgroundColor: "#f8fafc" }}>
+      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
         {!!submittingPid && <Loader overlay message="Submitting feedback..." />}
         {loading ? (
           <Loader size={160} message="Loading your delivered products…" />
@@ -282,7 +282,7 @@ export default function OrderFeedbackModal({
                         width: 70,
                         height: 70,
                         borderRadius: 2,
-                        backgroundColor: "#f1f5f9",
+                        backgroundColor: "var(--theme-bg-default, #f1f5f9)",
                         position: "relative",
                         overflow: "hidden",
                         flexShrink: 0,
@@ -361,7 +361,7 @@ export default function OrderFeedbackModal({
                               fontSize: "0.72rem",
                               fontWeight: 600,
                               cursor: "pointer",
-                              backgroundColor: currentComment.includes(tag) ? "rgba(15, 23, 42, 0.1)" : "#f1f5f9",
+                              backgroundColor: currentComment.includes(tag) ? "rgba(15, 23, 42, 0.1)" : "var(--theme-bg-default, #f1f5f9)",
                               color: BRAND.navy,
                               "&:hover": { backgroundColor: "#e2e8f0" },
                             }}

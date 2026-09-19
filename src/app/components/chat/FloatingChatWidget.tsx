@@ -9,7 +9,7 @@ import { useChatWidget } from "@/app/providers/ChatWidgetProvider";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import MessagesWorkspace from "@/app/components/chat/MessagesWorkspace";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 const STORAGE_KEY = "floating-chat-position";
 const FAB_SIZE = 56;

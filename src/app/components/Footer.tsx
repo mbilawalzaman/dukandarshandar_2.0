@@ -15,7 +15,6 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import Link from "next/link";
-import { BRAND } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
@@ -53,7 +52,7 @@ export default function Footer() {
   };
 
   return (
-    <Box component="footer" sx={{ mt: 8, backgroundColor: BRAND.footer, color: "#fff" }}>
+    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #111111)", color: "#fff" }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>
@@ -143,8 +142,8 @@ export default function Footer() {
                 size="small"
                 sx={{
                   bgcolor: "#fff",
-                  borderTopLeftRadius: 6,
-                  borderBottomLeftRadius: 6,
+                  borderTopLeftRadius: "var(--theme-button-radius, 6px)",
+                  borderBottomLeftRadius: "var(--theme-button-radius, 6px)",
                   "& fieldset": { border: "none" },
                 }}
               />
@@ -153,12 +152,12 @@ export default function Footer() {
                 variant="contained"
                 disabled={submitting}
                 sx={{
-                  borderRadius: "0 6px 6px 0",
+                  borderRadius: "0 var(--theme-button-radius, 6px) var(--theme-button-radius, 6px) 0",
                   px: 3,
                   whiteSpace: "nowrap",
-                  backgroundColor: BRAND.goldHover,
-                  color: "#fff",
-                  "&:hover": { backgroundColor: BRAND.goldDark, color: "#fff" },
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  "&:hover": { backgroundColor: "primary.dark" },
                 }}
               >
                 Subscribe

@@ -2,7 +2,7 @@
 
 import { Alert, Box, Typography } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 

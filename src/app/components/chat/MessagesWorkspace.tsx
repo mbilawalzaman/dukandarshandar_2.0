@@ -26,7 +26,7 @@ import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
 import { authHeaders } from "@/lib/cart";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import SupportChatPanel from "@/app/components/chat/SupportChatPanel";
 import { isChatEnabled } from "@/lib/firebaseConfig";

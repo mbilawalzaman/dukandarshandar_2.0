@@ -151,7 +151,7 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
         overflow: "hidden",
         position: "relative",
         minHeight: { xs: 240, sm: 380, md: 480 },
-        backgroundColor: "#f8fafc",
+        backgroundColor: "var(--theme-bg-default, #f8fafc)",
       }}
     >
       <Slider {...settings}>

@@ -44,7 +44,7 @@ export default function RecentActivityFeed({
 
           <TableContainer sx={{ border: "1px solid #f1f5f9", borderRadius: 2 }}>
             <Table size="small">
-              <TableHead sx={{ backgroundColor: "#f8fafc" }}>
+              <TableHead sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Order ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Customer</TableCell>
@@ -115,11 +115,11 @@ export default function RecentActivityFeed({
                     justifyContent: "space-between",
                     p: 1.5,
                     borderRadius: 2,
-                    backgroundColor: "#f8fafc",
+                    backgroundColor: "var(--theme-bg-default, #f8fafc)",
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: "#0284c7", width: 34, height: 34, fontSize: "0.85rem", fontWeight: 700 }}>
+                    <Avatar sx={{ bgcolor: "var(--theme-primary-main, #0284c7)", width: 34, height: 34, fontSize: "0.85rem", fontWeight: 700 }}>
                       {(user.userName || user.email || "U").charAt(0).toUpperCase()}
                     </Avatar>
                     <Box>

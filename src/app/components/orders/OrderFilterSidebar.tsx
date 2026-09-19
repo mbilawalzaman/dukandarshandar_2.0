@@ -23,7 +23,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 export interface OrderFilterState {
   search: string;
@@ -134,7 +134,7 @@ export default function OrderFilterSidebar({
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
-              backgroundColor: "#f8fafc",
+              backgroundColor: "var(--theme-bg-default, #f8fafc)",
               fontSize: "0.9rem",
             },
           }}

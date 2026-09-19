@@ -4,6 +4,7 @@ import {
   DELIVERY_SETTINGS_KEY,
   type DeliverySettings,
 } from "@/lib/deliverySettings";
+import { normalizeThemeKey } from "@/lib/themePresets";
 import { safeNavigationHref } from "@/lib/safeNavigation";
 
 export async function getDeliverySettings(): Promise<DeliverySettings> {
@@ -16,6 +17,7 @@ export async function getDeliverySettings(): Promise<DeliverySettings> {
   return {
     feeEnabled: doc.feeEnabled !== false,
     fee: Number.isFinite(fee) && fee >= 0 ? fee : DEFAULT_DELIVERY_SETTINGS.fee,
+    activeThemeKey: normalizeThemeKey(doc.activeThemeKey),
     shopName: typeof doc.shopName === "string" && doc.shopName.trim() ? doc.shopName.trim() : DEFAULT_DELIVERY_SETTINGS.shopName,
     shopPhone: typeof doc.shopPhone === "string" && doc.shopPhone.trim() ? doc.shopPhone.trim() : DEFAULT_DELIVERY_SETTINGS.shopPhone,
     storeEmail: typeof doc.storeEmail === "string" && doc.storeEmail.trim() ? doc.storeEmail.trim() : DEFAULT_DELIVERY_SETTINGS.storeEmail,
@@ -54,6 +56,10 @@ export async function updateDeliverySettings(
     updated_at: new Date(),
     updated_by: updatedBy,
   };
+
+  if (input.activeThemeKey !== undefined) {
+    setPayload.activeThemeKey = normalizeThemeKey(input.activeThemeKey);
+  }
 
   if (typeof input.shopName === "string") {
     setPayload.shopName = input.shopName.trim();

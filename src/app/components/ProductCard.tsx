@@ -21,7 +21,7 @@ import PriceTag from "@/app/components/promotions/PriceTag";
 import PromotionBadge from "@/app/components/promotions/PromotionBadge";
 import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
 import { useWishlist } from "@/app/providers/WishlistProvider";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 export type ProductCardData = {
   _id: string;
@@ -82,7 +82,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           position: "relative",
           width: "100%",
           height: 190,
-          backgroundColor: "#f8fafc",
+          backgroundColor: "var(--theme-bg-default, #f8fafc)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

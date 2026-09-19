@@ -37,7 +37,7 @@ type Props = {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", flex: 1, minWidth: 110 }}>
+    <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: "var(--theme-bg-default, #f8fafc)", border: "1px solid #e2e8f0", flex: 1, minWidth: 110 }}>
       <Typography variant="caption" color="text.secondary" fontWeight={600}>{label}</Typography>
       <Typography variant="h6" fontWeight={800} color="#0f172a">{value}</Typography>
     </Box>
@@ -107,7 +107,7 @@ export default function PromotionDetailDrawer({ promotion, onClose, onEdit, onTo
             </Button>
             <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => onDuplicate(p)} sx={{ textTransform: "none" }}>Duplicate</Button>
             {p.kind === "voucher" && (
-              <Button size="small" variant="contained" startIcon={<SendIcon />} onClick={() => onSendEmail(p)} sx={{ textTransform: "none", backgroundColor: "#0284c7", color: "#fff", "&:hover": { backgroundColor: "#0369a1" } }}>
+              <Button size="small" variant="contained" startIcon={<SendIcon />} onClick={() => onSendEmail(p)} sx={{ textTransform: "none", backgroundColor: "var(--theme-primary-main, #0284c7)", color: "#fff", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } }}>
                 Send email
               </Button>
             )}

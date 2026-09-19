@@ -1,6 +1,6 @@
 import { Container, Typography, Box, Paper, Divider } from "@mui/material";
 import GavelIcon from "@mui/icons-material/Gavel";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import PageBanner from "../components/PageBanner";
 import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
 
@@ -56,4 +56,3 @@ export default async function TermsOfServicePage() {
     </Box>
   );
 }
-

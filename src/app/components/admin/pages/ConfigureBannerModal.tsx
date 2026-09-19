@@ -97,7 +97,7 @@ export default function ConfigureBannerModal({
               control={<Radio />}
               label={
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <CollectionsIcon sx={{ fontSize: 18, color: "#0284c7" }} />
+                  <CollectionsIcon sx={{ fontSize: 18, color: "var(--theme-primary-main, #0284c7)" }} />
                   <Typography sx={{ fontWeight: 600 }}>Image</Typography>
                 </Box>
               }
@@ -168,7 +168,7 @@ export default function ConfigureBannerModal({
             (modalType === "video" ? !modalVideoFile : !modalMediaPayload)
           }
           startIcon={modalUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
-          sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "#0284c7", "&:hover": { backgroundColor: "#0369a1" } }}
+          sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "var(--theme-primary-main, #0284c7)", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } }}
         >
           {modalUploading
             ? "Uploading…"

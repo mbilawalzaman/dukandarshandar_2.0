@@ -241,7 +241,7 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
 
         {/* ---------------- 1. Discount Strategy Preset Selector ---------------- */}
         {!promotion && types.length > 0 && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, backgroundColor: "#f8fafc", borderColor: "#cbd5e1" }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, backgroundColor: "var(--theme-bg-default, #f8fafc)", borderColor: "#cbd5e1" }}>
             <Typography variant="subtitle2" fontWeight={700} color="#0f172a" sx={{ mb: 1 }}>
               1. Select Discount Rule Preset
             </Typography>
@@ -379,7 +379,7 @@ export default function PromotionFormModal({ open, onClose, promotion, defaultKi
             disabled={saving}
             onClick={() => submit(false)}
             startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
-            sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "#0284c7", color: "#fff", "&:hover": { backgroundColor: "#0369a1" } }}
+            sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "var(--theme-primary-main, #0284c7)", color: "#fff", "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" } }}
           >
             {promotion ? "Save changes" : "Publish Campaign"}
           </Button>
@@ -396,8 +396,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         {title}
       </Typography>
       {children}
-      <Divider sx={{ mt: 2.5, borderColor: "#f1f5f9" }} />
+      <Divider sx={{ mt: 2.5, borderColor: "var(--theme-bg-default, #f1f5f9)" }} />
     </Box>
   );
 }
-

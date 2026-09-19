@@ -38,7 +38,7 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: mediaToRender?.url ? "transparent" : "#1e293b",
+        backgroundColor: mediaToRender?.url ? "transparent" : "var(--theme-bg-footer, #1e293b)",
         backgroundImage:
           isPlainImage
             ? `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${mediaToRender.url})`

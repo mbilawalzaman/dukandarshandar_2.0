@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Grid, Typography, Skeleton, Container } from "@mui/material";
 import ProductCard, { type ProductCardData } from "./ProductCard";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 interface TopRatedProductsProps {
   refreshTrigger?: boolean;

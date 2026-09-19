@@ -2,12 +2,14 @@
 
 import React from "react";
 import "./loader.css";
+import { useSafeStoreSettings, getStoreInitials } from "@/app/providers/StoreSettingsProvider";
 
 export interface LoaderProps {
   size?: number;
   marginTop?: string;
   overlay?: boolean;
   message?: string;
+  initials?: string;
 }
 
 export default function Loader({
@@ -15,7 +17,11 @@ export default function Loader({
   marginTop = "0px",
   overlay = false,
   message,
+  initials: customInitials,
 }: LoaderProps) {
+  const { settings } = useSafeStoreSettings();
+  const displayInitials = customInitials || getStoreInitials(settings.shopName, "DS");
+
   const content = (
     <div className="loader" style={{ marginTop: overlay ? "0" : marginTop }}>
       <div
@@ -27,7 +33,7 @@ export default function Loader({
         <div className="gooey-ring-3" />
         <div className="gooey-core">
           <span style={{ fontWeight: 800, color: "#d97706", fontSize: Math.max(14, Math.round(size * 0.16)) }}>
-            DS
+            {displayInitials}
           </span>
         </div>
       </div>

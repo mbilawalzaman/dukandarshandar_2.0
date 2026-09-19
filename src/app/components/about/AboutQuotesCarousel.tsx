@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 export default function AboutQuotesCarousel({ quotes }: { quotes: string[] }) {
   const [index, setIndex] = useState(0);

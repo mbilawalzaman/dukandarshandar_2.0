@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Alert, Box, Button, Typography } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { conditionsLabel, formatPromoDate, rewardLabel } from "@/lib/promotionDisplay";
 import type { PublicPromotion } from "@/types/apps/promotionTypes";
 import FreeDeliveryPromoBanner from "@/app/components/FreeDeliveryPromoBanner";

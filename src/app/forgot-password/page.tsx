@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockResetIcon from "@mui/icons-material/LockReset";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 export default function ForgotPasswordPage() {
@@ -178,4 +178,3 @@ export default function ForgotPasswordPage() {
     </Container>
   );
 }
-

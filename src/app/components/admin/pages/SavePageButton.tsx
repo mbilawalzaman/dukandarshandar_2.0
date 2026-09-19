@@ -43,8 +43,8 @@ export default function SavePageButton({
         py: 1.1,
         fontWeight: 700,
         textTransform: "none",
-        backgroundColor: "#0284c7",
-        "&:hover": { backgroundColor: "#0369a1" },
+        backgroundColor: "var(--theme-primary-main, #0284c7)",
+        "&:hover": { backgroundColor: "var(--theme-primary-dark, #0369a1)" },
       }}
     >
       {isSaving ? "Saving..." : `Save ${PAGE_LABELS[page]}`}

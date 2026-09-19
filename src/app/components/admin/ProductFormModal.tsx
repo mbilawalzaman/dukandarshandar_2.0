@@ -396,7 +396,7 @@ export default function ProductFormModal({
                             height: 22,
                             fontSize: "0.65rem",
                             fontWeight: 700,
-                            backgroundColor: "#febe4c",
+                            backgroundColor: "var(--theme-primary-main, #febe4c)",
                             color: "#1e293b",
                           }}
                         />
@@ -427,7 +427,7 @@ export default function ProductFormModal({
                           <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Box>
-                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, p: 0.5, bgcolor: "#f8fafc" }}>
+                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, p: 0.5, bgcolor: "var(--theme-bg-default, #f8fafc)" }}>
                         <IconButton
                           size="small"
                           disabled={index === 0}
@@ -465,7 +465,7 @@ export default function ProductFormModal({
                   cursor: "pointer",
                   transition: "all 0.2s ease-in-out",
                   "&:hover": {
-                    borderColor: "#febe4c",
+                    borderColor: "var(--theme-primary-main, #febe4c)",
                     backgroundColor: "rgba(254, 190, 76, 0.04)",
                   },
                 }}

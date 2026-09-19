@@ -107,7 +107,7 @@ export default function AdminSidebar({
       >
         {(isMobileView || open) && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, color: "#38bdf8" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, color: "var(--theme-primary-light, #38bdf8)" }}>
               Admin Portal
             </Typography>
           </Box>
@@ -138,7 +138,7 @@ export default function AdminSidebar({
                       justifyContent: !isMobileView && !open ? "center" : "initial",
                       px: 2.5,
                       backgroundColor: isChildActive ? "rgba(56, 189, 248, 0.1)" : "transparent",
-                      borderLeft: isChildActive ? "4px solid #38bdf8" : "4px solid transparent",
+                      borderLeft: isChildActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
                       "&:hover": {
                         backgroundColor: "rgba(255, 255, 255, 0.08)",
                       },
@@ -149,7 +149,7 @@ export default function AdminSidebar({
                         minWidth: 0,
                         mr: !isMobileView && !open ? "auto" : 2,
                         justifyContent: "center",
-                        color: isChildActive ? "#38bdf8" : "#94a3b8",
+                        color: isChildActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
                       }}
                     >
                       {item.icon}
@@ -158,7 +158,7 @@ export default function AdminSidebar({
                       primary={item.label}
                       sx={{
                         opacity: !isMobileView && !open ? 0 : 1,
-                        color: isChildActive ? "#38bdf8" : "#e2e8f0",
+                        color: isChildActive ? "var(--theme-primary-light, #38bdf8)" : "#e2e8f0",
                         fontWeight: isChildActive ? 600 : 400,
                       }}
                     />
@@ -179,7 +179,7 @@ export default function AdminSidebar({
                             minHeight: 40,
                             pl: 4.5,
                             backgroundColor: isSubActive ? "rgba(56, 189, 248, 0.2)" : "transparent",
-                            borderLeft: isSubActive ? "4px solid #38bdf8" : "4px solid transparent",
+                            borderLeft: isSubActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
                             "&:hover": {
                               backgroundColor: "rgba(255, 255, 255, 0.08)",
                             },
@@ -190,7 +190,7 @@ export default function AdminSidebar({
                               minWidth: 0,
                               mr: 1.5,
                               justifyContent: "center",
-                              color: isSubActive ? "#38bdf8" : "#94a3b8",
+                              color: isSubActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
                               fontSize: "1.1rem",
                             }}
                           >
@@ -199,7 +199,7 @@ export default function AdminSidebar({
                           <ListItemText
                             primary={sub.label}
                             primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: isSubActive ? 700 : 400 }}
-                            sx={{ color: isSubActive ? "#38bdf8" : "#cbd5e1" }}
+                            sx={{ color: isSubActive ? "var(--theme-primary-light, #38bdf8)" : "#cbd5e1" }}
                           />
                         </ListItemButton>
                       );
@@ -222,7 +222,7 @@ export default function AdminSidebar({
                   justifyContent: !isMobileView && !open ? "center" : "initial",
                   px: 2.5,
                   backgroundColor: isActive ? "rgba(56, 189, 248, 0.15)" : "transparent",
-                  borderLeft: isActive ? "4px solid #38bdf8" : "4px solid transparent",
+                  borderLeft: isActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
                   "&:hover": {
                     backgroundColor: "rgba(255, 255, 255, 0.08)",
                   },
@@ -233,7 +233,7 @@ export default function AdminSidebar({
                     minWidth: 0,
                     mr: !isMobileView && !open ? "auto" : 2,
                     justifyContent: "center",
-                    color: isActive ? "#38bdf8" : "#94a3b8",
+                    color: isActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
                   }}
                 >
                   {item.icon}
@@ -242,7 +242,7 @@ export default function AdminSidebar({
                   primary={item.label}
                   sx={{
                     opacity: !isMobileView && !open ? 0 : 1,
-                    color: isActive ? "#38bdf8" : "#e2e8f0",
+                    color: isActive ? "var(--theme-primary-light, #38bdf8)" : "#e2e8f0",
                     fontWeight: isActive ? 600 : 400,
                   }}
                 />
@@ -266,8 +266,8 @@ export default function AdminSidebar({
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#1e293b",
-            color: "#f8fafc",
+            backgroundColor: "var(--theme-bg-footer, #1e293b)",
+            color: "var(--theme-bg-default, #f8fafc)",
             borderRight: "1px solid #334155",
           },
         }}
@@ -290,8 +290,8 @@ export default function AdminSidebar({
           width: open ? drawerWidth : 64,
           transition: "width 0.2s ease-in-out",
           overflowX: "hidden",
-          backgroundColor: "#1e293b",
-          color: "#f8fafc",
+          backgroundColor: "var(--theme-bg-footer, #1e293b)",
+          color: "var(--theme-bg-default, #f8fafc)",
           borderRight: "1px solid #334155",
         },
       }}

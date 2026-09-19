@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
 import { getDeliverySettings, updateDeliverySettings } from "@/lib/deliverySettings.server";
+import { THEME_KEYS, type ThemeKey } from "@/lib/themePresets";
 
 export async function GET() {
   try {
@@ -12,6 +13,7 @@ export async function GET() {
       settings: {
         feeEnabled: settings.feeEnabled,
         fee: settings.fee,
+        activeThemeKey: settings.activeThemeKey,
         shopName: settings.shopName || "",
         shopPhone: settings.shopPhone || "",
         storeEmail: settings.storeEmail || "",
@@ -38,6 +40,10 @@ export async function PUT(req: NextRequest) {
     if (!admin.ok) return admin.response;
 
     const body = await req.json();
+    if (body.activeThemeKey !== undefined && !THEME_KEYS.includes(body.activeThemeKey)) {
+      return NextResponse.json({ success: false, message: "Invalid theme" }, { status: 400 });
+    }
+    const activeThemeKey = body.activeThemeKey as ThemeKey | undefined;
     const feeEnabled = body.feeEnabled;
     const fee = body.fee;
     if ((feeEnabled !== undefined && typeof feeEnabled !== "boolean") ||
@@ -78,7 +84,7 @@ export async function PUT(req: NextRequest) {
         : undefined;
 
     const settings = await updateDeliverySettings(
-      { feeEnabled, fee, shopName, shopPhone, storeEmail, shopAddress, province, city, area, address, qrCodeImage, whatsAppNumber, storeLogo, socialLinks },
+      { activeThemeKey, feeEnabled, fee, shopName, shopPhone, storeEmail, shopAddress, province, city, area, address, qrCodeImage, whatsAppNumber, storeLogo, socialLinks },
       admin.user.userName
     );
 
@@ -101,6 +107,7 @@ export async function PUT(req: NextRequest) {
         storeLogo: settings.storeLogo || "",
         socialLinks: settings.socialLinks || { instagram: "", facebook: "", youtube: "" },
         updatedAt: settings.updatedAt,
+        activeThemeKey: settings.activeThemeKey,
         updatedBy: settings.updatedBy,
       },
     });

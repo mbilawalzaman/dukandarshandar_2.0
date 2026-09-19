@@ -22,7 +22,7 @@ export default function DashboardMetricsGrid({ stats, loading }: DashboardMetric
           title="Total Products"
           value={loading ? "..." : stats.totalProducts}
           icon={<ShoppingBagIcon />}
-          color="#0284c7"
+          color="var(--theme-primary-main, #0284c7)"
           subtitle="Active inventory items"
         />
       </Grid>

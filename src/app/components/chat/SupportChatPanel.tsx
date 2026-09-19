@@ -28,7 +28,7 @@ import {
 import { getFirebaseDb } from "@/lib/firebaseClient";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import { authHeaders } from "@/lib/cart";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 const PAGE_SIZE = 30;
@@ -315,7 +315,7 @@ export default function SupportChatPanel({
           flex: 1,
           overflowY: "auto",
           p: widget ? 2 : 2,
-          backgroundColor: widget || customerTheme ? (customerTheme ? "#ffffff" : "#f3f4f6") : "#f8fafc",
+          backgroundColor: widget || customerTheme ? (customerTheme ? "#ffffff" : "#f3f4f6") : "var(--theme-bg-default, #f8fafc)",
           minHeight: 0,
         }}
       >
@@ -395,7 +395,7 @@ export default function SupportChatPanel({
                             ? BRAND.gold
                             : widget
                               ? "#374151"
-                              : "#0284c7"
+                              : "var(--theme-primary-main, #0284c7)"
                           : "#ffffff",
                         color: mine ? (customerTheme ? BRAND.navy : "#fff") : "#374151",
                         border: mine ? "none" : "1px solid #e5e7eb",

@@ -3,11 +3,9 @@
 import type { ReactNode } from "react";
 import React, { useState } from "react";
 import { useServerInsertedHTML } from "next/navigation";
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { CacheProvider } from "@emotion/react";
 import type { Options as OptionsOfCreateCache } from "@emotion/cache";
 import createCache from "@emotion/cache";
-import { BRAND } from "@/lib/constants";
 import { CartProvider } from "./providers/CartProvider";
 import { PromotionProvider } from "./providers/PromotionProvider";
 import { FirebaseProvider } from "./providers/FirebaseProvider";
@@ -15,48 +13,8 @@ import { NotificationProvider } from "./providers/NotificationProvider";
 import { ChatWidgetProvider } from "./providers/ChatWidgetProvider";
 import FloatingChatWidget from "./components/chat/FloatingChatWidget";
 import FloatingWhatsAppWidget from "./components/chat/FloatingWhatsAppWidget";
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: BRAND.gold,
-      dark: BRAND.goldHover,
-      contrastText: "#1a1a1a",
-    },
-    secondary: {
-      main: BRAND.navy,
-    },
-    background: {
-      default: "#ffffff",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: BRAND.navy,
-      secondary: BRAND.muted,
-    },
-  },
-  typography: {
-    fontFamily: "var(--font-poppins), Poppins, sans-serif",
-    h1: { fontWeight: 800 },
-    h2: { fontWeight: 800 },
-    h3: { fontWeight: 700 },
-    h4: { fontWeight: 700 },
-    h5: { fontWeight: 700 },
-    h6: { fontWeight: 700 },
-    button: { textTransform: "none", fontWeight: 700 },
-  },
-  shape: { borderRadius: 10 },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        containedPrimary: {
-          boxShadow: "none",
-          "&:hover": { backgroundColor: BRAND.goldHover, boxShadow: "none" },
-        },
-      },
-    },
-  },
-});
+import { StoreSettingsProvider } from "./providers/StoreSettingsProvider";
+import { MarketplaceThemeProvider } from "./providers/MarketplaceThemeProvider";
 
 export default function ThemeRegistry({
   children,
@@ -107,22 +65,23 @@ export default function ThemeRegistry({
 
   return (
     <CacheProvider value={cache}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <CartProvider>
-        <PromotionProvider>
-          <FirebaseProvider>
-            <NotificationProvider>
-              <ChatWidgetProvider>
-                {children}
-                <FloatingWhatsAppWidget />
-                <FloatingChatWidget />
-              </ChatWidgetProvider>
-            </NotificationProvider>
-          </FirebaseProvider>
-        </PromotionProvider>
-        </CartProvider>
-      </ThemeProvider>
+      <StoreSettingsProvider>
+        <MarketplaceThemeProvider>
+          <CartProvider>
+            <PromotionProvider>
+              <FirebaseProvider>
+                <NotificationProvider>
+                  <ChatWidgetProvider>
+                    {children}
+                    <FloatingWhatsAppWidget />
+                    <FloatingChatWidget />
+                  </ChatWidgetProvider>
+                </NotificationProvider>
+              </FirebaseProvider>
+            </PromotionProvider>
+          </CartProvider>
+        </MarketplaceThemeProvider>
+      </StoreSettingsProvider>
     </CacheProvider>
   );
 }

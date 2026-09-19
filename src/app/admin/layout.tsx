@@ -23,7 +23,7 @@ import { signOut } from "firebase/auth";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import NotificationBell from "../components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
 import { clearChatSessionState } from "@/lib/chatSync";
@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f1f5f9" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--theme-bg-default, #f1f5f9)" }}>
       <Suspense fallback={null}>
         <AdminSidebar
           open={sidebarOpen}
@@ -139,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 component={Link}
                 href="/"
                 sx={{
-                  color: "#0284c7",
+                  color: "var(--theme-primary-main, #0284c7)",
                   textDecoration: "none",
                   fontWeight: 600,
                   fontSize: { xs: "0.8rem", sm: "0.875rem" },
@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
                       {getDisplayName(avatarUser)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "#0284c7", fontWeight: 600 }}>
+                    <Typography variant="caption" sx={{ color: "var(--theme-primary-main, #0284c7)", fontWeight: 600 }}>
                       Administrator
                     </Typography>
                   </Box>

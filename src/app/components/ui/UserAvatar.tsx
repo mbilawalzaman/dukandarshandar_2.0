@@ -3,7 +3,7 @@
 import React from "react";
 import type { AvatarProps } from "@mui/material";
 import { Avatar } from "@mui/material";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import {
   getAvatarSrc,
   getDisplayName,

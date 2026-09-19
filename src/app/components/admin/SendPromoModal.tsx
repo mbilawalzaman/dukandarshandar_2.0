@@ -50,7 +50,7 @@ const SEGMENTS: Array<{ value: NonNullable<SendPromoEmailInput["segment"]>; labe
   { value: "subscribers", label: "Newsletter subscribers" },
 ];
 
-const AVATAR_COLORS = ["#e11d48", "#7c3aed", "#0284c7", "#059669", "#d97706", "#4f46e5", "#db2777"];
+const AVATAR_COLORS = ["#e11d48", "#7c3aed", "var(--theme-primary-main, #0284c7)", "#059669", "#d97706", "#4f46e5", "#db2777"];
 
 function getInitials(name: string): string {
   if (!name) return "U";
@@ -228,7 +228,7 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             sx={{
               p: 2,
               borderRadius: 2,
-              backgroundColor: "#f8fafc",
+              backgroundColor: "var(--theme-bg-default, #f8fafc)",
               border: "1px dashed #cbd5e1",
               display: "flex",
               alignItems: "center",
@@ -245,7 +245,7 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             </Box>
             <Chip
               label={rewardLabel(promotion.reward)}
-              sx={{ backgroundColor: "#febe4c", color: "#0f172a", fontWeight: 700 }}
+              sx={{ backgroundColor: "var(--theme-primary-main, #febe4c)", color: "#0f172a", fontWeight: 700 }}
             />
           </Paper>
         )}

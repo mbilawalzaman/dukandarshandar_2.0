@@ -22,7 +22,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
 import ProductCard, { type ProductCardData } from "./ProductCard";
 import FilterSidebar, { type FilterState } from "./catalog/FilterSidebar";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 
 interface ProductListProps {
   refreshTrigger?: boolean;

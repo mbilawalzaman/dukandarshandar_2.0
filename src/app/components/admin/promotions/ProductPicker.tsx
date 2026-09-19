@@ -183,7 +183,7 @@ export default function ProductPicker({ value, onChange, withPricing, defaultPer
 
       {/* ---------------- Browse Catalog List ---------------- */}
       <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", borderColor: "#cbd5e1" }}>
-        <Box sx={{ p: 1.5, bg: "#f8fafc", backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ p: 1.5, bg: "var(--theme-bg-default, #f8fafc)", backgroundColor: "var(--theme-bg-default, #f8fafc)", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
               size="small"
@@ -255,7 +255,7 @@ export default function ProductPicker({ value, onChange, withPricing, defaultPer
 
           <Paper variant="outlined" sx={{ borderRadius: 2, overflowX: "auto" }}>
             <Table size="small">
-              <TableHead sx={{ backgroundColor: "#f8fafc" }}>
+              <TableHead sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
                 <TableRow>
                   <TableCell><Typography variant="caption" fontWeight={700}>Product</Typography></TableCell>
                   <TableCell align="right"><Typography variant="caption" fontWeight={700}>Base Price</Typography></TableCell>
@@ -297,4 +297,3 @@ export default function ProductPicker({ value, onChange, withPricing, defaultPer
     </Box>
   );
 }
-

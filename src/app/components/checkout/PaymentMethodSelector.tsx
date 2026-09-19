@@ -6,7 +6,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 // import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 // import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
-import { BRAND } from "@/lib/constants";
+import { BRAND } from "@/lib/uiBrand";
 import type { PaymentMethod } from "@/types/apps/paymentTypes";
 
 export type { PaymentMethod };

@@ -48,7 +48,7 @@ export default function PromotionsOverview() {
           <StatCard title="Active" value={v(summary?.active)} icon={<LocalOfferIcon />} color="#16a34a" subtitle={`${summary?.scheduled ?? 0} scheduled`} />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <StatCard title="Redemptions" value={v(summary?.totalRedemptions)} icon={<RedeemIcon />} color="#0284c7" subtitle="Across all campaigns" />
+          <StatCard title="Redemptions" value={v(summary?.totalRedemptions)} icon={<RedeemIcon />} color="var(--theme-primary-main, #0284c7)" subtitle="Across all campaigns" />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard title="Discount given" value={loading ? "..." : `PKR ${v(summary?.totalDiscountGiven)}`} icon={<SavingsIcon />} color="#dc2626" subtitle="Total customer savings" />
