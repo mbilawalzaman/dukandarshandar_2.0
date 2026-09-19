@@ -64,6 +64,7 @@ export function MarketplaceThemeProvider({ children }: { children: React.ReactNo
   const preset = useMemo(() => getThemePreset(activeThemeKey), [activeThemeKey]);
   const primaryText = getContrastRatio(preset.palette.primary.main, preset.palette.primary.contrastText) >= 4.5
     ? preset.palette.primary.contrastText : "#111111";
+  const footerText = getContrastRatio(preset.palette.background.footer, "#ffffff") >= 4.5 ? "#ffffff" : "#111111";
 
   useEffect(() => {
     const root = document.documentElement;
@@ -80,10 +81,13 @@ export function MarketplaceThemeProvider({ children }: { children: React.ReactNo
     root.style.setProperty("--theme-bg-paper", preset.palette.background.paper);
     root.style.setProperty("--theme-bg-header", preset.palette.background.header);
     root.style.setProperty("--theme-bg-footer", preset.palette.background.footer);
+    root.style.setProperty("--theme-footer-text", footerText);
+    root.style.setProperty("--theme-sidebar-selected-bg", footerText);
+    root.style.setProperty("--theme-sidebar-selected-text", preset.palette.background.footer);
     root.style.setProperty("--theme-card-border", preset.palette.marketplace.cardBorder);
     root.style.setProperty("--theme-card-radius", `${preset.borderRadius.card}px`);
     root.style.setProperty("--theme-button-radius", `${preset.borderRadius.button}px`);
-  }, [preset, primaryText]);
+  }, [preset, primaryText, footerText]);
 
   const muiTheme = useMemo(() => {
     return createTheme({

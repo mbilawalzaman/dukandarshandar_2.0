@@ -1,5 +1,15 @@
 # Ecommerce defect fixes
 
+Footer/sidebar appearance follow-up: Temu, Daraz, eBay, Walmart and AliExpress now use their marketplace colors for these surfaces; Default and Amazon retain navy. Footer text, links, icons, newsletter action and sidebar normal/selected/hover states use contrasting surface tokens. Calculated text contrast passes 4.5:1 for all seven presets; browser visual verification remains separate.
+
+## Marketplace theme follow-up
+
+- Theme selection is validated and included in settings API reads and writes; missing legacy values retain Default.
+- Delivery-settings consumers share the store provider. Navigation refreshes settings, and stale requests cannot overwrite a successful save.
+- Save responses refresh the complete admin form, including uploaded media URLs. Cancelling a preview resets the selection; navigating away or changing authentication clears previews.
+- Ordinary text uses a neutral readable color independent of marketplace accents. Shared brand styles, checkout actions, navbar, page banners, admin sidebar and surfaces consume theme values.
+- Regression tests cover all seven theme keys through API save/read, invalid keys and customer permission denial. Uploaded artwork, social-platform colors and status indicators retain their distinct appearance.
+
 Scope: repairs to the existing app following `ecommerce-audit.md`. No wishlist, variants, returns/exchanges module, password-recovery flow, invoice generator, courier integration or COD settlement feature was added.
 
 ## Changes
@@ -40,6 +50,8 @@ A cancellation with `refund_state: review_required` (or a long-stalled `requeste
 Uncertain payment session attempts are retained in `payment_sessions` for investigation. An operator should match the provider tracker/order metadata before retrying or binding a session. This avoids automatically issuing a second session when the first provider request may have succeeded.
 
 ## Validation
+
+Wishlist/account follow-up: introduced authenticated, ownership-scoped saved items; hardened password-reset/email-verification token handling and session revocation; restricted social/banner destinations to safe HTTPS or same-site links.
 
 Re-audit fixes also validate and normalize admin product ratings, and add bounded input, email safety checks and IP rate limits to contact/newsletter endpoints.
 

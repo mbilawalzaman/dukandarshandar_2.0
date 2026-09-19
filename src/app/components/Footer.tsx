@@ -52,14 +52,14 @@ export default function Footer() {
   };
 
   return (
-    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #0f172a)", color: "#fff", transition: "background-color 0.3s ease" }}>
+    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #0f172a)", color: "var(--theme-footer-text, #fff)", transition: "background-color 0.3s ease" }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
               Visit our website and enjoy fast shipping
             </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", mb: 2 }}>
+            <Typography variant="body2" sx={{ color: "var(--theme-footer-text, #fff)", mb: 2 }}>
               Discover stationery, craft supplies, and hassle free shopping{storeName ? ` at ${storeName}` : ""}.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center", mb: 1.5 }}>
@@ -82,7 +82,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "#fff", "&:hover": { color: "#E4405F", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
                   >
                     <InstagramIcon fontSize="small" />
                   </IconButton>
@@ -94,7 +94,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "#fff", "&:hover": { color: "#1877F2", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
                   >
                     <FacebookIcon fontSize="small" />
                   </IconButton>
@@ -106,7 +106,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "#fff", "&:hover": { color: "#FF0000", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
                   >
                     <YouTubeIcon fontSize="small" />
                   </IconButton>
@@ -115,7 +115,7 @@ export default function Footer() {
             </Box>
 
             {/* Customer Policy Pages */}
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", fontSize: "0.825rem", color: "rgba(255,255,255,0.65)" }}>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", fontSize: "0.825rem", color: "var(--theme-footer-text, #fff)" }}>
               <MuiLink component={Link} href="/privacy-policy" color="inherit" underline="hover">
                 Privacy Policy
               </MuiLink>
@@ -141,7 +141,7 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 size="small"
                 sx={{
-                  bgcolor: "#fff",
+                  bgcolor: "var(--theme-footer-text, #fff)",
                   borderTopLeftRadius: "var(--theme-button-radius, 6px)",
                   borderBottomLeftRadius: "var(--theme-button-radius, 6px)",
                   "& fieldset": { border: "none" },
@@ -155,9 +155,9 @@ export default function Footer() {
                   borderRadius: "0 var(--theme-button-radius, 6px) var(--theme-button-radius, 6px) 0",
                   px: 3,
                   whiteSpace: "nowrap",
-                  backgroundColor: "primary.main",
-                  color: "primary.contrastText",
-                  "&:hover": { backgroundColor: "primary.dark" },
+                  backgroundColor: "var(--theme-footer-text, #fff)",
+                  color: "var(--theme-bg-footer, #0f172a)",
+                  "&:hover": { backgroundColor: "var(--theme-footer-text, #fff)", filter: "brightness(0.9)" },
                 }}
               >
                 Subscribe
@@ -165,7 +165,7 @@ export default function Footer() {
             </Box>
           </Grid>
         </Grid>
-        <Typography variant="caption" sx={{ display: "block", mt: 4, color: "rgba(255,255,255,0.5)" }}>
+        <Typography variant="caption" sx={{ display: "block", mt: 4, color: "var(--theme-footer-text, #fff)" }}>
           © {new Date().getFullYear()} {storeName}. All rights reserved.
         </Typography>
       </Container>

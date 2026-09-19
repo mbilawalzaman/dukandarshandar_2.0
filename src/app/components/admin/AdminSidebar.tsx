@@ -107,17 +107,17 @@ export default function AdminSidebar({
       >
         {(isMobileView || open) && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, color: "var(--theme-primary-light, #38bdf8)" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, color: "var(--theme-footer-text, #fff)" }}>
               Admin Portal
             </Typography>
           </Box>
         )}
         {isMobileView ? (
-          <IconButton onClick={onMobileClose} sx={{ color: "#94a3b8" }}>
+          <IconButton onClick={onMobileClose} sx={{ color: "var(--theme-footer-text, #fff)" }}>
             <CloseIcon />
           </IconButton>
         ) : (
-          <IconButton onClick={onToggle} sx={{ color: "#94a3b8" }}>
+          <IconButton onClick={onToggle} sx={{ color: "var(--theme-footer-text, #fff)" }}>
             {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
         )}
@@ -137,10 +137,10 @@ export default function AdminSidebar({
                       minHeight: 48,
                       justifyContent: !isMobileView && !open ? "center" : "initial",
                       px: 2.5,
-                      backgroundColor: isChildActive ? "rgba(56, 189, 248, 0.1)" : "transparent",
-                      borderLeft: isChildActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
+                      backgroundColor: isChildActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
+                      borderLeft: isChildActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
                       "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
                       },
                     }}
                   >
@@ -149,7 +149,7 @@ export default function AdminSidebar({
                         minWidth: 0,
                         mr: !isMobileView && !open ? "auto" : 2,
                         justifyContent: "center",
-                        color: isChildActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
+                        color: isChildActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
                       }}
                     >
                       {item.icon}
@@ -158,11 +158,11 @@ export default function AdminSidebar({
                       primary={item.label}
                       sx={{
                         opacity: !isMobileView && !open ? 0 : 1,
-                        color: isChildActive ? "var(--theme-primary-light, #38bdf8)" : "#e2e8f0",
+                        color: isChildActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
                         fontWeight: isChildActive ? 600 : 400,
                       }}
                     />
-                    {(isMobileView || open) && (groupOpen ? <ExpandLess sx={{ color: "#94a3b8" }} /> : <ExpandMore sx={{ color: "#94a3b8" }} />)}
+                    {(isMobileView || open) && (groupOpen ? <ExpandLess sx={{ color: "var(--theme-footer-text, #fff)" }} /> : <ExpandMore sx={{ color: "var(--theme-footer-text, #fff)" }} />)}
                   </ListItemButton>
                 </ListItem>
                 <Collapse in={groupOpen && (isMobileView || open)} timeout="auto" unmountOnExit>
@@ -178,10 +178,10 @@ export default function AdminSidebar({
                           sx={{
                             minHeight: 40,
                             pl: 4.5,
-                            backgroundColor: isSubActive ? "rgba(56, 189, 248, 0.2)" : "transparent",
-                            borderLeft: isSubActive ? "4px solid var(--theme-primary-light, #38bdf8)" : "4px solid transparent",
+                            backgroundColor: isSubActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
+                            borderLeft: isSubActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
                             "&:hover": {
-                              backgroundColor: "rgba(255, 255, 255, 0.08)",
+                              backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
                             },
                           }}
                         >
@@ -190,7 +190,7 @@ export default function AdminSidebar({
                               minWidth: 0,
                               mr: 1.5,
                               justifyContent: "center",
-                              color: isSubActive ? "var(--theme-primary-light, #38bdf8)" : "#94a3b8",
+                              color: isSubActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
                               fontSize: "1.1rem",
                             }}
                           >
@@ -199,7 +199,7 @@ export default function AdminSidebar({
                           <ListItemText
                             primary={sub.label}
                             primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: isSubActive ? 700 : 400 }}
-                            sx={{ color: isSubActive ? "var(--theme-primary-main, #febe4c)" : "#cbd5e1" }}
+                            sx={{ color: isSubActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)" }}
                           />
                         </ListItemButton>
                       );
@@ -221,10 +221,10 @@ export default function AdminSidebar({
                   minHeight: 48,
                   justifyContent: !isMobileView && !open ? "center" : "initial",
                   px: 2.5,
-                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.12)" : "transparent",
-                  borderLeft: isActive ? "4px solid var(--theme-primary-main, #febe4c)" : "4px solid transparent",
+                  backgroundColor: isActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
+                  borderLeft: isActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
                   "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
                   },
                 }}
               >
@@ -233,7 +233,7 @@ export default function AdminSidebar({
                     minWidth: 0,
                     mr: !isMobileView && !open ? "auto" : 2,
                     justifyContent: "center",
-                    color: isActive ? "var(--theme-primary-main, #febe4c)" : "#94a3b8",
+                    color: isActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
                   }}
                 >
                   {item.icon}
@@ -242,7 +242,7 @@ export default function AdminSidebar({
                   primary={item.label}
                   sx={{
                     opacity: !isMobileView && !open ? 0 : 1,
-                    color: isActive ? "var(--theme-primary-main, #febe4c)" : "#e2e8f0",
+                    color: isActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
                     fontWeight: isActive ? 600 : 400,
                   }}
                 />
@@ -267,7 +267,7 @@ export default function AdminSidebar({
             width: drawerWidth,
             boxSizing: "border-box",
             backgroundColor: "var(--theme-bg-footer, #0f172a)",
-            color: "var(--theme-bg-default, #f8fafc)",
+            color: "var(--theme-footer-text, #fff)",
             borderRight: "1px solid rgba(255, 255, 255, 0.1)",
             transition: "background-color 0.3s ease",
           },
@@ -292,7 +292,7 @@ export default function AdminSidebar({
           transition: "width 0.2s ease-in-out, background-color 0.3s ease",
           overflowX: "hidden",
           backgroundColor: "var(--theme-bg-footer, #0f172a)",
-          color: "var(--theme-bg-default, #f8fafc)",
+          color: "var(--theme-footer-text, #fff)",
           borderRight: "1px solid rgba(255, 255, 255, 0.1)",
         },
       }}

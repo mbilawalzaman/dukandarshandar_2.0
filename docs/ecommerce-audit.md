@@ -1,5 +1,7 @@
 # Dukandar Shandar ecommerce audit
 
+Theme-switcher follow-up: repaired API persistence, shared settings synchronization, preview cleanup, form/media refresh after saves, neutral text contrast and theme-aware shared storefront/admin styling. See `ecommerce-fixes.md` for details and regression coverage. Visual verification of all seven presets on a deployed browser remains required.
+
 Reviewed and updated after defect fixes: 2026-09-19.
 
 **Current verdict:** the defect-fix pass is implemented and local validation passed. The app is not yet certified production-complete: live database/payment verification, operational checks and the deferred ecommerce features below remain outstanding.
@@ -99,6 +101,13 @@ The numbering and severity below refer to the original audit findings. Fixed fin
 3. Prioritize catalog-specific enhancements such as variants, address books and wishlist after those operational requirements are agreed.
 
 ## Validation after fixes
+
+### Account, navigation and wishlist follow-up
+
+- Password-reset and email-verification tokens are stored as hashes, rate-limited, expire server-side and are single-use. A completed password reset revokes active refresh sessions.
+- Email-confirmation links work from the recipient's browser without relying on the old account session. Profile email changes now send a confirmation request after other profile updates save.
+- Social profile and banner destinations accept only HTTPS URLs or same-site paths, preventing unsafe link schemes.
+- Logged-in customers can save active products to a server-owned wishlist through product-card/detail heart controls and manage them at `/wishlist`.
 
 Re-audit fixes also validate and normalize admin product ratings, and add bounded input, email safety checks and IP rate limits to contact/newsletter endpoints.
 

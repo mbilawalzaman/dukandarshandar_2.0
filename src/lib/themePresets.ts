@@ -112,7 +112,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#f5f5f5",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#001830",
+        footer: "#F57224",
       },
       marketplace: {
         accentRed: "#e63946",
@@ -190,7 +190,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#f7f7f7",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#121824",
+        footer: "#0064D2",
       },
       marketplace: {
         accentRed: "#E53238",
@@ -229,7 +229,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#F2F8FD",
         paper: "#ffffff",
         header: "#0071DC",
-        footer: "#041E42",
+        footer: "#0071DC",
       },
       marketplace: {
         accentRed: "#de2a2a",
@@ -268,7 +268,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#f4f4f4",
         paper: "#ffffff",
         header: "#ffffff",
-        footer: "#1f0909",
+        footer: "#FF4747",
       },
       marketplace: {
         accentRed: "#FF4747",
@@ -307,7 +307,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#fff7f2",
         paper: "#ffffff",
         header: "#FF5000",
-        footer: "#2b1400",
+        footer: "#FF5000",
       },
       marketplace: {
         accentRed: "#e03000",
@@ -351,4 +351,3 @@ export function getThemePresetName(key?: unknown, shopName?: string): string {
   }
   return preset.name;
 }
-
