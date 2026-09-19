@@ -141,10 +141,12 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 size="small"
                 sx={{
-                  bgcolor: "var(--theme-footer-text, #fff)",
+                  bgcolor: "background.paper",
                   borderTopLeftRadius: "var(--theme-button-radius, 6px)",
                   borderBottomLeftRadius: "var(--theme-button-radius, 6px)",
                   "& fieldset": { border: "none" },
+                  "& input": { color: "text.primary" },
+                  "& input::placeholder": { color: "text.secondary", opacity: 1 },
                 }}
               />
               <Button
