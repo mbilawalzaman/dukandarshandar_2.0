@@ -1,6 +1,6 @@
 export type BannerMediaType = "image" | "video";
 export type ProcessingStatus = "idle" | "uploading" | "processing" | "failed";
-export type PageSettingsKey = "home" | "shop" | "about" | "contact";
+export type PageSettingsKey = "home" | "shop" | "about" | "contact" | "privacy" | "terms" | "shipping" | "returns";
 export type HomeBannerMode = "image_slider" | "single_video";
 
 export interface MediaAsset {
@@ -71,6 +71,17 @@ export interface AboutPageSettingsConfig extends PageBannerConfig {
   quotes?: string[];
 }
 
+export interface PolicySectionItem {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface PolicyPageSettingsConfig extends PageBannerConfig {
+  lastUpdated?: string;
+  sections: PolicySectionItem[];
+}
+
 export interface PageSettings {
   home: {
     bannerMode: HomeBannerMode;
@@ -84,6 +95,10 @@ export interface PageSettings {
   shop: PageBannerConfig & { productsPerPage: number };
   about: AboutPageSettingsConfig;
   contact: PageBannerConfig;
+  privacy: PolicyPageSettingsConfig;
+  terms: PolicyPageSettingsConfig;
+  shipping: PolicyPageSettingsConfig;
+  returns: PolicyPageSettingsConfig;
 }
 
 export const DEFAULT_PAGE_SETTINGS: PageSettings = {
@@ -160,6 +175,132 @@ export const DEFAULT_PAGE_SETTINGS: PageSettings = {
     bannerType: "image",
     bannerImage: "",
   },
+  privacy: {
+    bannerTitle: "PRIVACY POLICY",
+    bannerSubtitle: "How we collect, use, and protect your personal data",
+    bannerType: "image",
+    bannerImage: "",
+    lastUpdated: "September 2026",
+    sections: [
+      {
+        id: "priv-1",
+        title: "Information We Collect",
+        content: "At Dukandar Shandar, we collect personal information necessary to process your orders and enhance your shopping experience. This includes your name, email address, phone number, shipping address, and payment method details.",
+      },
+      {
+        id: "priv-2",
+        title: "How We Use Your Information",
+        content: "Your information is used strictly to process orders, generate shipping labels, deliver stationery and craft products, send order tracking updates, and provide customer support via email or WhatsApp.",
+      },
+      {
+        id: "priv-3",
+        title: "Payment Security & Third Parties",
+        content: "Online card and digital wallet payments are securely processed through encrypted payment gateways (Safepay). We never store raw credit card numbers or banking secrets on our servers. Courier partners (e.g., PostEx) receive only your shipping name, address, and contact number for parcel fulfillment.",
+      },
+      {
+        id: "priv-4",
+        title: "Cookies & Local Storage",
+        content: "We use secure browser cookies and local storage to save your cart items, maintain active login sessions, and optimize storefront performance.",
+      },
+      {
+        id: "priv-5",
+        title: "Your Data Rights & Contact",
+        content: "You may request access to, correction of, or deletion of your stored profile data at any time by contacting our support team via our Contact page or WhatsApp.",
+      },
+    ],
+  },
+  terms: {
+    bannerTitle: "TERMS & CONDITIONS",
+    bannerSubtitle: "Rules, terms, and guidelines for shopping with us",
+    bannerType: "image",
+    bannerImage: "",
+    lastUpdated: "September 2026",
+    sections: [
+      {
+        id: "terms-1",
+        title: "Acceptance of Terms",
+        content: "By accessing Dukandar Shandar or placing an order, you agree to be bound by these Terms & Conditions. If you do not agree to all terms, please do not use our website.",
+      },
+      {
+        id: "terms-2",
+        title: "Products & Pricing",
+        content: "All prices listed on our storefront are in Pakistani Rupees (PKR) and include applicable taxes unless stated otherwise. We reserve the right to correct pricing errors or update product availability without prior notice.",
+      },
+      {
+        id: "terms-3",
+        title: "Order Acceptance & Payments",
+        content: "An order placement constitutes an offer to purchase. We reserve the right to decline or cancel orders due to stock unavailability, pricing inaccuracies, or suspected fraud. Cash on Delivery (COD) orders require exact payment upon parcel delivery.",
+      },
+      {
+        id: "terms-4",
+        title: "User Accounts",
+        content: "You are responsible for maintaining the confidentiality of your account password and restricting access to your computer.",
+      },
+      {
+        id: "terms-5",
+        title: "Governing Law",
+        content: "These terms are governed by and construed in accordance with the laws of the Islamic Republic of Pakistan.",
+      },
+    ],
+  },
+  shipping: {
+    bannerTitle: "SHIPPING & DELIVERY POLICY",
+    bannerSubtitle: "Parcel delivery timelines, rates, and tracking info",
+    bannerType: "image",
+    bannerImage: "",
+    lastUpdated: "September 2026",
+    sections: [
+      {
+        id: "ship-1",
+        title: "Delivery Timelines",
+        content: "We deliver stationery, craft supplies, and art materials across all major cities and rural areas in Pakistan. Standard delivery takes 2 to 4 business days for major urban cities (Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad) and 3 to 6 business days for secondary towns.",
+      },
+      {
+        id: "ship-2",
+        title: "Shipping Charges & Free Delivery Promotions",
+        content: "Standard shipping fee is flat rate (e.g. PKR 250) per order across Pakistan. We regularly run Free Shipping promotions on orders exceeding specific cart amounts or via special promotion vouchers.",
+      },
+      {
+        id: "ship-3",
+        title: "Cash on Delivery (COD) Rules",
+        content: "For Cash on Delivery (COD) orders, please keep exact cash ready upon rider arrival. Riders are authorized to hand over parcels only after cash collection.",
+      },
+      {
+        id: "ship-4",
+        title: "Order Tracking",
+        content: "Once your order is processed and handed over to our courier partner (e.g. PostEx), you will receive email/SMS notifications with your tracking ID to track your package live.",
+      },
+    ],
+  },
+  returns: {
+    bannerTitle: "RETURNS & REFUNDS POLICY",
+    bannerSubtitle: "7-Day return policy and hassle-free refund process",
+    bannerType: "image",
+    bannerImage: "",
+    lastUpdated: "September 2026",
+    sections: [
+      {
+        id: "ret-1",
+        title: "7-Day Return Window",
+        content: "We accept return requests within 7 days of order delivery if you receive damaged, defective, or incorrect stationery products.",
+      },
+      {
+        id: "ret-2",
+        title: "Eligibility Criteria",
+        content: "To be eligible for a return, your item must be unused, in its original packaging, and accompanied by proof of purchase (Order ID or receipt).",
+      },
+      {
+        id: "ret-3",
+        title: "Refund Process",
+        content: "Once your returned parcel is received and inspected, we will notify you of the approval or rejection of your refund. Approved refunds are processed to your original payment method (Safepay online refund) or Bank Account / Raast for COD orders within 3 to 5 business days.",
+      },
+      {
+        id: "ret-4",
+        title: "Damaged or Wrong Items",
+        content: "If your parcel arrives damaged during transit, please contact us immediately via WhatsApp or email with unboxing photos/videos so we can arrange a free replacement.",
+      },
+    ],
+  },
 };
 
 export interface RawMongoPageSettingsDoc {
@@ -175,6 +316,10 @@ export interface RawMongoPageSettingsDoc {
   shop?: Partial<PageSettings["shop"]>;
   about?: Partial<AboutPageSettingsConfig>;
   contact?: Partial<PageSettings["contact"]>;
+  privacy?: Partial<PolicyPageSettingsConfig>;
+  terms?: Partial<PolicyPageSettingsConfig>;
+  shipping?: Partial<PolicyPageSettingsConfig>;
+  returns?: Partial<PolicyPageSettingsConfig>;
 }
 
 function normalizeMediaAsset(media?: MediaAsset | null): MediaAsset {
@@ -296,6 +441,26 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
     };
   };
 
+  const normalizePolicyPage = (
+    page: Partial<PolicyPageSettingsConfig> | undefined,
+    defaults: PolicyPageSettingsConfig
+  ): PolicyPageSettingsConfig => {
+    const banner = normalizePageBanner(page, defaults);
+    const sections = Array.isArray(page?.sections) && page!.sections.length > 0
+      ? page!.sections.map((s, idx) => ({
+          id: s.id || `section-${idx + 1}`,
+          title: typeof s.title === "string" ? s.title : "",
+          content: typeof s.content === "string" ? s.content : "",
+        }))
+      : defaults.sections;
+
+    return {
+      ...banner,
+      lastUpdated: typeof page?.lastUpdated === "string" ? page.lastUpdated : defaults.lastUpdated || "September 2026",
+      sections,
+    };
+  };
+
   return {
     home: {
       ...DEFAULT_PAGE_SETTINGS.home,
@@ -331,5 +496,9 @@ export function normalizePageSettings(doc: RawMongoPageSettingsDoc | Record<stri
         : DEFAULT_PAGE_SETTINGS.about.quotes,
     },
     contact: normalizePageBanner(safeDoc.contact, DEFAULT_PAGE_SETTINGS.contact),
+    privacy: normalizePolicyPage(safeDoc.privacy, DEFAULT_PAGE_SETTINGS.privacy),
+    terms: normalizePolicyPage(safeDoc.terms, DEFAULT_PAGE_SETTINGS.terms),
+    shipping: normalizePolicyPage(safeDoc.shipping, DEFAULT_PAGE_SETTINGS.shipping),
+    returns: normalizePolicyPage(safeDoc.returns, DEFAULT_PAGE_SETTINGS.returns),
   };
 }

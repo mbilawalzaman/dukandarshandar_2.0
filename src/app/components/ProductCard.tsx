@@ -9,7 +9,10 @@ import {
   Rating,
   Box,
   Chip,
+  IconButton,
 } from "@mui/material";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/providers/CartProvider";
 import { getProductThumbnail } from "@/lib/productImages";
@@ -17,6 +20,8 @@ import { usePromotions } from "@/app/providers/PromotionProvider";
 import PriceTag from "@/app/components/promotions/PriceTag";
 import PromotionBadge from "@/app/components/promotions/PromotionBadge";
 import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
+import { useWishlist } from "@/app/providers/WishlistProvider";
+import { BRAND } from "@/lib/constants";
 
 export type ProductCardData = {
   _id: string;
@@ -32,10 +37,23 @@ export type ProductCardData = {
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
   const router = useRouter();
-  const { add } = useCart();
+  const { add, toast } = useCart();
+  const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
   const deal = dealFor({ _id: product._id, price: Number(product.price) || 0, category: product.category });
   const outOfStock = Number(product.quantity) === 0;
+  const saved = productIds.has(product._id);
+
+  const toggleWishlist = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const result = await toggle(product._id);
+    if (!result.ok) {
+      toast(result.message || "Could not update wishlist", "error");
+      if (result.message === "Please log in to save items") router.push(`/login?next=${encodeURIComponent(`/products/${product._id}`)}`);
+    } else {
+      toast(saved ? "Removed from wishlist" : "Saved to wishlist");
+    }
+  };
 
   return (
     <Card
@@ -103,6 +121,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             }}
           />
         )}
+        <IconButton
+          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+          onClick={toggleWishlist}
+          sx={{ position: "absolute", right: 8, bottom: 8, backgroundColor: "rgba(255,255,255,0.94)", color: saved ? "#dc2626" : BRAND.navy, "&:hover": { backgroundColor: "#fff", color: "#dc2626" } }}
+        >
+          {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+        </IconButton>
       </Box>
 
       {/* Product Information */}

@@ -106,6 +106,7 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error updating delivery settings:", error);
-    return NextResponse.json({ success: false, message: "Failed to update delivery settings" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to update delivery settings";
+    return NextResponse.json({ success: false, message }, { status: message === "Social links must be HTTPS URLs" ? 400 : 500 });
   }
 }

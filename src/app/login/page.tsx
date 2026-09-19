@@ -183,6 +183,11 @@ function LoginForm() {
                   ),
                 }}
               />
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -0.5 }}>
+                <Link href="/forgot-password" variant="body2" color="primary" sx={{ fontWeight: 600, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+                  Forgot Password?
+                </Link>
+              </Box>
               {error && (
                 <Typography color="error" align="center" variant="body2">
                   {error}

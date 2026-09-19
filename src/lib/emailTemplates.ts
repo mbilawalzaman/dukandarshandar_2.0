@@ -183,8 +183,47 @@ export function promoCodeEmailTemplate(input: {
          Claim Your Discount
        </a>
      </div>
-     <p style="font-size:13px; color:#64748b;">Simply enter promo code <strong>"${promoCode}"</strong> at checkout to claim your savings.</p>
      <p>Warm regards,<br/>The ${escapeHtml(storeName || "Store")} Team</p>`,
     storeName
   );
 }
+
+export function passwordResetEmail(input: { name?: string; resetUrl: string; shopName?: string }) {
+  const storeName = input.shopName || "Dukandar Shandar";
+  const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
+
+  return layout(
+    "Password Reset Request",
+    `<p>Hi ${customerName},</p>
+     <p>We received a request to reset your password for your ${escapeHtml(storeName)} account.</p>
+     <p>Click the button below to reset your password. This link is valid for 1 hour.</p>
+     <div style="margin:28px 0; text-align:center;">
+       <a href="${input.resetUrl}" style="background:${gold}; color:${navy}; font-size:15px; font-weight:bold; padding:14px 32px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         Reset Password
+       </a>
+     </div>
+     <p style="font-size:13px; color:#64748b;">If you didn't request a password reset, you can safely ignore this email. Your password will not change.</p>
+     <p style="font-size:12px; color:#94a3b8; word-break:break-all;">Direct link: ${input.resetUrl}</p>`,
+    storeName
+  );
+}
+
+export function emailVerificationEmail(input: { name?: string; verifyUrl: string; newEmail: string; shopName?: string }) {
+  const storeName = input.shopName || "Dukandar Shandar";
+  const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
+
+  return layout(
+    "Verify Email Change",
+    `<p>Hi ${customerName},</p>
+     <p>You requested to update your account email to <strong>${escapeHtml(input.newEmail)}</strong>.</p>
+     <p>Please click the button below to verify and complete your email update:</p>
+     <div style="margin:28px 0; text-align:center;">
+       <a href="${input.verifyUrl}" style="background:${gold}; color:${navy}; font-size:15px; font-weight:bold; padding:14px 32px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         Verify Email Address
+       </a>
+     </div>
+     <p style="font-size:13px; color:#64748b;">If you did not request this email change, please secure your account immediately.</p>`,
+    storeName
+  );
+}
+

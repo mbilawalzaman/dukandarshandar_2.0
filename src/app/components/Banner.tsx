@@ -10,6 +10,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import { safeNavigationHref } from "@/lib/safeNavigation";
 
 interface BannerProps {
   banners?: BannerItem[];
@@ -36,7 +37,7 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
       return null;
     }
 
-    const goToLink = singleBanner?.goToLink || banners?.[0]?.goToLink;
+    const goToLink = safeNavigationHref(singleBanner?.goToLink || banners?.[0]?.goToLink);
     const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
 
     const singleContent = (
@@ -155,7 +156,7 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
     >
       <Slider {...settings}>
         {activeBanners.map((banner, index) => {
-          const goToLink = banner.goToLink;
+          const goToLink = safeNavigationHref(banner.goToLink);
           const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
 
           const slideContent = (

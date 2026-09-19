@@ -40,6 +40,7 @@ import type { CheckoutShippingFormType } from "@/types/apps/orderTypes";
 import { fetchAreas } from "@/lib/locationClient";
 import type { CheckoutSafepaySessionType, PaymentMethod } from "@/types/apps/paymentTypes";
 import type { UserTokenType } from "@/types/shared/authTypes";
+import Link from "next/link";
 
 type TokenUser = UserTokenType;
 
@@ -601,6 +602,16 @@ export default function CheckoutPage() {
                   >
                     {submitLabel}
                   </Button>
+                  <Typography variant="caption" align="center" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
+                    By placing your order, you agree to Dukandar Shandar’s{" "}
+                    <Link href="/terms-of-service" style={{ color: BRAND.navy, fontWeight: 600 }}>
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy-policy" style={{ color: BRAND.navy, fontWeight: 600 }}>
+                      Privacy Policy
+                    </Link>.
+                  </Typography>
                 </Paper>
               )}
 

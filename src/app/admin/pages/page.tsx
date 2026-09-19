@@ -11,24 +11,23 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import SecurityIcon from "@mui/icons-material/Security";
+import GavelIcon from "@mui/icons-material/Gavel";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import AssignmentReturnIcon from "@mui/icons-material/AssignmentReturn";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ContactMailIcon from "@mui/icons-material/ContactMail";
 
-import type {
-  PageSettings,
-  PageSettingsKey,
-  BannerItem,
-  MediaAsset,
-} from "@/lib/pageSettings";
+import type { BannerItem, MediaAsset, PageSettings, PageSettingsKey } from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 import { uploadVideoToCloudinary } from "@/lib/cloudinaryClientUpload";
-
 import HomeTab from "@/app/components/admin/pages/HomeTab";
 import ShopCatalogTab from "@/app/components/admin/pages/ShopCatalogTab";
 import AboutUsTab from "@/app/components/admin/pages/AboutUsTab";
 import ContactTab from "@/app/components/admin/pages/ContactTab";
+import PolicyTab from "@/app/components/admin/pages/PolicyTab";
 import ConfigureBannerModal from "@/app/components/admin/pages/ConfigureBannerModal";
 
 const PAGE_LABELS: Record<PageSettingsKey, string> = {
@@ -36,6 +35,10 @@ const PAGE_LABELS: Record<PageSettingsKey, string> = {
   shop: "Shop",
   about: "About",
   contact: "Contact",
+  privacy: "Privacy Policy",
+  terms: "Terms & Conditions",
+  shipping: "Shipping Policy",
+  returns: "Returns & Refunds",
 };
 
 export default function AdminManagePages() {
@@ -414,6 +417,10 @@ export default function AdminManagePages() {
           <Tab icon={<StorefrontIcon />} iconPosition="start" label="Shop Catalog Page" />
           <Tab icon={<InfoOutlinedIcon />} iconPosition="start" label="About Us Page" />
           <Tab icon={<ContactMailIcon />} iconPosition="start" label="Contact Page" />
+          <Tab icon={<SecurityIcon />} iconPosition="start" label="Privacy Policy" />
+          <Tab icon={<GavelIcon />} iconPosition="start" label="Terms & Conditions" />
+          <Tab icon={<LocalShippingIcon />} iconPosition="start" label="Shipping Policy" />
+          <Tab icon={<AssignmentReturnIcon />} iconPosition="start" label="Returns & Refunds" />
         </Tabs>
       </Paper>
 
@@ -455,6 +462,58 @@ export default function AdminManagePages() {
 
       {activeTab === 3 && (
         <ContactTab
+          settings={settings}
+          setSettings={setSettings}
+          savingPage={savingPage}
+          modalUploading={modalUploading}
+          onOpenModal={handleOpenModal}
+          onSavePage={savePage}
+        />
+      )}
+
+      {activeTab === 4 && (
+        <PolicyTab
+          pageKey="privacy"
+          pageTitle="Privacy Policy"
+          settings={settings}
+          setSettings={setSettings}
+          savingPage={savingPage}
+          modalUploading={modalUploading}
+          onOpenModal={handleOpenModal}
+          onSavePage={savePage}
+        />
+      )}
+
+      {activeTab === 5 && (
+        <PolicyTab
+          pageKey="terms"
+          pageTitle="Terms & Conditions"
+          settings={settings}
+          setSettings={setSettings}
+          savingPage={savingPage}
+          modalUploading={modalUploading}
+          onOpenModal={handleOpenModal}
+          onSavePage={savePage}
+        />
+      )}
+
+      {activeTab === 6 && (
+        <PolicyTab
+          pageKey="shipping"
+          pageTitle="Shipping Policy"
+          settings={settings}
+          setSettings={setSettings}
+          savingPage={savingPage}
+          modalUploading={modalUploading}
+          onOpenModal={handleOpenModal}
+          onSavePage={savePage}
+        />
+      )}
+
+      {activeTab === 7 && (
+        <PolicyTab
+          pageKey="returns"
+          pageTitle="Returns & Refunds"
           settings={settings}
           setSettings={setSettings}
           savingPage={savingPage}

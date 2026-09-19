@@ -10,6 +10,10 @@ const PAGE_LABELS: Record<PageSettingsKey, string> = {
   shop: "Shop",
   about: "About",
   contact: "Contact",
+  privacy: "Privacy Policy",
+  terms: "Terms & Conditions",
+  shipping: "Shipping Policy",
+  returns: "Returns & Refunds",
 };
 
 export interface SavePageButtonProps {

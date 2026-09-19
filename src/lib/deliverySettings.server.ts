@@ -4,6 +4,7 @@ import {
   DELIVERY_SETTINGS_KEY,
   type DeliverySettings,
 } from "@/lib/deliverySettings";
+import { safeNavigationHref } from "@/lib/safeNavigation";
 
 export async function getDeliverySettings(): Promise<DeliverySettings> {
   const db = await getDb();
@@ -93,10 +94,16 @@ export async function updateDeliverySettings(
   }
 
   if (input.socialLinks && typeof input.socialLinks === "object") {
+    const instagram = safeNavigationHref(input.socialLinks.instagram);
+    const facebook = safeNavigationHref(input.socialLinks.facebook);
+    const youtube = safeNavigationHref(input.socialLinks.youtube);
+    if ((input.socialLinks.instagram && !instagram) || (input.socialLinks.facebook && !facebook) || (input.socialLinks.youtube && !youtube)) {
+      throw new Error("Social links must be HTTPS URLs");
+    }
     setPayload.socialLinks = {
-      instagram: typeof input.socialLinks.instagram === "string" ? input.socialLinks.instagram.trim() : "",
-      facebook: typeof input.socialLinks.facebook === "string" ? input.socialLinks.facebook.trim() : "",
-      youtube: typeof input.socialLinks.youtube === "string" ? input.socialLinks.youtube.trim() : "",
+      instagram: instagram || "",
+      facebook: facebook || "",
+      youtube: youtube || "",
     };
   }
 

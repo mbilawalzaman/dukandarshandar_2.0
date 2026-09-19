@@ -135,6 +135,11 @@ export default function ProfileEditor({
       return;
     }
 
+    const normalizedEmail = form.email.trim().toLowerCase();
+    const emailChangeRequested = Boolean(
+      profile && !profile.needsEmail && normalizedEmail !== String(profile.email || "").trim().toLowerCase()
+    );
+
     setSaving(true);
     try {
       const res = await authFetch("/api/profile", {
@@ -142,7 +147,7 @@ export default function ProfileEditor({
         body: JSON.stringify({
           name: form.name.trim(),
           storeName: form.storeName.trim(),
-          email: form.email.trim().toLowerCase(),
+          ...(emailChangeRequested ? {} : { email: normalizedEmail }),
           phone: form.phone.trim(),
           province: form.province.trim(),
           city: form.city.trim(),
@@ -177,7 +182,21 @@ export default function ProfileEditor({
       if (p.image) localStorage.setItem("userImage", p.image);
       else localStorage.removeItem("userImage");
       window.dispatchEvent(new Event("authChange"));
-      setSuccess("Profile saved");
+      if (emailChangeRequested) {
+        const verification = await authFetch("/api/profile/verify-email", {
+          method: "POST",
+          body: JSON.stringify({ action: "request", newEmail: normalizedEmail }),
+        });
+        const verificationData = await verification.json();
+        if (!verification.ok || !verificationData.success) {
+          setError(verificationData.message || "Profile was saved, but we could not send the verification email.");
+          return;
+        }
+        setForm((prev) => ({ ...prev, email: p.email || "" }));
+        setSuccess("Profile saved. Check your new email address to confirm the change.");
+      } else {
+        setSuccess("Profile saved");
+      }
     } catch {
       setError("Network error while saving");
     } finally {

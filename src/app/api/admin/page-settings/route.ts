@@ -1,5 +1,6 @@
 import type { NextRequest} from "next/server";
 import { NextResponse } from "next/server";
+import { safeNavigationHref } from "@/lib/safeNavigation";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
@@ -117,7 +118,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
       id: bannerId,
       title: b.title || "",
       subtitle: b.subtitle || "",
-      goToLink: typeof b.goToLink === "string" ? b.goToLink.trim() : undefined,
+      goToLink: safeNavigationHref(b.goToLink) || undefined,
       order: typeof b.order === "number" ? b.order : i + 1,
       isActive: b.isActive !== false,
       activeMedia,
@@ -170,7 +171,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     id: (typeof rawSingle.id === "string" && rawSingle.id) || "single-banner-1",
     title: (typeof rawSingle.title === "string" && rawSingle.title) || "",
     subtitle: (typeof rawSingle.subtitle === "string" && rawSingle.subtitle) || "",
-    goToLink: (typeof rawSingle.goToLink === "string" && rawSingle.goToLink.trim()) || undefined,
+    goToLink: safeNavigationHref(rawSingle.goToLink) || undefined,
     order: 1,
     isActive: rawSingle.isActive !== false,
     activeMedia: singleActiveMedia,
@@ -202,7 +203,7 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
 }
 
 async function processSubpageSettings(
-  pageKey: "shop" | "about" | "contact",
+  pageKey: "shop" | "about" | "contact" | "privacy" | "terms" | "shipping" | "returns",
   rawPage: Record<string, unknown>
 ) {
   const defaults = DEFAULT_PAGE_SETTINGS[pageKey];
@@ -280,7 +281,24 @@ async function processSubpageSettings(
     } satisfies PageSettings["about"];
   }
 
-  return result satisfies PageSettings["about"];
+  if (pageKey === "privacy" || pageKey === "terms" || pageKey === "shipping" || pageKey === "returns") {
+    const policyDefaults = DEFAULT_PAGE_SETTINGS[pageKey];
+    const lastUpdated = typeof rawPage.lastUpdated === "string" ? rawPage.lastUpdated.trim() : policyDefaults.lastUpdated;
+    const rawSections = Array.isArray(rawPage.sections) ? rawPage.sections : policyDefaults.sections;
+    const sections = (rawSections as Array<Record<string, unknown>>).map((s, idx) => ({
+      id: (s.id as string) || `sec-${idx + 1}`,
+      title: typeof s.title === "string" ? s.title.trim() : "",
+      content: typeof s.content === "string" ? s.content.trim() : "",
+    }));
+
+    return {
+      ...result,
+      lastUpdated,
+      sections,
+    };
+  }
+
+  return result;
 }
 
 export async function GET(req: NextRequest) {
@@ -317,9 +335,10 @@ export async function PUT(req: NextRequest) {
     const db = await getDb();
     const page = body.page as PageSettingsKey | undefined;
 
-    if (!page || !["home", "shop", "about", "contact"].includes(page)) {
+    const validPages: PageSettingsKey[] = ["home", "shop", "about", "contact", "privacy", "terms", "shipping", "returns"];
+    if (!page || !validPages.includes(page)) {
       return NextResponse.json(
-        { success: false, message: "page must be one of: home, shop, about, contact" },
+        { success: false, message: `page must be one of: ${validPages.join(", ")}` },
         { status: 400 }
       );
     }

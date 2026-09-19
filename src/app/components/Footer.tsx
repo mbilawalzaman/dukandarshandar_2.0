@@ -63,7 +63,7 @@ export default function Footer() {
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", mb: 2 }}>
               Discover stationery, craft supplies, and hassle free shopping{storeName ? ` at ${storeName}` : ""}.
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center", mb: 1.5 }}>
               <MuiLink component={Link} href="/shop" color="inherit" underline="hover">
                 Shop
               </MuiLink>
@@ -113,6 +113,22 @@ export default function Footer() {
                   </IconButton>
                 )}
               </Box>
+            </Box>
+
+            {/* Customer Policy Pages */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", fontSize: "0.825rem", color: "rgba(255,255,255,0.65)" }}>
+              <MuiLink component={Link} href="/privacy-policy" color="inherit" underline="hover">
+                Privacy Policy
+              </MuiLink>
+              <MuiLink component={Link} href="/terms-of-service" color="inherit" underline="hover">
+                Terms of Service
+              </MuiLink>
+              <MuiLink component={Link} href="/shipping-policy" color="inherit" underline="hover">
+                Shipping Policy
+              </MuiLink>
+              <MuiLink component={Link} href="/returns-and-refunds" color="inherit" underline="hover">
+                Returns &amp; Refunds
+              </MuiLink>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>

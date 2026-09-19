@@ -11,7 +11,10 @@ import {
   Rating,
   TextField,
   Typography,
+  IconButton,
 } from "@mui/material";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/constants";
 import Loader from "@/app/components/loader/Loader";
@@ -23,6 +26,7 @@ import PriceTag from "@/app/components/promotions/PriceTag";
 import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
 import VoucherStrip from "@/app/components/promotions/VoucherStrip";
 import type { ProductReview } from "@/types/apps/productReviewTypes";
+import { useWishlist } from "@/app/providers/WishlistProvider";
 
 interface Product {
   _id: string;
@@ -41,6 +45,7 @@ const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
   const { add } = useCart();
+  const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,6 +187,14 @@ const ProductDetails = () => {
     router.push("/checkout");
   };
 
+  const handleWishlist = async () => {
+    if (!product) return;
+    const result = await toggle(product._id);
+    if (!result.ok && result.message === "Please log in to save items") {
+      router.push(`/login?next=${encodeURIComponent(`/products/${product._id}`)}`);
+    }
+  };
+
   if (loading) {
     return <Loader size={180} message="Loading product details..." />;
   }
@@ -279,6 +292,21 @@ const ProductDetails = () => {
           )}
 
           <Box sx={{ mt: 4, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+            <IconButton
+              aria-label={productIds.has(product._id) ? "Remove from wishlist" : "Save to wishlist"}
+              onClick={handleWishlist}
+              sx={{
+                width: 48,
+                height: 48,
+                flex: "0 0 48px",
+                alignSelf: { xs: "center", sm: "auto" },
+                border: "1px solid",
+                borderColor: productIds.has(product._id) ? "error.main" : "divider",
+                color: productIds.has(product._id) ? "error.main" : "text.primary",
+              }}
+            >
+              {productIds.has(product._id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+            </IconButton>
             <Button
               onClick={handleBuyNow}
               variant="contained"

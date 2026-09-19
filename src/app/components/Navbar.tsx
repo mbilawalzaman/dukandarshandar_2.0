@@ -25,10 +25,12 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { jwtDecode } from "jwt-decode";
 import { BRAND } from "@/lib/constants";
 import { useCart } from "@/app/providers/CartProvider";
+import { useWishlist } from "@/app/providers/WishlistProvider";
 import NotificationBell from "@/app/components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { unregisterWebPushToken } from "@/lib/fcmClient";
@@ -62,6 +64,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { count } = useCart();
+  const { productIds } = useWishlist();
   const { settings } = useDeliverySettings();
   const storeLogo = settings.storeLogo || "";
 
@@ -285,6 +288,34 @@ export default function Navbar() {
                 </Badge>
               </IconButton>
 
+              {/* Wishlist Icon */}
+              {mounted && isAuthenticated && role !== "guest" && (
+                <IconButton
+                  component={Link}
+                  href="/wishlist"
+                  color="inherit"
+                  aria-label="wishlist"
+                  sx={{
+                    p: { xs: 0.75, sm: 1 },
+                    "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
+                  }}
+                >
+                  <Badge
+                    badgeContent={mounted ? productIds.size : 0}
+                    sx={{
+                      "& .MuiBadge-badge": {
+                        backgroundColor: "#dc2626",
+                        color: "#ffffff",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                      },
+                    }}
+                  >
+                    <FavoriteBorderIcon />
+                  </Badge>
+                </IconButton>
+              )}
+
               {mounted && isAuthenticated && isChatEnabled() && <NotificationBell />}
 
               {/* User Account / Auth Actions */}
@@ -320,6 +351,16 @@ export default function Navbar() {
                       </Box>
                     </MenuItem>
                     <Divider />
+                    {role !== "guest" && (
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorElUser(null);
+                          router.push("/wishlist");
+                        }}
+                      >
+                        My Wishlist
+                      </MenuItem>
+                    )}
                     {role !== "guest" && (
                       <MenuItem
                         onClick={() => {
@@ -566,6 +607,25 @@ export default function Navbar() {
                 }}
               >
                 Profile
+              </Button>
+            )}
+            {role !== "guest" && (
+              <Button
+                component={Link}
+                href="/wishlist"
+                variant="outlined"
+                fullWidth
+                onClick={() => setMobileDrawerOpen(false)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "#cbd5e1",
+                  color: BRAND.navy,
+                  py: 1,
+                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                }}
+              >
+                My Wishlist
               </Button>
             )}
             <Button
