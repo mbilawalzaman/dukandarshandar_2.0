@@ -110,9 +110,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           position="sticky"
           elevation={0}
           sx={{
-            backgroundColor: "#ffffff",
-            borderBottom: "1px solid #e2e8f0",
-            color: "#0f172a",
+            backgroundColor: "background.paper",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            color: "text.primary",
             zIndex: (t) => t.zIndex.drawer + 1,
           }}
         >
@@ -125,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 variant="h6"
                 sx={{
                   fontWeight: 700,
-                  color: "#0f172a",
+                  color: "text.primary",
                   fontSize: { xs: "0.95rem", sm: "1.25rem" },
                   whiteSpace: "nowrap",
                 }}

@@ -101,7 +101,7 @@ export function useSafeStoreSettings() {
   return context ?? { settings: DEFAULT_DELIVERY_SETTINGS, loading: false };
 }
 
-export function getStoreInitials(shopName?: string, fallback = "DS"): string {
+export function getStoreInitials(shopName?: string, fallback = ""): string {
   const name = shopName?.trim();
   if (!name) return fallback;
   const parts = name.split(/\s+/).filter(Boolean);

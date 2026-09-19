@@ -81,6 +81,8 @@ export function MarketplaceThemeProvider({ children }: { children: React.ReactNo
     root.style.setProperty("--theme-bg-paper", preset.palette.background.paper);
     root.style.setProperty("--theme-bg-header", preset.palette.background.header);
     root.style.setProperty("--theme-bg-footer", preset.palette.background.footer);
+    root.style.setProperty("--theme-highlight-badge-bg", preset.palette.marketplace.highlightBadgeBg);
+    root.style.setProperty("--theme-highlight-badge-text", preset.palette.marketplace.highlightBadgeText);
     root.style.setProperty("--theme-footer-text", footerText);
     root.style.setProperty("--theme-sidebar-selected-bg", footerText);
     root.style.setProperty("--theme-sidebar-selected-text", preset.palette.background.footer);

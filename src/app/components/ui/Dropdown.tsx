@@ -103,7 +103,7 @@ export default function Dropdown<T = unknown>({
     <IconButton
       size="small"
       onClick={handleOpen}
-      sx={{ color: "#475569", "&:hover": { backgroundColor: "var(--theme-bg-default, #f1f5f9)" } }}
+      sx={{ color: "text.secondary", "&:hover": { backgroundColor: "background.default" } }}
     >
       <MoreVertIcon fontSize="small" />
     </IconButton>
@@ -111,14 +111,15 @@ export default function Dropdown<T = unknown>({
     <Button
       size="small"
       onClick={handleOpen}
-      endIcon={<KeyboardArrowDownIcon sx={{ fontSize: "1.1rem !important", color: "#64748b" }} />}
+      endIcon={<KeyboardArrowDownIcon sx={{ fontSize: "1.1rem !important", color: "text.secondary" }} />}
       sx={{
         textTransform: "none",
         fontWeight: 600,
         fontSize: "0.85rem",
-        color: "#334155",
-        backgroundColor: "#ffffff",
-        border: "1px solid #cbd5e1",
+        color: "text.primary",
+        backgroundColor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
         borderRadius: "10px",
         px: 1.5,
         py: 0.5,
@@ -126,8 +127,8 @@ export default function Dropdown<T = unknown>({
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         transition: "all 0.15s ease-in-out",
         "&:hover": {
-          backgroundColor: "var(--theme-bg-default, #f8fafc)",
-          borderColor: "#94a3b8",
+          backgroundColor: "background.default",
+          borderColor: "primary.main",
           boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
         },
       }}
@@ -160,7 +161,8 @@ export default function Dropdown<T = unknown>({
             minWidth,
             py: 0.5,
             boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
+            border: "1px solid",
+            borderColor: "divider",
           },
         }}
         transformOrigin={transformOrigin}
@@ -188,7 +190,7 @@ export default function Dropdown<T = unknown>({
             }}
             sx={{ gap: 1.5, fontSize: "0.85rem" }}
           >
-            <ListItemIcon sx={{ minWidth: "auto", color: "#475569" }}>
+            <ListItemIcon sx={{ minWidth: "auto", color: "text.secondary" }}>
               <EditIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="Edit" />
@@ -206,7 +208,7 @@ export default function Dropdown<T = unknown>({
               sx={{ gap: 1.5, fontSize: "0.85rem", color: act.color || "inherit" }}
             >
               {act.icon && (
-                <ListItemIcon sx={{ minWidth: "auto", color: act.color || "#475569" }}>
+                <ListItemIcon sx={{ minWidth: "auto", color: act.color || "text.secondary" }}>
                   {act.icon}
                 </ListItemIcon>
               )}

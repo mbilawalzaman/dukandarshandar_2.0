@@ -79,7 +79,7 @@ function ResetPasswordForm() {
 
   return (
     <Container maxWidth="xs" sx={{ mt: 10, mb: 10 }}>
-      <Card sx={{ borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
+      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }} elevation={0}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             <Box
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                backgroundColor: "rgba(254,190,76,0.15)",
+                backgroundColor: "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

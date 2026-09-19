@@ -19,7 +19,7 @@ export default function GlobalLoader({
   initials: customInitials,
 }: GlobalLoaderProps) {
   const { settings } = useSafeStoreSettings();
-  const displayInitials = customInitials || getStoreInitials(settings.shopName, "DS");
+  const displayInitials = customInitials || getStoreInitials(settings.shopName, "");
 
   return (
     <Box

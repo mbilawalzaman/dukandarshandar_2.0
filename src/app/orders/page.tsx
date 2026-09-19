@@ -279,7 +279,7 @@ function OrdersContent() {
         {!loading && summary.totalOrders > 0 && (
           <Grid container spacing={2.5} sx={{ mb: 4 }}>
             <Grid item xs={6} sm={3}>
-              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#eff6ff", color: "var(--theme-primary-main, #0284c7)" }}>
                   <ShoppingBagOutlinedIcon fontSize="medium" />
                 </Box>
@@ -295,7 +295,7 @@ function OrdersContent() {
             </Grid>
 
             <Grid item xs={6} sm={3}>
-              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#fffbeb", color: "#d97706" }}>
                   <HourglassEmptyIcon fontSize="medium" />
                 </Box>
@@ -311,7 +311,7 @@ function OrdersContent() {
             </Grid>
 
             <Grid item xs={6} sm={3}>
-              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#ecfdf5", color: "#10b981" }}>
                   <CheckCircleOutlineIcon fontSize="medium" />
                 </Box>
@@ -327,7 +327,7 @@ function OrdersContent() {
             </Grid>
 
             <Grid item xs={6} sm={3}>
-              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 2 }}>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2.5, backgroundColor: "#f5f3ff", color: "#8b5cf6" }}>
                   <LocalShippingOutlinedIcon fontSize="medium" />
                 </Box>
@@ -353,7 +353,7 @@ function OrdersContent() {
               sx={{
                 p: 3,
                 borderRadius: 3,
-                border: "1px solid #e2e8f0",
+                border: "1px solid", borderColor: "divider",
                 position: "sticky",
                 top: 90,
               }}
@@ -402,8 +402,8 @@ function OrdersContent() {
               </Alert>
             ) : summary.totalOrders === 0 ? (
               /* EMPTY STATE: NO ORDERS EVER */
-              <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px solid #e2e8f0" }}>
-                <ShoppingBagOutlinedIcon sx={{ fontSize: 64, color: "#cbd5e1", mb: 2 }} />
+              <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
+                <ShoppingBagOutlinedIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
                 <Typography variant="h5" sx={{ fontWeight: 800, color: BRAND.navy, mb: 1 }}>
                   No orders placed yet
                 </Typography>
@@ -430,7 +430,7 @@ function OrdersContent() {
               </Paper>
             ) : orders.length === 0 ? (
               /* EMPTY STATE: NO FILTER MATCHES */
-              <Paper sx={{ p: 5, textAlign: "center", borderRadius: 3, border: "1px solid #e2e8f0" }}>
+              <Paper sx={{ p: 5, textAlign: "center", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND.navy, mb: 1 }}>
                   No orders match your filter criteria
                 </Typography>
@@ -455,7 +455,7 @@ function OrdersContent() {
                       key={order._id}
                       sx={{
                         borderRadius: 3,
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid", borderColor: "divider",
                         boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
                         overflow: "hidden",
                         transition: "transform 0.2s ease, box-shadow 0.2s ease",
@@ -469,7 +469,8 @@ function OrdersContent() {
                         sx={{
                           p: { xs: 2, sm: 2.5 },
                           backgroundColor: "var(--theme-bg-default, #f8fafc)",
-                          borderBottom: "1px solid #e2e8f0",
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
@@ -521,7 +522,8 @@ function OrdersContent() {
                                 justifyContent: "space-between",
                                 gap: 2,
                                 py: 1,
-                                borderBottom: idx < order.items.length - 1 ? "1px dashed #f1f5f9" : "none",
+                                borderBottom: idx < order.items.length - 1 ? "1px dashed" : "none",
+                                borderBottomColor: "divider",
                               }}
                             >
                               {/* Thumbnail + Name */}
@@ -531,11 +533,11 @@ function OrdersContent() {
                                     width: 64,
                                     height: 64,
                                     borderRadius: 2.5,
-                                    backgroundColor: "#ffffff",
+                                    backgroundColor: "background.paper",
                                     position: "relative",
                                     overflow: "hidden",
                                     flexShrink: 0,
-                                    border: "1px solid #e2e8f0",
+                                    border: "1px solid", borderColor: "divider",
                                     p: 0.5,
                                   }}
                                 >
@@ -568,7 +570,7 @@ function OrdersContent() {
                                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
                                     Qty: <strong>{item.quantity}</strong> × PKR {Number(item.price).toLocaleString()}
                                     {item.original_price && item.original_price > item.price && (
-                                      <Typography component="span" variant="caption" sx={{ ml: 0.5, textDecoration: "line-through", color: "#94a3b8" }}>
+                                      <Typography component="span" variant="caption" sx={{ ml: 0.5, textDecoration: "line-through", color: "text.disabled" }}>
                                         PKR {Number(item.original_price).toLocaleString()}
                                       </Typography>
                                     )}
@@ -605,12 +607,12 @@ function OrdersContent() {
                           <Grid item xs={12} sm={7}>
                             {Boolean(order.address || order.area || order.city || order.province) && (
                               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                                <PlaceOutlinedIcon sx={{ fontSize: 18, color: "#64748b", mt: 0.2 }} />
+                                <PlaceOutlinedIcon sx={{ fontSize: 18, color: "text.secondary", mt: 0.2 }} />
                                 <Box>
-                                  <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569" }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
                                     DELIVERY ADDRESS
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: "#334155", fontSize: "0.85rem" }}>
+                                  <Typography variant="body2" sx={{ color: "text.primary", fontSize: "0.85rem" }}>
                                     {[order.address, order.area, order.city, order.province]
                                       .filter(Boolean)
                                       .join(", ")}
@@ -689,7 +691,7 @@ function OrdersContent() {
                                       borderRadius: 1.5,
                                       fontWeight: 700,
                                       backgroundColor: BRAND.goldHover,
-                                      color: "#ffffff",
+                                      color: "primary.contrastText",
                                       "&:hover": { backgroundColor: BRAND.goldDark },
                                     }}
                                   >
@@ -787,7 +789,7 @@ function OrdersContent() {
             fontWeight: 700,
             borderRadius: 2,
             backgroundColor: BRAND.navy,
-            color: "#ffffff",
+            color: "primary.contrastText",
           }}
         >
           Apply Filters

@@ -103,7 +103,7 @@ export default function CartPage() {
                           flexShrink: 0,
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", border: "1px solid #e2e8f0", borderRadius: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
                           <IconButton size="small" onClick={() => updateQuantity(item._id, item.quantity - 1)}>
                             <RemoveIcon fontSize="small" />
                           </IconButton>
