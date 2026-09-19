@@ -38,8 +38,12 @@ export async function PUT(req: NextRequest) {
     if (!admin.ok) return admin.response;
 
     const body = await req.json();
-    const feeEnabled = Boolean(body.feeEnabled);
-    const fee = Math.max(0, Number(body.fee) || 0);
+    const feeEnabled = body.feeEnabled;
+    const fee = body.fee;
+    if ((feeEnabled !== undefined && typeof feeEnabled !== "boolean") ||
+        (fee !== undefined && (typeof fee !== "number" || !Number.isFinite(fee) || fee < 0))) {
+      return NextResponse.json({ success: false, message: "Invalid delivery fee settings" }, { status: 400 });
+    }
 
     const shopName = typeof body.shopName === "string" ? body.shopName : undefined;
     const shopPhone = typeof body.shopPhone === "string" ? body.shopPhone : undefined;

@@ -203,19 +203,7 @@ export async function getOrderReviews(userId: string, orderId: string) {
   const db = await getDb();
   const orderOid = new ObjectId(orderId);
 
-  let userEmail = "";
-  if (ObjectId.isValid(userId)) {
-    const userDoc = await db.collection("users").findOne({ _id: new ObjectId(userId) });
-    userEmail = userDoc?.email || "";
-  }
-
-  const order = await db.collection("orders").findOne({
-    _id: orderOid,
-    $or: [
-      { customer_id: userId },
-      ...(userEmail ? [{ customer_email: userEmail }] : []),
-    ],
-  });
+  const order = await db.collection("orders").findOne({ _id: orderOid, customer_id: userId });
 
   if (!order) {
     return { success: false as const, message: "Order not found", status: 404 };

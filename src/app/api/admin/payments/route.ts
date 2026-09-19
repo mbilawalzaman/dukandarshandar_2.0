@@ -34,7 +34,7 @@ function computeStats(orders: OrderDoc[]): AdminPaymentStats {
   );
   const awaiting = onlineOrders.filter((o) => o.status === "pending_payment");
   const codOrders = orders.filter(
-    (o) => (o.payment_method || "cod") === "cod" && o.status !== "cancelled"
+    (o) => (o.payment_method || "cod") === "cod" && o.status === "delivered"
   );
 
   const onlineRevenue = paidOnline.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);

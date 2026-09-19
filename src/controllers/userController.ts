@@ -26,7 +26,7 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (userId: string): Promise<User | null> => {
   const db = await getDb();
-  const user = await db.collection<User>("users").findOne({ _id: new ObjectId(userId) });
+  const user = await db.collection<User>("users").findOne({ _id: new ObjectId(userId) }, { projection: { name: 1, email: 1, role: 1, created_at: 1 } });
   return user || null;
 };
 

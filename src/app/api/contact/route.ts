@@ -3,11 +3,20 @@ import { getDb } from "@/lib/db";
 import { getShopInbox, sendMail } from "@/lib/mail";
 import { contactCustomerEmail, contactShopEmail } from "@/lib/emailTemplates";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, subject, message } = await req.json();
-    if (!name || !email || !message) {
+    const throttle = rateLimit(`contact:${getClientIp(req)}`, { limit: 5, windowMs: 10 * 60 * 1000 });
+    if (!throttle.ok) {
+      return NextResponse.json({ success: false, message: "Too many requests" }, { status: 429, headers: { "Retry-After": String(throttle.retryAfterSeconds) } });
+    }
+    const body = await req.json();
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const subject = typeof body.subject === "string" ? body.subject.trim() : "";
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    if (!name || name.length > 120 || !email || email.length > 254 || /[\r\n]/.test(email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length > 4000) {
       return NextResponse.json({ success: false, message: "Name, email, and message are required" }, { status: 400 });
     }
 

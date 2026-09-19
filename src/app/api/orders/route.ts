@@ -1,3 +1,10 @@
+import { CheckoutError, validateCheckout } from "@/lib/checkoutValidation";
+import { checkoutIdentity, validateShippingLocation } from "@/lib/checkout.server";
+import { withOrderTransaction, reserveOrderStock } from "@/lib/orderTransaction";
+import { allowedOrderTransitions } from "@/lib/orderRules";
+import { cancelCustomerOrder } from "@/services/orderCancelService";
+import { throttleRequest } from "@/lib/rateLimit.server";
+import { escapeRegex } from "@/lib/escapeRegex";
 import type { NextRequest} from "next/server";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
@@ -10,7 +17,7 @@ import { orderConfirmationEmail, orderStatusEmail, orderDeliveredEmail } from "@
 import { safeNotify } from "@/lib/safeNotify";
 import { notifyAdmins, createNotification } from "@/services/notificationService";
 import { parsePageLimit, paginationMeta } from "@/lib/pagination";
-import { quoteCart, recordRedemptions, releaseRedemptions, redemptionQuoteFromOrder, toOrderDiscountLines } from "@/services/promotionService";
+import { quoteCart, recordRedemptions, toOrderDiscountLines } from "@/services/promotionService";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 
 async function enrichOrdersWithImages(
@@ -96,9 +103,9 @@ function buildOrderFilter(
 
   if (search) {
     const searchOr: Array<Record<string, unknown>> = [
-      { customer_name: { $regex: search, $options: "i" } },
-      { customer_email: { $regex: search, $options: "i" } },
-      { "items.name": { $regex: search, $options: "i" } },
+      { customer_name: { $regex: escapeRegex(search), $options: "i" } },
+      { customer_email: { $regex: escapeRegex(search), $options: "i" } },
+      { "items.name": { $regex: escapeRegex(search), $options: "i" } },
       ...(ObjectId.isValid(search) ? [{ _id: new ObjectId(search) }] : []),
     ];
     // Don't clobber ownership $or (registered users) — combine with $and
@@ -143,13 +150,13 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
     db
       .collection("orders")
       .aggregate([
-        { $match: { ...baseQuery, status: { $ne: "cancelled" } } },
+        { $match: { ...baseQuery, status: { $ne: "cancelled" }, $or: [{ payment_status: "paid" }, { payment_method: "cod", status: "delivered" }] } },
         { $group: { _id: null, total: { $sum: "$total_amount" } } },
       ])
       .toArray(),
     db.collection("orders").countDocuments({
       ...baseQuery,
-      status: { $in: ["pending", "processing", "shipped", "pending_payment"] },
+      status: { $in: ["pending", "processing", "shipped", "pending_payment", "payment_review", "cancelling"] },
     }),
     db.collection("orders").countDocuments({ ...baseQuery, status: "delivered" }),
   ]);
@@ -187,19 +194,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const { page, limit, skip } = parsePageLimit(searchParams, { page: 1, limit: 10, maxLimit: 50 });
 
-    // Admin: all orders.
-    // Guest: only this guest session (customer_id). Checkout email ≠ JWT email (guest@guest.com).
-    // Registered: match by account id or account email.
-    let baseQuery: Record<string, unknown> = {};
-    if (user.role === "admin") {
-      baseQuery = {};
-    } else if (user.role === "guest") {
-      baseQuery = { customer_id: user.userId };
-    } else {
-      baseQuery = {
-        $or: [{ customer_id: user.userId }, { customer_email: user.email }],
-      };
-    }
+    // Contact email is not evidence of ownership (including guest orders).
+    const baseQuery: Record<string, unknown> = user.role === "admin" ? {} : { customer_id: user.userId };
 
     const filter = buildOrderFilter(baseQuery, searchParams);
     const sort = orderSort(searchParams);
@@ -230,7 +226,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = validateCheckout(await req.json(), ["cod"]);
     const { customer_name, customer_email, phone, province, city, area, address, items, payment_method, promo_code } = body;
     const user = getAuthUser(req);
 
@@ -241,27 +237,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ success: false, message: "Cart is empty" }, { status: 400 });
-    }
-
+    const limited = await throttleRequest(req, "orders", 20, 60 * 1000, user.userId);
+    if (limited) return limited;
+    const identity = checkoutIdentity(req, user.userId, body);
     const db = await getDb();
-
-    for (const item of items) {
-      if (!item._id || !ObjectId.isValid(item._id)) {
-        return NextResponse.json({ success: false, message: `Invalid product in cart: ${item.name}` }, { status: 400 });
-      }
-      const product = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
-      if (!product) {
-        return NextResponse.json({ success: false, message: `${item.name} is no longer available` }, { status: 400 });
-      }
-      if (Number(product.quantity) < Number(item.quantity)) {
-        return NextResponse.json(
-          { success: false, message: `Not enough stock for ${product.name}. Available: ${product.quantity}` },
-          { status: 400 }
-        );
-      }
+    const previous = await db.collection("orders").findOne({ _id: new ObjectId(identity.id) });
+    if (previous) {
+      if (previous.customer_id !== user.userId || previous.checkout_fingerprint !== identity.fingerprint) throw new CheckoutError("Checkout key was already used for a different order", 409);
+      return NextResponse.json({ success: true, order: previous, message: "Order already placed" });
     }
+    await validateShippingLocation(body);
 
     // Authoritative pricing: product prices, promotions and delivery fee all come from the server.
     const quote = await quoteCart({
@@ -279,34 +264,12 @@ export async function POST(req: NextRequest) {
 
     const { subtotal, shipping, deliveryPromo: delivery_promo, discountTotal: discount_total, total: computedTotal } = quote;
 
-    for (const item of items) {
-      const result = await db.collection("products").updateOne(
-        { _id: new ObjectId(item._id), quantity: { $gte: Number(item.quantity) } },
-        { $inc: { quantity: -Number(item.quantity) }, $set: { updated_at: new Date() } }
-      );
-      if (result.modifiedCount === 0) {
-        return NextResponse.json({ success: false, message: `Could not reserve stock for ${item.name}` }, { status: 400 });
-      }
-      const updated = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
-      if (updated && Number(updated.quantity) <= 5) {
-        await safeNotify(() =>
-          notifyAdmins({
-            type: "low_stock",
-            title: "Low stock alert",
-            body: `${updated.name} has only ${updated.quantity} units left`,
-            entityType: "product",
-            entityId: String(updated._id),
-            idempotencyKey: `low_stock:${updated._id}:${updated.quantity}`,
-            sendPush: true,
-            route: "/admin/products",
-          })
-        );
-      }
-    }
-
     const enrichedItems = quote.orderItems;
 
     const newOrder = {
+      _id: new ObjectId(identity.id),
+      checkout_fingerprint: identity.fingerprint,
+      stock_reserved: true,
       customer_name: customer_name || user?.userName || "Guest Customer",
       customer_email: customer_email || user?.email || "guest@example.com",
       customer_id: user?.userId || null,
@@ -327,27 +290,41 @@ export async function POST(req: NextRequest) {
       promotions_recorded: false,
       total_amount: computedTotal,
       payment_method: payment_method || "cod",
-      payment_status: payment_method === "cod" ? "unpaid" : "unpaid",
+      payment_status: "unpaid",
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
     };
 
-    const result = await db.collection("orders").insertOne(newOrder);
-    const orderId = String(result.insertedId).slice(-8).toUpperCase();
-
-    if (quote.applied.length > 0) {
-      const kept = await recordRedemptions({
-        orderId: String(result.insertedId),
-        quote,
-        customerId: user.userId || null,
-        customerEmail: newOrder.customer_email,
-      });
-      await db.collection("orders").updateOne({ _id: result.insertedId }, { $set: { promotions_recorded: true } });
-      if (kept.length !== quote.applied.length) {
-        console.warn(`[orders] ${quote.applied.length - kept.length} promotion(s) hit their limit while order ${orderId} was placed`);
+    const committed = await withOrderTransaction(async (tx) => {
+      const existing = await tx.db.collection("orders").findOne({ _id: newOrder._id }, { session: tx.session });
+      if (existing) {
+        if (existing.checkout_fingerprint !== identity.fingerprint || existing.customer_id !== user.userId) throw new CheckoutError("Checkout key was already used for a different order", 409);
+        return { created: false, order: existing };
       }
-    }
+      await reserveOrderStock(tx, enrichedItems);
+      await tx.db.collection("orders").insertOne(newOrder, { session: tx.session });
+      if (quote.applied.length) {
+        const kept = await recordRedemptions({ orderId: identity.id, quote, customerId: user.userId, customerEmail: customer_email }, tx);
+        if (kept.length !== quote.applied.length) throw new CheckoutError("A promotion has reached its limit. Refresh your cart and try again.", 409);
+        await tx.db.collection("orders").updateOne({ _id: newOrder._id }, { $set: { promotions_recorded: true } }, { session: tx.session });
+      }
+      return { created: true, order: newOrder };
+    });
+    if (!committed.created) return NextResponse.json({ success: true, order: committed.order, message: "Order already placed" });
+    newOrder.promotions_recorded = quote.applied.length > 0;
+    await safeNotify(async () => {
+      for (const item of enrichedItems) {
+        const product = await db.collection("products").findOne({ _id: new ObjectId(item._id) });
+        if (product && Number(product.quantity) <= 5) await notifyAdmins({
+          type: "low_stock", title: "Low stock alert", body: `${product.name} has only ${product.quantity} units left`,
+          entityType: "product", entityId: String(product._id), idempotencyKey: `low_stock:${product._id}:${product.quantity}`,
+          sendPush: true, route: "/admin/products",
+        });
+      }
+    });
+    const result = { insertedId: newOrder._id };
+    const orderId = identity.id.slice(-8).toUpperCase();
 
     await safeNotify(() =>
       notifyAdmins({
@@ -404,13 +381,15 @@ export async function POST(req: NextRequest) {
       phone,
       address,
       city,
-    });
+      province,
+      area,
+    }).catch(() => ({ updated: false, session: undefined }));
     if (synced.session) {
       token = synced.session.accessToken;
       const response = NextResponse.json({
         success: true,
         message: "Order placed successfully",
-        order: { _id: result.insertedId, ...newOrder },
+        order: newOrder,
         token: synced.session.accessToken,
         profileSynced: true,
       });
@@ -421,13 +400,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Order placed successfully",
-      order: { _id: result.insertedId, ...newOrder },
+      order: newOrder,
       ...(token ? { token } : {}),
       profileSynced: synced.updated,
     });
   } catch (error) {
     console.error("Error creating order:", error);
-    return NextResponse.json({ success: false, message: "Failed to place order" }, { status: 500 });
+    return NextResponse.json({ success: false, message: error instanceof CheckoutError ? error.message : "Failed to place order" }, { status: error instanceof CheckoutError ? error.status : 500 });
   }
 }
 
@@ -449,59 +428,19 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
     }
 
-    const previousStatus = existingOrder.status;
-
-    if (previousStatus !== "cancelled" && status === "cancelled") {
-      if (existingOrder.promotions_recorded) {
-        await releaseRedemptions(String(_id));
-        await db.collection("orders").updateOne({ _id: new ObjectId(_id) }, { $set: { promotions_recorded: false } });
-      }
-      if (Array.isArray(existingOrder.items)) {
-        for (const item of existingOrder.items) {
-          if (item._id && ObjectId.isValid(item._id)) {
-            await db.collection("products").updateOne(
-              { _id: new ObjectId(item._id) },
-              {
-                $inc: { quantity: Number(item.quantity) || 1 },
-                $set: { updated_at: new Date() },
-              }
-            );
-          }
-        }
-      }
-    } else if (previousStatus === "cancelled" && status !== "cancelled") {
-      if (!existingOrder.promotions_recorded && Array.isArray(existingOrder.discounts) && existingOrder.discounts.length > 0) {
-        await recordRedemptions({
-          orderId: String(_id),
-          quote: redemptionQuoteFromOrder(existingOrder),
-          customerId: existingOrder.customer_id ? String(existingOrder.customer_id) : null,
-          customerEmail: existingOrder.customer_email ? String(existingOrder.customer_email) : null,
-        });
-        await db.collection("orders").updateOne({ _id: new ObjectId(_id) }, { $set: { promotions_recorded: true } });
-      }
-      if (Array.isArray(existingOrder.items)) {
-        for (const item of existingOrder.items) {
-          if (item._id && ObjectId.isValid(item._id)) {
-            await db.collection("products").updateOne(
-              { _id: new ObjectId(item._id) },
-              {
-                $inc: { quantity: -(Number(item.quantity) || 1) },
-                $set: { updated_at: new Date() },
-              }
-            );
-          }
-        }
-      }
+    if (status === "cancelled") {
+      const cancelled = await cancelCustomerOrder(_id, admin.user);
+      return NextResponse.json(cancelled.success ? { success: true, message: cancelled.refunded ? "Order cancelled and refund initiated" : "Order cancelled" } : cancelled,
+        { status: cancelled.success ? 200 : cancelled.status });
     }
-
+    if (!allowedOrderTransitions(existingOrder).includes(status)) {
+      throw new CheckoutError("This order status transition is not allowed", 409);
+    }
     const result = await db.collection("orders").updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { status, updated_at: new Date() } }
+      { _id: existingOrder._id, status: existingOrder.status, payment_status: existingOrder.payment_status },
+      { $set: { status, updated_at: new Date() } },
     );
-
-    if (result.modifiedCount === 0 && previousStatus === status) {
-      return NextResponse.json({ success: false, message: "Order already has this status" }, { status: 400 });
-    }
+    if (result.modifiedCount !== 1) throw new CheckoutError("Order changed. Refresh and try again.", 409);
 
     if (existingOrder.customer_email) {
       const deliverySettings = await getDeliverySettings().catch(() => null);
@@ -529,11 +468,7 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    let recipientId = existingOrder.customer_id ? String(existingOrder.customer_id) : null;
-    if (!recipientId && existingOrder.customer_email) {
-      const customer = await db.collection("users").findOne({ email: existingOrder.customer_email });
-      recipientId = customer?._id ? String(customer._id) : null;
-    }
+    const recipientId = existingOrder.customer_id ? String(existingOrder.customer_id) : null;
     if (recipientId) {
       const isDelivered = status === "delivered";
       const displayId = String(existingOrder._id).slice(-8).toUpperCase();
@@ -563,6 +498,6 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error updating order:", error);
-    return NextResponse.json({ success: false, message: "Failed to update order" }, { status: 500 });
+    return NextResponse.json({ success: false, message: error instanceof CheckoutError ? error.message : "Failed to update order" }, { status: error instanceof CheckoutError ? error.status : 500 });
   }
 }

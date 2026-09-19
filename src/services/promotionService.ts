@@ -1,3 +1,5 @@
+import type { OrderTransaction } from "@/lib/orderTransaction";
+import { normalizeCartItems, isAvailableProduct } from "@/lib/checkoutValidation";
 import { ObjectId, type Db, type WithId, type Document, type UpdateFilter } from "mongodb";
 import { getDb } from "@/lib/db";
 import { escapeRegex } from "@/lib/escapeRegex";
@@ -488,7 +490,7 @@ async function customerRedemptionCounts(
   if (promotionIds.length === 0) return {};
   const ownership: Array<Record<string, unknown>> = [];
   if (customerId) ownership.push({ customerId });
-  if (customerEmail) ownership.push({ customerEmail: customerEmail.trim().toLowerCase() });
+  else if (customerEmail) ownership.push({ customerEmail: customerEmail.trim().toLowerCase() });
   if (ownership.length === 0) return {};
   const rows = await db
     .collection(REDEMPTIONS)
@@ -503,7 +505,7 @@ async function customerRedemptionCounts(
 async function customerOrderCount(db: Db, customerId?: string | null, customerEmail?: string | null): Promise<number> {
   const ownership: Array<Record<string, unknown>> = [];
   if (customerId) ownership.push({ customer_id: customerId });
-  if (customerEmail) ownership.push({ customer_email: customerEmail.trim().toLowerCase() });
+  else if (customerEmail) ownership.push({ customer_email: customerEmail.trim().toLowerCase() });
   if (ownership.length === 0) return 0;
   return db.collection("orders").countDocuments({ $or: ownership, status: { $nin: ["cancelled", "payment_failed", "pending_payment"] } });
 }
@@ -514,6 +516,7 @@ async function customerOrderCount(db: Db, customerId?: string | null, customerEm
  */
 export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
   const { db } = await col();
+  params = { ...params, items: normalizeCartItems(params.items) };
   const ids = params.items.filter((i) => ObjectId.isValid(i._id)).map((i) => new ObjectId(i._id));
   const products = ids.length
     ? await db
@@ -527,7 +530,7 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
   const items: EngineCartItem[] = [];
   for (const item of params.items) {
     const product = byId.get(String(item._id));
-    if (!product || product.deleted_at) {
+    if (!product || !isAvailableProduct(product)) {
       missingProductIds.push(String(item._id));
       continue;
     }
@@ -535,7 +538,7 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
       productId: String(item._id),
       category: product.category ? String(product.category) : item.category,
       price: Number(product.price) || 0,
-      quantity: Math.max(1, Number(item.quantity) || 1),
+      quantity: item.quantity,
       name: product.name ? String(product.name) : item.name,
     });
   }
@@ -621,8 +624,9 @@ export async function recordRedemptions(params: {
   quote: RedemptionQuote;
   customerId?: string | null;
   customerEmail?: string | null;
-}): Promise<OrderDiscountLine[]> {
-  const { db, promotions, redemptions } = await col();
+}, tx?: OrderTransaction): Promise<OrderDiscountLine[]> {
+  const { db, promotions, redemptions } = tx ? { db: tx.db, promotions: tx.db.collection(PROMOTIONS), redemptions: tx.db.collection(REDEMPTIONS) } : await col();
+  const options = tx ? { session: tx.session } : {};
   const kept: OrderDiscountLine[] = [];
   const now = new Date();
 
@@ -640,7 +644,7 @@ export async function recordRedemptions(params: {
       {
         $inc: { "stats.timesUsed": 1, "stats.totalDiscountGiven": a.amount, "stats.revenue": params.quote.total },
         $set: { updatedAt: now },
-      }
+      }, options
     );
     if (res.modifiedCount === 0) continue;
 
@@ -650,7 +654,7 @@ export async function recordRedemptions(params: {
         if (!line.appliedPromotionIds.includes(a.promotionId)) continue;
         await promotions.updateOne(
           { _id: new ObjectId(a.promotionId), "perProduct.productId": line.productId },
-          { $inc: { "perProduct.$.sold": line.quantity } }
+          { $inc: { "perProduct.$.sold": line.quantity } }, options
         );
       }
     }
@@ -665,22 +669,23 @@ export async function recordRedemptions(params: {
       amount: a.amount,
       createdAt: now.toISOString(),
     };
-    await redemptions.insertOne({ ...row, createdAt: now });
+    await redemptions.insertOne({ ...row, createdAt: now }, options);
     kept.push({ promotionId: a.promotionId, code: a.code || null, kind: a.kind, name: a.name, amount: a.amount });
   }
 
   void db;
-  if (kept.length > 0) invalidatePromotionCache();
+  if (!tx && kept.length > 0) invalidatePromotionCache();
   return kept;
 }
 
 /** Undo everything recordRedemptions did for an order (cancellation). */
-export async function releaseRedemptions(orderId: string): Promise<number> {
-  const { promotions, redemptions, db } = await col();
-  const rows = await redemptions.find({ orderId }).toArray();
+export async function releaseRedemptions(orderId: string, tx?: OrderTransaction): Promise<number> {
+  const { db, promotions, redemptions } = tx ? { db: tx.db, promotions: tx.db.collection(PROMOTIONS), redemptions: tx.db.collection(REDEMPTIONS) } : await col();
+  const options = tx ? { session: tx.session } : {};
+  const rows = await redemptions.find({ orderId }, options).toArray();
   if (rows.length === 0) return 0;
 
-  const order = ObjectId.isValid(orderId) ? await db.collection("orders").findOne({ _id: new ObjectId(orderId) }) : null;
+  const order = ObjectId.isValid(orderId) ? await db.collection("orders").findOne({ _id: new ObjectId(orderId) }, options) : null;
 
   for (const row of rows) {
     if (!ObjectId.isValid(row.promotionId)) continue;
@@ -692,7 +697,7 @@ export async function releaseRedemptions(orderId: string): Promise<number> {
           "stats.totalDiscountGiven": -Number(row.amount || 0),
           "stats.revenue": -Number(order?.total_amount || 0),
         },
-      }
+      }, options
     );
     if ((row.kind === "product_discount" || row.kind === "flash_sale") && Array.isArray(order?.items)) {
       for (const item of order!.items) {
@@ -700,13 +705,13 @@ export async function releaseRedemptions(orderId: string): Promise<number> {
         if (!promoIds.includes(String(row.promotionId))) continue;
         await promotions.updateOne(
           { _id: new ObjectId(row.promotionId), "perProduct.productId": String(item._id) },
-          { $inc: { "perProduct.$.sold": -(Number(item.quantity) || 0) } }
+          { $inc: { "perProduct.$.sold": -(Number(item.quantity) || 0) } }, options
         );
       }
     }
   }
-  const res = await redemptions.deleteMany({ orderId });
-  invalidatePromotionCache();
+  const res = await redemptions.deleteMany({ orderId }, options);
+  if (!tx) invalidatePromotionCache();
   return res.deletedCount;
 }
 

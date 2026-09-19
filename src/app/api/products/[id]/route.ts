@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/auth";
 import type { NextRequest} from "next/server";
 import { NextResponse } from "next/server";
 import { getProductByID, deleteProduct, updateProduct } from "@/controllers/productController";
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const response = await getProductByID(id);
+    const response = await getProductByID(id, getAuthUser(req)?.role === "admin");
     return NextResponse.json(
       { success: response.success, message: response.message, product: response.product || null },
       { status: response.status }
@@ -49,7 +50,7 @@ export async function PUT(
     const body = await req.json();
     const reqWithId = new Request(req.url, {
       method: "PUT",
-      body: JSON.stringify({ _id: id, ...body }),
+      body: JSON.stringify({ ...body, _id: id }),
       headers: req.headers,
     });
     return await updateProduct(reqWithId);

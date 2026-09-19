@@ -108,11 +108,11 @@ export async function ensureFreshAccessToken(skewSeconds = 120): Promise<string 
   }
 
   try {
-    const decoded = jwtDecode<{ exp?: number }>(token);
+    const decoded = jwtDecode<{ exp?: number; role?: string }>(token);
     const exp = decoded.exp;
     if (!exp) return token;
     const now = Math.floor(Date.now() / 1000);
-    if (exp - now > skewSeconds) return token;
+    if (exp - now > skewSeconds || (decoded.role === "guest" && exp > now)) return token;
   } catch {
     /* fall through to refresh */
   }

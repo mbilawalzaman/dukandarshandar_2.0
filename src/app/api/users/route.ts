@@ -75,7 +75,7 @@ export async function PATCH(req: Request) {
     if (!admin.ok) return admin.response;
 
     const { _id, role } = await req.json();
-    if (!_id || !role) {
+    if (typeof _id !== "string" || !ObjectId.isValid(_id) || !Object.values(UserRole).includes(role)) {
       return NextResponse.json({ success: false, error: "User id and role are required" }, { status: 400 });
     }
 

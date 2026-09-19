@@ -60,9 +60,7 @@ export async function syncCheckoutProfileToUser(
     });
     if (
       !emailTaken &&
-      (isSyntheticEmail(String(existingUser.email || "")) ||
-        existingUser.needsEmail ||
-        String(existingUser.email || "").toLowerCase() !== nextEmail)
+      (isSyntheticEmail(String(existingUser.email || "")) || existingUser.needsEmail)
     ) {
       profileUpdates.email = nextEmail;
       profileUpdates.needsEmail = false;

@@ -149,7 +149,7 @@ export default function ProfileEditor({
           area: form.area.trim(),
           address: form.address.trim(),
           image: form.image,
-          storeLogo: form.storeLogo,
+          ...(profile?.role === "admin" ? { storeLogo: form.storeLogo } : {}),
         }),
       });
       const data = await res.json();

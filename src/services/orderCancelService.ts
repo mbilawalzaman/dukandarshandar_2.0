@@ -1,3 +1,5 @@
+import { ownsOrder, hasReservedStock, allowedOrderTransitions } from "@/lib/orderRules";
+import { withOrderTransaction, releaseOrderStock } from "@/lib/orderTransaction";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
@@ -13,127 +15,68 @@ export type CancelOrderResult =
   | { success: true; orderId: string; refunded: boolean }
   | { success: false; message: string; status: number };
 
-function ownsOrder(
-  order: { customer_id?: string | null; customer_email?: string | null },
-  user: { userId?: string; email?: string; role?: string }
-): boolean {
-  if (user.role === "admin") return true;
-  if (user.userId && order.customer_id && String(order.customer_id) === String(user.userId)) {
-    return true;
-  }
-  if (user.email && order.customer_email) {
-    return user.email.trim().toLowerCase() === String(order.customer_email).trim().toLowerCase();
-  }
-  return false;
-}
-
-async function releaseOrderPromotions(order: { _id: ObjectId; promotions_recorded?: boolean }): Promise<void> {
-  if (!order.promotions_recorded) return;
-  await releaseRedemptions(String(order._id));
-  const db = await getDb();
-  await db.collection("orders").updateOne({ _id: order._id }, { $set: { promotions_recorded: false } });
-}
-
-async function restockOrderItems(
-  items: Array<{ _id?: string; quantity?: number }> | undefined
-): Promise<void> {
-  if (!Array.isArray(items)) return;
-  const db = await getDb();
-  for (const item of items) {
-    if (!item._id || !ObjectId.isValid(item._id)) continue;
-    await db.collection("products").updateOne(
-      { _id: new ObjectId(item._id) },
-      {
-        $inc: { quantity: Number(item.quantity) || 1 },
-        $set: { updated_at: new Date() },
-      }
-    );
-  }
-}
-
-/**
- * Customer (or admin) cancel while fulfillment status is still `pending`.
- * Paid card orders attempt a Safepay refund first (sandbox or production).
- */
+/** A durable claim prevents duplicate refunds. Ambiguous provider failures are never blindly retried. */
 export async function cancelCustomerOrder(
   orderId: string,
   user: { userId?: string; email?: string; role?: string }
 ): Promise<CancelOrderResult> {
-  if (!orderId || !ObjectId.isValid(orderId)) {
-    return { success: false, message: "Invalid order ID", status: 400 };
-  }
-
+  if (!orderId || !ObjectId.isValid(orderId)) return { success: false, message: "Invalid order ID", status: 400 };
   const db = await getDb();
-  const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
+  const _id = new ObjectId(orderId);
+  const order = await db.collection("orders").findOne({ _id });
+  if (!order) return { success: false, message: "Order not found", status: 404 };
+  if (!ownsOrder(order, user)) return { success: false, message: "You can only cancel your own orders", status: 403 };
+  if (order.status === "cancelled") return { success: true, orderId, refunded: order.payment_status === "refunded" };
 
-  if (!order) {
-    return { success: false, message: "Order not found", status: 404 };
+  const resuming = order.status === "cancelling";
+  if (resuming && order.refund_state !== "succeeded" && order.refund_state !== "not_required") {
+    return { success: false, message: "Cancellation is being processed. Contact support if it remains pending.", status: 409 };
   }
-
-  if (!ownsOrder(order as { customer_id?: string | null; customer_email?: string | null }, user)) {
-    return { success: false, message: "You can only cancel your own orders", status: 403 };
+  if (!resuming && !(user.role === "admin" ? allowedOrderTransitions(order).includes("cancelled") : order.status === "pending")) {
+    return { success: false, message: "This order can no longer be cancelled. Contact support if you need help.", status: 409 };
   }
-
-  const status = String(order.status || "").toLowerCase();
-  if (status === "cancelled") {
-    return { success: false, message: "Order is already cancelled", status: 400 };
-  }
-
-  if (status !== "pending") {
-    return {
-      success: false,
-      message: "This order can no longer be cancelled. Contact support if you need help.",
-      status: 400,
-    };
-  }
-
-  const paymentStatus = String(order.payment_status || "").toLowerCase();
-  const paymentMethod = String(order.payment_method || "cod").toLowerCase();
+  const needsRefund = order.payment_status === "paid" && order.payment_method !== "cod";
   const tracker = typeof order.safepay_tracker === "string" ? order.safepay_tracker.trim() : "";
-  const needsRefund = paymentStatus === "paid" && paymentMethod !== "cod" && Boolean(tracker);
+  if (!resuming && needsRefund && (!tracker || !isSafepayConfigured())) {
+    return { success: false, message: "Payment refund is unavailable. Please contact support.", status: 503 };
+  }
 
-  let refunded = false;
-  if (needsRefund) {
-    if (!isSafepayConfigured()) {
-      return {
-        success: false,
-        message: "Payment refund is unavailable right now. Please contact support.",
-        status: 503,
-      };
-    }
-    try {
-      await SafepayService.refundPayment(tracker, {
-        amount: Number(order.total_amount) || undefined,
-        reason: "customer_cancel",
-      });
-      refunded = true;
-    } catch (error) {
-      console.error("Safepay refund failed:", error);
-      return {
-        success: false,
-        message:
-          "Could not refund this payment automatically. Please contact support — your order was not cancelled.",
-        status: 502,
-      };
+  if (!resuming) {
+    const claimed = await db.collection("orders").updateOne(
+      { _id, status: order.status, payment_status: order.payment_status },
+      { $set: { status: "cancelling", cancellation_previous_status: order.status,
+        stock_reserved: hasReservedStock(order), refund_state: needsRefund ? "requested" : "not_required",
+        cancelled_by: user.userId, updated_at: new Date() } },
+    );
+    if (claimed.modifiedCount !== 1) return { success: false, message: "Order changed. Refresh and try again.", status: 409 };
+    if (needsRefund) {
+      try {
+        await SafepayService.refundPayment(tracker, { amount: Number(order.total_amount), reason: "customer_cancel" });
+        await db.collection("orders").updateOne({ _id, status: "cancelling", refund_state: "requested" }, {
+          $set: { refund_state: "succeeded", payment_status: "refunded", refunded_at: new Date(), updated_at: new Date() },
+        });
+      } catch (error) {
+        console.error("Safepay refund requires reconciliation:", error);
+        await db.collection("orders").updateOne({ _id, status: "cancelling", refund_state: "requested" }, { $set: { refund_state: "review_required", updated_at: new Date() } });
+        await safeNotify(() => notifyAdmins({ type: "order_status", title: "Refund requires review", body: `Check Safepay before retrying refund for order ${orderId}`,
+          entityType: "order", entityId: orderId, idempotencyKey: `refund_review:${orderId}`, sendPush: true, route: "/admin/orders" }));
+        return { success: false, message: "The refund needs verification. Please contact support; it will not be submitted twice.", status: 502 };
+      }
     }
   }
 
-  await restockOrderItems(order.items);
-  await releaseOrderPromotions(order as { _id: ObjectId; promotions_recorded?: boolean });
-
-  await db.collection("orders").updateOne(
-    { _id: new ObjectId(orderId), status: "pending" },
-    {
-      $set: {
-        status: "cancelled",
-        cancelled_at: new Date(),
-        cancelled_by: user.userId || user.email || "customer",
-        payment_status: refunded ? "refunded" : order.payment_status,
-        refunded_at: refunded ? new Date() : order.refunded_at || null,
-        updated_at: new Date(),
-      },
-    }
-  );
+  const refunded = await withOrderTransaction(async (tx) => {
+    const current = await tx.db.collection("orders").findOne({ _id }, { session: tx.session });
+    if (!current) throw new Error("Order not found");
+    if (current.status === "cancelled") return current.payment_status === "refunded";
+    if (current.status !== "cancelling" || !["succeeded", "not_required"].includes(current.refund_state)) throw new Error("Cancellation is not ready");
+    await releaseOrderStock(tx, current);
+    if (current.promotions_recorded) await releaseRedemptions(orderId, tx);
+    await tx.db.collection("orders").updateOne({ _id }, { $set: {
+      status: "cancelled", stock_reserved: false, promotions_recorded: false, cancelled_at: new Date(), updated_at: new Date(),
+    } }, { session: tx.session });
+    return current.payment_status === "refunded";
+  });
 
   const displayOrderId = String(orderId).slice(-8).toUpperCase();
 

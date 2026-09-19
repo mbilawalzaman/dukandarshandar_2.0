@@ -33,7 +33,7 @@ export class SafepayWebhookService {
       }
       return {
         handled: true,
-        message: result.alreadyPaid ? "Order already marked as paid" : "Order fulfilled after payment",
+        message: result.reviewRequired ? "Payment recorded; order requires review" : result.alreadyPaid ? "Order already marked as paid" : "Order fulfilled after payment",
       };
     }
 

@@ -41,12 +41,15 @@ export async function updateDeliverySettings(
   updatedBy: string
 ): Promise<DeliverySettings> {
   const db = await getDb();
-  const fee = Math.max(0, Number(input.fee) || 0);
+  if (input.fee !== undefined && (typeof input.fee !== "number" || !Number.isFinite(input.fee) || input.fee < 0)) {
+    throw new Error("Invalid delivery fee");
+  }
+  if (input.feeEnabled !== undefined && typeof input.feeEnabled !== "boolean") throw new Error("Invalid delivery fee toggle");
 
   const setPayload: Record<string, unknown> = {
     key: DELIVERY_SETTINGS_KEY,
-    feeEnabled: Boolean(input.feeEnabled),
-    fee,
+    ...(input.feeEnabled !== undefined ? { feeEnabled: input.feeEnabled } : {}),
+    ...(input.fee !== undefined ? { fee: input.fee } : {}),
     updated_at: new Date(),
     updated_by: updatedBy,
   };

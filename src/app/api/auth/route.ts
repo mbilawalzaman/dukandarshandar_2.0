@@ -1,3 +1,5 @@
+import { throttleRequest } from "@/lib/rateLimit.server";
+import { isValidCustomerEmail } from "@/lib/userDisplay";
 import { NextResponse } from "next/server";
 import { signupController, loginController, guestLoginController } from "@/controllers/authController";
 import { clearAuthCookie, getAuthUser } from "@/lib/auth";
@@ -18,7 +20,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, type, role } = await req.json();
+    const { name, email, password, type } = await req.json();
     const userAgent = req.headers.get("user-agent") || undefined;
 
     if (type === "logout") {
@@ -32,13 +34,24 @@ export async function POST(req: Request) {
       return clearAuthCookie(response);
     }
 
+    if (["signup", "login", "guest"].includes(type)) {
+      const limited = await throttleRequest(req, `auth:${type}`, type === "login" ? 15 : 10, 60 * 1000);
+      if (limited) return limited;
+    }
+    if (type === "signup" || type === "login") {
+      if (typeof email !== "string" || email.length > 254 || !isValidCustomerEmail(email) ||
+          typeof password !== "string" || !password || password.length > 1024 ||
+          (type === "signup" && (password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || typeof name !== "string" || !name.trim() || name.length > 120))) {
+        return NextResponse.json({ success: false, error: "Enter valid account details (new passwords require at least 8 characters)" }, { status: 400 });
+      }
+    }
     if (type === "signup") {
-      const result = await signupController(name, email, password, role);
+      const result = await signupController(name.trim(), email.trim(), password);
       return NextResponse.json(result, { status: result.success ? 201 : 400 });
     }
 
     if (type === "login") {
-      const result = await loginController(email, password, { userAgent });
+      const result = await loginController(email.trim(), password, { userAgent });
       const response = NextResponse.json(result, { status: result.success ? 200 : 401 });
       if (result.success && result.token && result.refreshToken) {
         attachSessionCookies(response, result.token, result.refreshToken);

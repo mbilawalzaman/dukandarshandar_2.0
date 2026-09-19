@@ -353,6 +353,17 @@ export default function CheckoutPage() {
     }
   };
 
+  const checkoutRequestKey = () => {
+    const content = JSON.stringify({ form, items: items.map(({ _id, quantity }) => ({ _id, quantity })), paymentMethod, appliedCode });
+    const stored = sessionStorage.getItem("checkout_attempt");
+    if (stored) {
+      try { const attempt = JSON.parse(stored); if (attempt.content === content && attempt.key) return attempt.key as string; } catch { /* replace invalid saved attempt */ }
+    }
+    const key = crypto.randomUUID();
+    sessionStorage.setItem("checkout_attempt", JSON.stringify({ content, key }));
+    return key;
+  };
+
   const placeCodOrder = async () => {
     if (!(await validateForm())) return;
 
@@ -363,7 +374,7 @@ export default function CheckoutPage() {
 
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Idempotency-Key": checkoutRequestKey() },
         credentials: "include",
         body: JSON.stringify({
           ...form,
@@ -382,6 +393,7 @@ export default function CheckoutPage() {
       if (res.ok && data.success) {
         if (data.token) persistAccessToken(data.token);
         setEmailRequiredHint(false);
+        sessionStorage.removeItem("checkout_attempt");
         clear();
         toast("Order placed successfully!");
         router.push("/orders?placed=1");
@@ -409,7 +421,7 @@ export default function CheckoutPage() {
 
       const res = await fetch("/api/payments/safepay/session", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Idempotency-Key": checkoutRequestKey() },
         credentials: "include",
         body: JSON.stringify({
           ...form,
@@ -455,6 +467,7 @@ export default function CheckoutPage() {
 
   const handlePaymentSuccess = () => {
     persistGuestInfoIfApplicable();
+    sessionStorage.removeItem("checkout_attempt");
     clear();
     toast("Payment submitted successfully!");
     router.push("/orders?placed=1");

@@ -1,9 +1,12 @@
+import { throttleRequest } from "@/lib/rateLimit.server";
 import { NextResponse } from "next/server";
 import { socialLoginController } from "@/controllers/authController";
 import { attachSessionCookies } from "@/lib/session";
 
 export async function POST(req: Request) {
   try {
+    const limited = await throttleRequest(req, "auth:social", 15, 60 * 1000);
+    if (limited) return limited;
     const body = await req.json();
     const idToken = typeof body.idToken === "string" ? body.idToken : "";
     const userAgent = req.headers.get("user-agent") || undefined;

@@ -1,3 +1,5 @@
+import { ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
+import { escapeRegex } from "@/lib/escapeRegex";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
@@ -8,6 +10,12 @@ import type { ProductImage } from "@/lib/productImages";
 import { MAX_PRODUCT_IMAGES } from "@/lib/productImages";
 
 type StoredProductImage = { url: string; publicId: string };
+
+function normalizeAdminRating(value: unknown): number | null {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0.5 || numeric > 5) return null;
+  return Math.round(numeric * 2) / 2;
+}
 
 function getStoredImages(product: Record<string, unknown>): StoredProductImage[] {
   const images = product.images as ProductImage[] | undefined;
@@ -74,6 +82,14 @@ export const createProduct = async (req: Request) => {
       return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 });
     }
 
+    if (typeof price !== "number" || !Number.isFinite(price) || price <= 0 ||
+        typeof quantity !== "number" || !Number.isSafeInteger(quantity) || quantity < 0) {
+      return NextResponse.json({ success: false, message: "Price must be positive and stock must be a nonnegative whole number" }, { status: 400 });
+    }
+    const normalizedRating = rating === undefined ? null : normalizeAdminRating(rating);
+    if (rating !== undefined && normalizedRating === null) {
+      return NextResponse.json({ success: false, message: "Rating must be a number between 0.5 and 5" }, { status: 400 });
+    }
     const db = await getDb();
     const storedImages = await resolveImagesInput(imageInputs);
     if (!storedImages.length) {
@@ -85,8 +101,8 @@ export const createProduct = async (req: Request) => {
       category,
       price: Number(price),
       quantity: Number(quantity),
-      rating: rating || 0,
-      ratings: rating ? [rating] : [],
+      rating: normalizedRating ?? 0,
+      ratings: normalizedRating === null ? [] : [normalizedRating],
       description,
       ...syncPrimaryImageFields(storedImages),
       featured: Boolean(featured),
@@ -119,7 +135,7 @@ export const updateProduct = async (req: Request) => {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
-    const { _id, rating, image, images, ...updateFields } = await req.json();
+    const { _id, rating, image, images, created_by: _createdBy, ...updateFields } = await req.json();
 
     if (!_id) {
       return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
@@ -136,6 +152,19 @@ export const updateProduct = async (req: Request) => {
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     }
 
+    const allowedFields = new Set(["name", "category", "price", "quantity", "description", "featured", "status"]);
+    if (Object.keys(updateFields).some((key) => !allowedFields.has(key))) {
+      return NextResponse.json({ success: false, message: "Unsupported product field" }, { status: 400 });
+    }
+    if ((updateFields.price !== undefined && (typeof updateFields.price !== "number" || !Number.isFinite(updateFields.price) || updateFields.price <= 0)) ||
+        (updateFields.quantity !== undefined && (typeof updateFields.quantity !== "number" || !Number.isSafeInteger(updateFields.quantity) || updateFields.quantity < 0)) ||
+        (updateFields.status !== undefined && !["active", "inactive"].includes(updateFields.status))) {
+      return NextResponse.json({ success: false, message: "Invalid product price, quantity or status" }, { status: 400 });
+    }
+    const normalizedRating = rating === undefined ? null : normalizeAdminRating(rating);
+    if (rating !== undefined && normalizedRating === null) {
+      return NextResponse.json({ success: false, message: "Rating must be a number between 0.5 and 5" }, { status: 400 });
+    }
     const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields, updated_at: new Date() } };
     const existingImages = getStoredImages(product);
 
@@ -152,9 +181,11 @@ export const updateProduct = async (req: Request) => {
       Object.assign(updateQuery.$set, syncPrimaryImageFields(storedImages));
     }
 
-    if (rating !== undefined) {
-      const ratings = product.ratings || [];
-      ratings.push(rating);
+    if (normalizedRating !== null) {
+      const ratings = (Array.isArray(product.ratings) ? product.ratings : [])
+        .map((value) => normalizeAdminRating(value))
+        .filter((value): value is number => value !== null);
+      ratings.push(normalizedRating);
       const newAverageRating =
         Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
       updateQuery.$set.rating = newAverageRating;
@@ -240,14 +271,14 @@ export const submitProductRating = async (req: Request) => {
   }
 };
 
-export const getProductByID = async (id: string) => {
+export const getProductByID = async (id: string, includeInactive = false) => {
   try {
     if (!id || !ObjectId.isValid(id)) {
       return { success: false, message: "Invalid product ID", status: 400 };
     }
 
     const db = await getDb();
-    const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
+    const product = await db.collection("products").findOne({ _id: new ObjectId(id), ...(includeInactive ? {} : ACTIVE_PRODUCT_FILTER) });
 
     if (!product) {
       return { success: false, message: "Product not found", status: 404 };
@@ -263,7 +294,7 @@ export const getProductByID = async (id: string) => {
 export const fetchProducts = async () => {
   try {
     const db = await getDb();
-    const products = await db.collection("products").find({}).sort({ created_at: -1 }).toArray();
+    const products = await db.collection("products").find(ACTIVE_PRODUCT_FILTER).sort({ created_at: -1 }).toArray();
     return { success: true, products };
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -281,25 +312,26 @@ type ProductQueryOptions = {
   inStockOnly?: boolean;
   sortBy?: string;
   stock?: string;
+  includeInactive?: boolean;
 };
 
 function buildProductFilter(options: ProductQueryOptions) {
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = options.includeInactive ? {} : { ...ACTIVE_PRODUCT_FILTER };
   const and: Record<string, unknown>[] = [];
 
   if (options.search?.trim()) {
     const q = options.search.trim();
     and.push({
       $or: [
-        { name: { $regex: q, $options: "i" } },
-        { category: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
+        { name: { $regex: escapeRegex(q), $options: "i" } },
+        { category: { $regex: escapeRegex(q), $options: "i" } },
+        { description: { $regex: escapeRegex(q), $options: "i" } },
       ],
     });
   }
 
   if (options.category && options.category !== "all") {
-    and.push({ category: { $regex: new RegExp(`^${options.category}$`, "i") } });
+    and.push({ category: { $regex: new RegExp(`^${escapeRegex(options.category)}$`, "i") } });
   }
 
   if (options.minPrice !== undefined && !Number.isNaN(options.minPrice)) {
@@ -353,14 +385,15 @@ export const fetchProductsPaginated = async (options: ProductQueryOptions = {}) 
     const skip = (page - 1) * limit;
     const filter = buildProductFilter(options);
     const sort = productSort(options.sortBy);
+    const visibility = options.includeInactive ? {} : ACTIVE_PRODUCT_FILTER;
 
     const [products, total, categoryAgg, inStockCount, lowStockCount, outOfStockCount] = await Promise.all([
       db.collection("products").find(filter).sort(sort).skip(skip).limit(limit).toArray(),
       db.collection("products").countDocuments(filter),
-      db.collection("products").aggregate([{ $group: { _id: "$category", count: { $sum: 1 } } }]).toArray(),
-      db.collection("products").countDocuments({ quantity: { $gt: 5 } }),
-      db.collection("products").countDocuments({ quantity: { $gt: 0, $lte: 5 } }),
-      db.collection("products").countDocuments({ quantity: { $lte: 0 } }),
+      db.collection("products").aggregate([{ $match: visibility }, { $group: { _id: "$category", count: { $sum: 1 } } }]).toArray(),
+      db.collection("products").countDocuments({ ...visibility, quantity: { $gt: 5 } }),
+      db.collection("products").countDocuments({ ...visibility, quantity: { $gt: 0, $lte: 5 } }),
+      db.collection("products").countDocuments({ ...visibility, quantity: { $lte: 0 } }),
     ]);
 
     const categoryCounts: Record<string, number> = { all: 0 };
@@ -393,7 +426,7 @@ export const getTopRatedProducts = async (limit: number = 8) => {
   try {
     const db = await getDb();
     const count = Math.max(1, Math.min(24, Number(limit) || 8));
-    return await db.collection("products").find({ status: "active" }).sort({ rating: -1 }).limit(count).toArray();
+    return await db.collection("products").find(ACTIVE_PRODUCT_FILTER).sort({ rating: -1 }).limit(count).toArray();
   } catch (error) {
     console.error("Error fetching top-rated products:", error);
     return [];

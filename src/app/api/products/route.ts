@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/auth";
 import type { NextRequest} from "next/server";
 import { NextResponse } from "next/server";
 import { fetchProductsPaginated } from "@/controllers/productController";
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get("maxPrice");
 
   const result = await fetchProductsPaginated({
+    includeInactive: getAuthUser(req)?.role === "admin",
     page,
     limit,
     search: searchParams.get("search") || undefined,

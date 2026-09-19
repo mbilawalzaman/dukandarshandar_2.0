@@ -50,6 +50,7 @@ function methodLabel(method: string) {
 }
 
 function paymentStatusChip(record: AdminPaymentRecord) {
+  if (record.payment_status === "refunded") return <Chip label="Refund initiated" color="info" size="small" />;
   if (record.order_status === "pending_payment") {
     return <Chip label="Awaiting payment" color="warning" size="small" variant="outlined" />;
   }
@@ -277,7 +278,7 @@ export default function AdminPaymentsPage() {
         <StatCard label="Paid Online" value={String(stats.paidOnlineCount)} sub="Successful card payments" />
         <StatCard label="Success Rate" value={`${stats.successRate}%`} sub={`${stats.onlineAttempts} online attempts`} />
         <StatCard label="Failed / Awaiting" value={`${stats.failedCount} / ${stats.awaitingCount}`} sub="Needs follow-up" />
-        <StatCard label="COD Total" value={`PKR ${stats.codRevenue.toLocaleString()}`} sub={`${stats.codCount} orders`} />
+        <StatCard label="Delivered COD Sales" value={`PKR ${stats.codRevenue.toLocaleString()}`} sub={`${stats.codCount} delivered orders; collection unverified`} />
       </Box>
 
       <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap", alignItems: "center" }}>

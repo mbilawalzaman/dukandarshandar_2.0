@@ -1,5 +1,7 @@
 "use client";
 
+import { allowedOrderTransitions } from "@/lib/orderRules";
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -70,6 +72,7 @@ function paymentStatusChip(order: Order) {
   const status = order.status?.toLowerCase();
   const paymentStatus = order.payment_status?.toLowerCase();
 
+  if (paymentStatus === "refunded") return <Chip label="Refund initiated" color="info" size="small" />;
   if (status === "pending_payment") {
     return <Chip label="Awaiting payment" color="warning" size="small" variant="outlined" />;
   }
@@ -89,6 +92,8 @@ function fulfillmentLabel(status: string, order: Order) {
   const key = status?.toLowerCase();
   if (key === "pending_payment") return "Awaiting payment";
   if (key === "payment_failed") return "Payment failed";
+  if (key === "payment_review") return "Payment needs review";
+  if (key === "cancelling") return "Cancellation pending";
   if (key === "pending" && order.payment_status === "paid") return "Confirmed";
   return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
 }
@@ -268,14 +273,11 @@ export default function AdminOrdersPage() {
               sx={{ fontSize: "0.85rem", height: 32 }}
               renderValue={(selected) => fulfillmentLabel(String(selected), row)}
             >
-              <MenuItem value="pending_payment" disabled={row.payment_status === "paid"}>
-                Awaiting Payment
-              </MenuItem>
-              <MenuItem value="payment_failed">Payment Failed</MenuItem>
-              <MenuItem value="pending">Confirmed / Pending</MenuItem>
-              <MenuItem value="shipped">Shipped</MenuItem>
-              <MenuItem value="delivered">Delivered</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
+              <MenuItem value={row.status}>{fulfillmentLabel(row.status, row)}</MenuItem>
+              {allowedOrderTransitions(row).map((next) => (
+                <MenuItem key={next} value={next}>{fulfillmentLabel(next, row)}</MenuItem>
+              ))}
+              {row.status === "cancelling" && <MenuItem value="cancelled">Retry cancellation</MenuItem>}
             </Select>
           </FormControl>
           {(() => {

@@ -8,7 +8,7 @@ import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 import { SYNTHETIC_EMAIL_SUFFIX, isSyntheticEmail } from "@/lib/userDisplay";
 
-export async function signupController(name: string, email: string, password: string, role: string) {
+export async function signupController(name: string, email: string, password: string) {
   const db = await getDb();
   const usersCollection = db.collection("users");
 
@@ -18,8 +18,7 @@ export async function signupController(name: string, email: string, password: st
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const userCount = await usersCollection.countDocuments();
-  const assignedRole = userCount === 0 ? UserRole.ADMIN : role === UserRole.ADMIN ? UserRole.USER : role || UserRole.USER;
+  const assignedRole = UserRole.USER;
 
   await usersCollection.insertOne({
     name,
@@ -32,7 +31,7 @@ export async function signupController(name: string, email: string, password: st
   });
 
   const created = await usersCollection.findOne({ email: email.toLowerCase() });
-  if (created && assignedRole !== UserRole.ADMIN) {
+  if (created) {
     await safeNotify(async () => {
       const { notifyAdmins } = await import("@/services/notificationService");
       return notifyAdmins({
@@ -167,7 +166,10 @@ export async function socialLoginController(
 
   let user = await users.findOne({ firebaseUid });
   if (!user && emailFromProvider) {
-    user = await users.findOne({ email });
+    const existingEmail = await users.findOne({ email });
+    if (existingEmail) {
+      return { success: false, error: "An account already uses this email. Sign in with its existing login method." };
+    }
   }
 
   if (user) {

@@ -72,6 +72,9 @@ const STATUS_CONFIG: Record<
 function getOrderStatusInfo(order: Order) {
   const statusKey = order.status?.toLowerCase() || "pending";
 
+  if (statusKey === "payment_review" || statusKey === "cancelling") {
+    return { ...STATUS_CONFIG.pending, label: statusKey === "payment_review" ? "Payment received — contact support" : "Cancellation processing", color: "warning" as const };
+  }
   if (statusKey === "pending_payment") {
     return STATUS_CONFIG.pending_payment;
   }

@@ -1,3 +1,4 @@
+import { normalizeCartItems, CheckoutError } from "@/lib/checkoutValidation";
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
@@ -22,14 +23,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const items = Array.isArray(body.items)
-      ? body.items
-          .filter((i: { _id?: unknown }) => typeof i._id === "string")
-          .map((i: { _id: string; quantity?: unknown }) => ({ _id: i._id, quantity: Math.max(1, Number(i.quantity) || 1) }))
-      : [];
-    if (items.length === 0) {
-      return NextResponse.json({ success: false, error: "Cart is empty" }, { status: 400 });
-    }
+    const items = normalizeCartItems(body.items);
 
     const user = getAuthUser(req);
     const quote = await quoteCart({
@@ -42,6 +36,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, quote });
   } catch (error) {
     console.error("Error quoting cart:", error);
-    return NextResponse.json({ success: false, error: "Could not price your cart" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error instanceof CheckoutError ? error.message : "Could not price your cart" }, { status: error instanceof CheckoutError ? error.status : 500 });
   }
 }

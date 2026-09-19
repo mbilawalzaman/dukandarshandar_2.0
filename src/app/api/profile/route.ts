@@ -68,6 +68,9 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
+    if (body.storeLogo !== undefined && auth.user.role !== "admin") {
+      return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
+    }
     const db = await getDb();
     const userId = new ObjectId(auth.user.userId);
     const existing = await db.collection("users").findOne({ _id: userId });
@@ -112,6 +115,16 @@ export async function PUT(req: Request) {
       });
       if (taken) {
         return NextResponse.json({ success: false, message: "Email is already in use" }, { status: 400 });
+      }
+      if (
+        String(existing.email || "").toLowerCase() !== nextEmail &&
+        !isSyntheticEmail(String(existing.email || "")) &&
+        !existing.needsEmail
+      ) {
+        return NextResponse.json(
+          { success: false, message: "Email changes require verification and are not available from this form" },
+          { status: 409 }
+        );
       }
       updates.email = nextEmail;
       updates.needsEmail = false;

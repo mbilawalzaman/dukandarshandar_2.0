@@ -109,12 +109,12 @@ export async function issueSessionForUser(
 /** Guest: short-lived access only, no refresh. Unique id so this browser session owns its orders. */
 export function issueGuestAccessToken(): { accessToken: string; user: SessionUser } {
   const guestId = `guest_${crypto.randomBytes(12).toString("hex")}`;
-  const accessToken = signAccessToken({
+  const accessToken = jwt.sign({
     userId: guestId,
     email: "guest@guest.com",
     userName: "Guest User",
     role: "guest",
-  });
+  }, getJwtSecret(), { expiresIn: REFRESH_TOKEN_TTL_SECONDS });
   return {
     accessToken,
     user: { name: "Guest User", email: "guest@guest.com", role: "guest" },
