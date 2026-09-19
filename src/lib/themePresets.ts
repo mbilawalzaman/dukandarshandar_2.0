@@ -307,7 +307,7 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
         default: "#fff7f2",
         paper: "#ffffff",
         header: "#FF5000",
-        footer: "#22140a",
+        footer: "#FF5000",
       },
       marketplace: {
         accentRed: "#e03000",

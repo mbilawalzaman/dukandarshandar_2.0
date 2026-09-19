@@ -63,6 +63,21 @@ export function StoreSettingsProvider({ children }: { children: React.ReactNode 
     return () => { revision.current += 1; };
   }, [pathname, fetchSettings]);
 
+  useEffect(() => {
+    if (typeof document !== "undefined" && settings.shopName) {
+      document.title = settings.shopName;
+    }
+    if (typeof document !== "undefined" && settings.storeLogo) {
+      let iconLink: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!iconLink) {
+        iconLink = document.createElement("link");
+        iconLink.rel = "icon";
+        document.head.appendChild(iconLink);
+      }
+      iconLink.href = settings.storeLogo;
+    }
+  }, [settings.shopName, settings.storeLogo]);
+
   const updateSettingsInState = useCallback((partial: Partial<DeliverySettings>) => {
     revision.current += 1;
     setSettings((prev) => ({

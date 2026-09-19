@@ -4,16 +4,28 @@ import "./globals.css";
 import ThemeRegistry from "./ThemeRegistry";
 import AppShell from "./components/AppShell";
 
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
+
 const poppins = Poppins({
   weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
   variable: "--font-poppins",
 });
 
-export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_STORE_NAME || "Store",
-  description: "Stationery and craft ecommerce quality supplies for every project.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getDeliverySettings().catch(() => null);
+  const shopName = settings?.shopName?.trim() || process.env.NEXT_PUBLIC_STORE_NAME || "Ecommerce Store";
+  const storeLogo = settings?.storeLogo;
+
+  return {
+    title: {
+      default: shopName,
+      template: `%s | ${shopName}`,
+    },
+    description: "Quality stationery, craft, and ecommerce supplies for every project.",
+    icons: storeLogo ? [{ rel: "icon", url: storeLogo }] : undefined,
+  };
+}
 
 export default function RootLayout({
   children,
