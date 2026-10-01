@@ -23,6 +23,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
+import PostExBookingModal from "@/components/admin/orders/PostExBookingModal";
 
 interface OrderItem {
   name: string;
@@ -47,6 +48,10 @@ interface Order {
   safepay_tracker?: string | null;
   paid_at?: string;
   created_at?: string;
+  postexDetails?: {
+    trackingNumber?: string;
+    orderStatus?: string;
+  };
 }
 
 interface OrderSummary {
@@ -111,10 +116,17 @@ export default function AdminOrdersPage() {
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
   const [selectedOrderForLabel, setSelectedOrderForLabel] = useState<Order | null>(null);
   const [labelModalOpen, setLabelModalOpen] = useState(false);
+  const [selectedOrderForPostex, setSelectedOrderForPostex] = useState<Order | null>(null);
+  const [postexModalOpen, setPostexModalOpen] = useState(false);
 
   const handleOpenLabelModal = (order: Order) => {
     setSelectedOrderForLabel(order);
     setLabelModalOpen(true);
+  };
+
+  const handleOpenPostexModal = (order: Order) => {
+    setSelectedOrderForPostex(order);
+    setPostexModalOpen(true);
   };
 
   useEffect(() => {
@@ -311,6 +323,24 @@ export default function AdminOrdersPage() {
               </Tooltip>
             );
           })()}
+          <Tooltip title={row.postexDetails?.trackingNumber ? `PostEx: ${row.postexDetails.trackingNumber}` : "Book with PostEx Courier"}>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenPostexModal(row)}
+              sx={{
+                border: `1px solid ${row.postexDetails?.trackingNumber ? "#10b981" : "#3b82f6"}`,
+                backgroundColor: row.postexDetails?.trackingNumber ? "#ecfdf5" : "#eff6ff",
+                color: row.postexDetails?.trackingNumber ? "#059669" : "#2563eb",
+                borderRadius: "50%",
+                p: 0.6,
+                "&:hover": {
+                  backgroundColor: row.postexDetails?.trackingNumber ? "#d1fae5" : "#dbeafe",
+                },
+              }}
+            >
+              <LocalShippingIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
@@ -454,6 +484,13 @@ export default function AdminOrdersPage() {
         open={labelModalOpen}
         onClose={() => setLabelModalOpen(false)}
         order={selectedOrderForLabel}
+      />
+
+      <PostExBookingModal
+        open={postexModalOpen}
+        onClose={() => setPostexModalOpen(false)}
+        order={selectedOrderForPostex}
+        onSuccess={fetchOrders}
       />
     </Box>
   );
