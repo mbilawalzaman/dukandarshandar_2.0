@@ -145,8 +145,8 @@ class PostExService {
       orderRefNumber: String(orderPayload.orderRefNumber),
       orderType: orderPayload.orderType || 'Normal',
       transactionNotes: orderPayload.transactionNotes || '',
-      pickupAddressCode: orderPayload.pickupAddressCode || POSTEX_CONFIG.DEFAULT_PICKUP_ADDRESS_CODE || '',
-      storeAddressCode: orderPayload.storeAddressCode || '',
+      pickupAddressCode: orderPayload.pickupAddressCode || POSTEX_CONFIG.DEFAULT_PICKUP_ADDRESS_CODE || '001',
+      ...(orderPayload.storeAddressCode ? { storeAddressCode: orderPayload.storeAddressCode } : {}),
     };
 
     return await this._request('/services/integration/api/order/v3/create-order', {
