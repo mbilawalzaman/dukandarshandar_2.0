@@ -132,19 +132,34 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
     const content = printRef.current;
     if (!content) return;
 
+    let extractedCss = "";
+    try {
+      extractedCss = Array.from(document.styleSheets)
+        .map((sheet) => {
+          try {
+            return Array.from(sheet.cssRules)
+              .map((rule) => rule.cssText)
+              .join("\n");
+          } catch {
+            return "";
+          }
+        })
+        .join("\n");
+    } catch {
+      /* fallback */
+    }
+
     const printWindow = window.open("", "_blank", "width=800,height=900");
     if (!printWindow) return;
-
-    const stylesHtml = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map((node) => node.outerHTML)
-      .join("\n");
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Shipping Label - Order #${orderIdShort}</title>
-          ${stylesHtml}
+          <style>
+            ${extractedCss}
+          </style>
           <style>
             @page {
               size: 4in 6in;
@@ -152,8 +167,8 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
             }
             @media print {
               html, body {
-                width: 4in;
-                height: 6in;
+                width: 4in !important;
+                height: 6in !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
