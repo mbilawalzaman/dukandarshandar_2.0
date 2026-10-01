@@ -135,15 +135,38 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
     const printWindow = window.open("", "_blank", "width=800,height=900");
     if (!printWindow) return;
 
+    const stylesHtml = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((node) => node.outerHTML)
+      .join("\n");
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Shipping Label - Order #${orderIdShort}</title>
+          ${stylesHtml}
           <style>
             @page {
               size: 4in 6in;
               margin: 0;
+            }
+            @media print {
+              html, body {
+                width: 4in;
+                height: 6in;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                background: #ffffff !important;
+              }
+              .label-container {
+                width: 3.8in !important;
+                max-width: 3.8in !important;
+                margin: 0.1in auto !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
             }
             body {
               font-family: Arial, Helvetica, sans-serif;
@@ -155,133 +178,12 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
             }
             .label-container {
               width: 100%;
-              max-width: 380px;
+              max-width: 360px;
               margin: 0 auto;
               border: 2px solid #000;
               box-sizing: border-box;
               font-size: 11px;
               line-height: 1.2;
-            }
-            .header-barcodes {
-              display: flex;
-              border-bottom: 2px solid #000;
-            }
-            .header-col {
-              flex: 1;
-              padding: 4px;
-              text-align: center;
-              border-right: 1px solid #000;
-            }
-            .header-col:last-child {
-              border-right: none;
-            }
-            .col-title {
-              font-weight: bold;
-              font-size: 9px;
-              text-transform: uppercase;
-            }
-            .tracking-bar {
-              height: 20px;
-              border-bottom: 2px solid #000;
-              background: #ffffff;
-            }
-            .meta-grid {
-              display: flex;
-              border-bottom: 2px solid #000;
-            }
-            .meta-left {
-              flex: 1.2;
-              padding: 8px;
-              border-right: 2px solid #000;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .brand-name {
-              font-size: 18px;
-              font-weight: 900;
-              letter-spacing: -0.5px;
-            }
-            .hub-code {
-              font-size: 14px;
-              font-weight: 800;
-              margin-top: 6px;
-              padding: 2px 6px;
-              border: 1px solid #000;
-            }
-            .meta-right {
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-            }
-            .meta-row {
-              padding: 3px 6px;
-              border-bottom: 1px solid #000;
-              display: flex;
-              justify-content: space-between;
-              font-weight: bold;
-            }
-            .meta-row:last-child {
-              border-bottom: none;
-            }
-            .amount-box {
-              background: #000;
-              color: #fff;
-            }
-            .non-cod-box {
-              background: #f1f5f9;
-              color: #000;
-            }
-            .order-bar {
-              padding: 4px 6px;
-              font-weight: bold;
-              text-align: center;
-              border-bottom: 1px solid #000;
-              font-size: 11px;
-            }
-            .dates-bar {
-              display: flex;
-              border-bottom: 2px solid #000;
-              font-size: 9px;
-            }
-            .dates-col {
-              flex: 1;
-              padding: 3px 6px;
-              border-right: 1px solid #000;
-            }
-            .dates-col:last-child {
-              border-right: none;
-            }
-            .address-section {
-              display: flex;
-            }
-            .qr-col {
-              width: 100px;
-              padding: 6px;
-              border-right: 1px solid #000;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-            .info-col {
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-            }
-            .party-box {
-              padding: 6px;
-              border-bottom: 1px solid #000;
-            }
-            .party-box:last-child {
-              border-bottom: none;
-            }
-            .party-title {
-              font-weight: bold;
-              font-size: 10px;
-              text-transform: uppercase;
-              text-decoration: underline;
-              margin-bottom: 2px;
             }
             img {
               max-width: 100%;
@@ -289,8 +191,8 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
             }
           </style>
         </head>
-        <body>
-          ${content.innerHTML}
+        <body style="background: #ffffff; margin: 0; padding: 10px;">
+          ${content.outerHTML}
         </body>
       </html>
     `);
@@ -299,7 +201,7 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
-    }, 300);
+    }, 500);
   };
 
   const recipientAddress = [order.address, order.area, order.city, order.province]
