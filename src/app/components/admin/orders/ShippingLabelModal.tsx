@@ -363,7 +363,6 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
           ) : (
             <Box sx={{ py: 1, borderBottom: "2px solid #000", minHeight: "20px", backgroundColor: "#ffffff" }} />
           )}
-
           {/* Meta Grid */}
           <Box sx={{ display: "flex", borderBottom: "2px solid #000" }}>
             {/* Left Store Brand & Hub Code */}
