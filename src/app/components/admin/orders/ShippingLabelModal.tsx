@@ -354,8 +354,8 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
 
           {/* PostEx Barcode / Tracking Header Box */}
           {order.postexDetails?.trackingNumber ? (
-            <Box sx={{ py: 0.5, px: 1, borderBottom: "2px solid #000", textAlign: "center", backgroundColor: "#fffbe5" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "10px", color: "#d97706", display: "block" }}>
+            <Box sx={{ py: 0.5, px: 1, borderBottom: "2px solid #000", textAlign: "center", backgroundColor: "#ffffff" }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "10px", color: "#000000", display: "block" }}>
                 PostEx Courier Tracking: {order.postexDetails.trackingNumber}
               </Typography>
               <SimpleSvgBarcode value={order.postexDetails.trackingNumber} />
