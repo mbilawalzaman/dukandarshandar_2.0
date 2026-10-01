@@ -79,6 +79,39 @@ class PostExService {
   }
 
   /**
+   * Auto-resolves raw city names (e.g. 'Lahore - Garhi Shahu') to PostEx operational city names (e.g. 'Lahore')
+   */
+  static async resolveOperationalCity(cityName) {
+    if (!cityName) return '';
+    const cleanPart = String(cityName).split('-')[0].split(',')[0].trim().toLowerCase();
+
+    try {
+      const response = await this.getOperationalCities();
+      const citiesList = Array.isArray(response?.dist) ? response.dist : Array.isArray(response) ? response : [];
+
+      let match = citiesList.find((c) => {
+        const cName = (c?.cityName || c?.operationalCityName || c?.name || String(c)).toLowerCase();
+        return cName === cleanPart;
+      });
+
+      if (!match) {
+        match = citiesList.find((c) => {
+          const cName = (c?.cityName || c?.operationalCityName || c?.name || String(c)).toLowerCase();
+          return cName.startsWith(cleanPart) || cleanPart.startsWith(cName);
+        });
+      }
+
+      if (match) {
+        return match.cityName || match.operationalCityName || match.name || cleanPart;
+      }
+    } catch {
+      /* fallback to clean string */
+    }
+
+    return String(cityName).split('-')[0].split(',')[0].trim();
+  }
+
+  /**
    * 3.1 Get Operational Cities API
    * @param {string} [type] - 'Pickup' | 'Delivery' | null
    */
@@ -133,8 +166,10 @@ class PostExService {
       throw new CustomError('Invalid Customer Phone format for PostEx. Must be 11 digits (e.g. 03001234567)', 400);
     }
 
+    const resolvedCity = await this.resolveOperationalCity(orderPayload.cityName);
+
     const body = {
-      cityName: orderPayload.cityName,
+      cityName: resolvedCity || orderPayload.cityName,
       customerName: orderPayload.customerName,
       customerPhone: formattedPhone,
       deliveryAddress: orderPayload.deliveryAddress,
