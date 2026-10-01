@@ -5,8 +5,8 @@ import PostExService from "@/services/postex.service.js";
 
 export async function GET(req: NextRequest) {
   try {
-    const authError = await requireAdmin(req);
-    if (authError) return authError;
+    const auth = requireAdmin(req);
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || undefined;

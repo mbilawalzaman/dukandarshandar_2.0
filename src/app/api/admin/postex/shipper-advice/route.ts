@@ -5,8 +5,8 @@ import PostExService from "@/services/postex.service.js";
 
 export async function POST(req: NextRequest) {
   try {
-    const authError = await requireAdmin(req);
-    if (authError) return authError;
+    const auth = requireAdmin(req);
+    if (!auth.ok) return auth.response;
 
     const { trackingNumber, statusId, remarks } = await req.json();
 
