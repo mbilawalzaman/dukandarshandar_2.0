@@ -42,6 +42,10 @@ export interface OrderForLabel {
   safepay_tracker?: string | null;
   paid_at?: string;
   created_at?: string;
+  postexDetails?: {
+    trackingNumber?: string;
+    orderStatus?: string;
+  };
 }
 
 interface ShippingLabelModalProps {
@@ -348,8 +352,17 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
             </Box>
           </Box>
 
-          {/* Empty Barcode / Tracking Header Box */}
-          <Box sx={{ py: 1, borderBottom: "2px solid #000", minHeight: "20px", backgroundColor: "#ffffff" }} />
+          {/* PostEx Barcode / Tracking Header Box */}
+          {order.postexDetails?.trackingNumber ? (
+            <Box sx={{ py: 0.5, px: 1, borderBottom: "2px solid #000", textAlign: "center", backgroundColor: "#fffbe5" }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "10px", color: "#d97706", display: "block" }}>
+                PostEx Courier Tracking: {order.postexDetails.trackingNumber}
+              </Typography>
+              <SimpleSvgBarcode value={order.postexDetails.trackingNumber} />
+            </Box>
+          ) : (
+            <Box sx={{ py: 1, borderBottom: "2px solid #000", minHeight: "20px", backgroundColor: "#ffffff" }} />
+          )}
 
           {/* Meta Grid */}
           <Box sx={{ display: "flex", borderBottom: "2px solid #000" }}>

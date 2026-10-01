@@ -25,6 +25,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
     }
 
+    if (order.postexDetails?.trackingNumber) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Order is already booked with PostEx tracking number: ${order.postexDetails.trackingNumber}`,
+        },
+        { status: 400 }
+      );
+    }
+
     const customerPhone = order.shippingAddress?.phone || order.phone || "";
     const customerName = order.shippingAddress?.name || order.customerName || order.userEmail || "Customer";
     const deliveryAddress = order.shippingAddress?.address || order.address || "";

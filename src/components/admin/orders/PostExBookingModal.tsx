@@ -54,19 +54,21 @@ export default function PostExBookingModal({
 
   const [trackingInfo, setTrackingInfo] = useState<Record<string, unknown> | null>(null);
   const [trackingLoading, setTrackingLoading] = useState<boolean>(false);
+  const [newlyBookedTrackingNumber, setNewlyBookedTrackingNumber] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setError(null);
       setSuccessMsg(null);
       setTrackingInfo(null);
+      setNewlyBookedTrackingNumber(null);
     }
   }, [open, order]);
 
   if (!order) return null;
 
-  const trackingNumber = order.postexDetails?.trackingNumber;
-  const currentPostExStatus = order.postexDetails?.orderStatus || "Not Booked";
+  const trackingNumber = order.postexDetails?.trackingNumber || newlyBookedTrackingNumber;
+  const currentPostExStatus = order.postexDetails?.orderStatus || (newlyBookedTrackingNumber ? "UnBooked" : "Not Booked");
 
   const handleBookOrder = async () => {
     setLoading(true);
@@ -95,7 +97,9 @@ export default function PostExBookingModal({
         throw new Error(data.error || "Failed to book order with PostEx");
       }
 
-      setSuccessMsg(`Successfully booked! PostEx Tracking Number: ${data.data?.trackingNumber || ""}`);
+      const newTracking = data.data?.trackingNumber || null;
+      setNewlyBookedTrackingNumber(newTracking);
+      setSuccessMsg(`Successfully booked! PostEx Tracking Number: ${newTracking || ""}`);
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
       const errorObj = err as Error;
