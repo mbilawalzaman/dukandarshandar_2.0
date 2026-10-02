@@ -180,11 +180,10 @@ export default function CheckoutPage() {
   const announceRef = useRef(false);
 
   const requestQuote = useCallback(
-    async (code: string | null) => {
+    async (code: string | null, customShippingFee: number) => {
       if (items.length === 0) return;
       setQuoting(true);
       try {
-        const currentShippingFee = getShipping(localSubtotal, calculatedShippingFee ?? settings.fee);
         const res = await fetch("/api/promotions/quote", {
           method: "POST",
           headers: authHeaders(),
@@ -193,7 +192,7 @@ export default function CheckoutPage() {
             items: items.map((i) => ({ _id: i._id, quantity: i.quantity })),
             voucherCode: code,
             customerEmail: form.customer_email.trim().toLowerCase() || undefined,
-            shippingFee: currentShippingFee,
+            shippingFee: customShippingFee,
           }),
         });
         const data = await res.json();
@@ -216,13 +215,15 @@ export default function CheckoutPage() {
         setQuoting(false);
       }
     },
-    [items, form.customer_email, getShipping, localSubtotal, calculatedShippingFee, settings.fee, toast]
+    [items, form.customer_email, toast]
   );
 
+  const effectiveShippingFee = getShipping(localSubtotal, calculatedShippingFee ?? settings.fee);
+
   useEffect(() => {
-    requestQuote(appliedCode);
-    // re-quote whenever the cart, voucher, or calculated shipping fee changes
-  }, [cartFingerprint, appliedCode, calculatedShippingFee, settings.fee, requestQuote]);
+    requestQuote(appliedCode, effectiveShippingFee);
+    // re-quote whenever the cart, voucher, or effective shipping fee changes
+  }, [cartFingerprint, appliedCode, effectiveShippingFee, requestQuote]);
 
   // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
   useEffect(() => {
