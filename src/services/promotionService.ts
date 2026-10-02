@@ -7,6 +7,7 @@ import { optionalNumber as num, compact } from "@/lib/objectUtils";
 import { startOfDay, endOfDay } from "@/lib/dateUtils";
 import { computeShipping, isDeliveryPromoActive } from "@/lib/deliverySettings";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
+import { calculatePostExShippingRate } from "@/lib/postexCalculator";
 import { applyPromotions, promotionStatus, type EngineCartItem, type EngineResult } from "@/lib/promotionEngine";
 import {
   PROMOTION_KINDS as KINDS,
@@ -458,6 +459,8 @@ export interface QuoteCartParams {
   customerEmail?: string | null;
   /** override delivery fee (tests); otherwise read from settings */
   shippingFee?: number;
+  province?: string | null;
+  city?: string | null;
 }
 
 /** Order line as persisted on an order document: what was actually charged. */
@@ -545,7 +548,17 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
 
   const [promotions, deliverySettings] = await Promise.all([getLivePromotions(), getDeliverySettings()]);
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const shippingFee = params.shippingFee ?? computeShipping(subtotal, deliverySettings);
+
+  let baseCalculatedFee: number | undefined = undefined;
+  if (params.shippingFee === undefined && params.city && params.city.trim()) {
+    try {
+      baseCalculatedFee = await calculatePostExShippingRate(params.province || "", params.city);
+    } catch {
+      /* fallback */
+    }
+  }
+
+  const shippingFee = params.shippingFee ?? computeShipping(subtotal, deliverySettings, baseCalculatedFee);
 
   const limitedIds = promotions.filter((p) => p.limits.perCustomer).map((p) => String(p._id));
   const needsOrderCount = promotions.some((p) => p.conditions.firstOrderOnly);

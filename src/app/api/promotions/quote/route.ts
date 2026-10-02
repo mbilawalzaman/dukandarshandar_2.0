@@ -26,11 +26,18 @@ export async function POST(req: Request) {
     const items = normalizeCartItems(body.items);
 
     const user = getAuthUser(req);
+    const rawShippingFee = typeof body.shippingFee === "number" && body.shippingFee >= 0 ? body.shippingFee : undefined;
+    const province = typeof body.province === "string" ? body.province : undefined;
+    const city = typeof body.city === "string" ? body.city : undefined;
+
     const quote = await quoteCart({
       items,
       voucherCode: typeof body.voucherCode === "string" ? body.voucherCode : null,
       customerId: user?.userId || null,
       customerEmail: (typeof body.customerEmail === "string" && body.customerEmail) || user?.email || null,
+      shippingFee: rawShippingFee,
+      province,
+      city,
     });
 
     return NextResponse.json({ success: true, quote });
