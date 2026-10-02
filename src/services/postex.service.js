@@ -36,23 +36,35 @@ class PostExService {
 
       clearTimeout(timeoutId);
 
-      // Handle PDF Binary responses
       const contentType = response.headers.get('content-type') || '';
+
+      if (!response.ok) {
+        let errorMsg = `PostEx API HTTP ${response.status}`;
+        try {
+          const responseData = await response.json();
+          errorMsg = responseData.statusMessage || responseData.message || responseData.error || errorMsg;
+        } catch {
+          const text = await response.text().catch(() => '');
+          if (text) errorMsg = text;
+        }
+        throw new CustomError(errorMsg, response.status || 400);
+      }
+
+      // Handle PDF Binary responses
       if (contentType.includes('application/pdf') || options.responseType === 'arraybuffer') {
-        if (!response.ok) {
-          throw new CustomError(`PostEx PDF API Request Failed with status ${response.status}`, response.status);
+        if (contentType.includes('application/json')) {
+          const responseData = await response.json().catch(() => ({}));
+          if (responseData.statusCode && responseData.statusCode !== '200') {
+            const errorMsg = responseData.statusMessage || responseData.message || `PostEx API Error ${responseData.statusCode}`;
+            throw new CustomError(errorMsg, 400);
+          }
+          return responseData;
         }
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
       }
 
       const responseData = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        const errorMsg = responseData.statusMessage || responseData.message || `PostEx API HTTP ${response.status}`;
-        throw new CustomError(errorMsg, response.status || 400);
-      }
-
       return responseData;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -206,8 +218,25 @@ class PostExService {
     if (!Array.isArray(trackingNumbers) || trackingNumbers.length === 0) {
       throw new CustomError('Tracking numbers list is required to generate load sheet.', 400);
     }
+
+    let pickupAddr = pickupAddress;
+    if (!pickupAddr) {
+      try {
+        const addressesRes = await this.getPickupAddresses();
+        const defaultAddr = Array.isArray(addressesRes?.dist)
+          ? addressesRes.dist.find((a) => a.addressCode === '001') || addressesRes.dist[0]
+          : null;
+        if (defaultAddr) {
+          pickupAddr = defaultAddr.addressCode || defaultAddr.address || '001';
+        }
+      } catch {
+        pickupAddr = POSTEX_CONFIG.DEFAULT_PICKUP_ADDRESS_CODE || '001';
+      }
+    }
+
     const body = {
-      pickupAddress,
+      pickupAddress: pickupAddr || '001',
+      pickupAddressCode: pickupAddr || '001',
       trackingNumbers,
     };
     return await this._request('/services/integration/api/order/v2/generate-load-sheet', {
