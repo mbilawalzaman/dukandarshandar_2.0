@@ -43,8 +43,14 @@ export class OrderPaymentService {
     const existing = await db.collection("orders").findOne({ _id });
     if (existing) return reuse(existing);
     const validation = await this.validateCartItems(body.items);
-    if (!validation.ok) throw new CheckoutError(validation.message);
-    const quote = await quoteCart({ items: body.items, voucherCode: body.promo_code || null, customerId: user.userId, customerEmail: body.customer_email });
+    const rawShippingFee = (body as unknown as { shippingFee?: number }).shippingFee;
+    const quote = await quoteCart({
+      items: body.items,
+      voucherCode: body.promo_code || null,
+      customerId: user.userId,
+      customerEmail: body.customer_email,
+      shippingFee: typeof rawShippingFee === "number" && rawShippingFee >= 0 ? rawShippingFee : undefined,
+    });
     if (quote.missingProductIds.length) throw new CheckoutError("Some products are no longer available");
     if (body.promo_code && quote.rejected.length) throw new CheckoutError(quote.rejected[0].message);
     const order = {

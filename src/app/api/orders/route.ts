@@ -248,12 +248,13 @@ export async function POST(req: NextRequest) {
     }
     await validateShippingLocation(body);
 
-    // Authoritative pricing: product prices, promotions and delivery fee all come from the server.
+    const rawShippingFee = (body as unknown as { shippingFee?: number }).shippingFee;
     const quote = await quoteCart({
       items,
       voucherCode: promo_code || null,
       customerId: user.userId || null,
       customerEmail: customer_email || user.email || null,
+      shippingFee: typeof rawShippingFee === "number" && rawShippingFee >= 0 ? rawShippingFee : undefined,
     });
     if (quote.missingProductIds.length > 0) {
       return NextResponse.json({ success: false, message: "Some items in your cart are no longer available" }, { status: 400 });

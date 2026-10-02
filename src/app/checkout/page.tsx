@@ -184,6 +184,7 @@ export default function CheckoutPage() {
       if (items.length === 0) return;
       setQuoting(true);
       try {
+        const currentShippingFee = getShipping(localSubtotal, calculatedShippingFee ?? settings.fee);
         const res = await fetch("/api/promotions/quote", {
           method: "POST",
           headers: authHeaders(),
@@ -192,6 +193,7 @@ export default function CheckoutPage() {
             items: items.map((i) => ({ _id: i._id, quantity: i.quantity })),
             voucherCode: code,
             customerEmail: form.customer_email.trim().toLowerCase() || undefined,
+            shippingFee: currentShippingFee,
           }),
         });
         const data = await res.json();
@@ -214,14 +216,13 @@ export default function CheckoutPage() {
         setQuoting(false);
       }
     },
-    [items, form.customer_email, toast]
+    [items, form.customer_email, getShipping, localSubtotal, calculatedShippingFee, settings.fee, toast]
   );
 
   useEffect(() => {
     requestQuote(appliedCode);
-    // re-quote whenever the cart or the chosen voucher changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartFingerprint, appliedCode]);
+    // re-quote whenever the cart, voucher, or calculated shipping fee changes
+  }, [cartFingerprint, appliedCode, calculatedShippingFee, settings.fee, requestQuote]);
 
   // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
   useEffect(() => {
@@ -416,6 +417,7 @@ export default function CheckoutPage() {
           total_amount: grandTotal,
           promo_code: appliedCode || undefined,
           payment_method: "cod",
+          shippingFee: getShipping(localSubtotal, standardFee),
         }),
       });
       const data = await res.json();
@@ -463,6 +465,7 @@ export default function CheckoutPage() {
           total_amount: grandTotal,
           promo_code: appliedCode || undefined,
           payment_method: paymentMethod,
+          shippingFee: getShipping(localSubtotal, standardFee),
         }),
       });
 
