@@ -109,16 +109,27 @@ export default function PostExBookingModal({
     }
   };
 
-  const handlePrintAirwayBill = async () => {
-    if (!trackingNumber) return;
+    const handlePrintAirwayBill = async () => {
+    if (!trackingNumber) {
+      setError("No tracking number available to print label.");
+      return;
+    }
+
     try {
       const res = await fetch("/api/admin/postex/airway-bill", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackingNumbers: [trackingNumber] }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          trackingNumbers: [trackingNumber],
+        }),
       });
 
-      if (!res.ok) throw new Error("Failed to fetch Airway Bill PDF");
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errorData.error || "Failed to fetch Airway Bill PDF");
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
