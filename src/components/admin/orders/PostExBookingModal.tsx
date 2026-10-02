@@ -209,6 +209,12 @@ export default function PostExBookingModal({
               </Button>
             </Box>
 
+            {String(currentPostExStatus).toLowerCase().includes("unbooked") && (
+              <Alert severity="info" sx={{ mt: 2, fontSize: "0.825rem" }}>
+                <strong>Note:</strong> PostEx generates Airway Bill PDFs after orders are booked or assigned to a loadsheet in your PostEx Merchant Portal.
+              </Alert>
+            )}
+
             {trackingInfo && (
               <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
                 <Typography variant="subtitle2">PostEx Status Details:</Typography>
