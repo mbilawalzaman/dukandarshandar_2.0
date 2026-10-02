@@ -95,11 +95,12 @@ function paymentStatusChip(order: Order) {
 }
 
 function fulfillmentLabel(status: string, order: Order) {
-  const key = status?.toLowerCase();
+  const key = (status || "").toLowerCase().replace(/\s+/g, "_");
   if (key === "pending_payment") return "Awaiting payment";
   if (key === "payment_failed") return "Payment failed";
   if (key === "payment_review") return "Payment needs review";
   if (key === "cancelling") return "Cancellation pending";
+  if (key === "ready_to_ship") return "Ready to Ship";
   if (key === "pending" && order.payment_status === "paid") return "Confirmed";
   return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
 }
