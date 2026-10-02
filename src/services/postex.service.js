@@ -314,31 +314,38 @@ class PostExService {
       throw new CustomError('PostEx limits Airway Bill requests to a maximum of 10 tracking numbers per request.', 400);
     }
 
-    // Unencoded comma-separated tracking numbers query (PostEx API requires literal commas in trackingNumbers query param)
+    // PostEx Airway Bill API requires literal commas in trackingNumbers query param
     const rawCommaJoined = numbersArray.map((tn) => encodeURIComponent(tn)).join(',');
     const query = `?trackingNumbers=${rawCommaJoined}`;
 
-    try {
-      return await this._request(`/services/integration/api/order/v1/getinvoice${query}`, {
-        responseType: 'arraybuffer',
-      });
-    } catch (err) {
-      // Fallback 1: If 404 and single tracking number, try singular query parameter `?trackingNumber=...`
-      if (err && err.statusCode === 404 && numbersArray.length === 1) {
-        const singularQuery = `?trackingNumber=${encodeURIComponent(numbersArray[0])}`;
-        return await this._request(`/services/integration/api/order/v1/getinvoice${singularQuery}`, {
-          responseType: 'arraybuffer',
-        });
-      }
-      // Fallback 2: Multi-parameter format `?trackingNumbers=TN1&trackingNumbers=TN2`
-      if (err && err.statusCode === 404 && numbersArray.length > 1) {
-        const multiQuery = '?' + numbersArray.map((tn) => `trackingNumbers=${encodeURIComponent(tn)}`).join('&');
-        return await this._request(`/services/integration/api/order/v1/getinvoice${multiQuery}`, {
-          responseType: 'arraybuffer',
-        });
-      }
-      throw err;
+    // Primary endpoint path on PostEx API is `/services/integration/api/order/v1/get-invoice`
+    const endpoints = [
+      `/services/integration/api/order/v1/get-invoice${query}`,
+      `/services/integration/api/order/v1/getinvoice${query}`,
+    ];
+
+    if (numbersArray.length === 1) {
+      endpoints.push(`/services/integration/api/order/v1/get-invoice?trackingNumber=${encodeURIComponent(numbersArray[0])}`);
     }
+
+    let lastError = null;
+    for (const endpoint of endpoints) {
+      try {
+        const res = await this._request(endpoint, {
+          responseType: 'arraybuffer',
+        });
+        if (Buffer.isBuffer(res) && res.length > 0) {
+          return res;
+        }
+      } catch (err) {
+        lastError = err;
+        if (err && err.statusCode !== 404) {
+          throw err;
+        }
+      }
+    }
+
+    throw lastError || new CustomError('Airway Bill PDF not found on PostEx servers.', 404);
   }
 
   /**
