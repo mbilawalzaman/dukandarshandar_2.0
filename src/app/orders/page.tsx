@@ -64,13 +64,14 @@ const STATUS_CONFIG: Record<
   payment_failed: { label: "Payment Failed", color: "error", icon: <CancelOutlinedIcon sx={{ fontSize: 16 }} />, step: 0 },
   pending: { label: "Confirmed", color: "success", icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />, step: 1 },
   processing: { label: "Processing", color: "info", icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />, step: 2 },
+  ready_to_ship: { label: "Ready to Ship", color: "info", icon: <LocalShippingOutlinedIcon sx={{ fontSize: 16 }} />, step: 2 },
   shipped: { label: "Shipped", color: "primary", icon: <LocalShippingOutlinedIcon sx={{ fontSize: 16 }} />, step: 3 },
   delivered: { label: "Delivered", color: "success", icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />, step: 4 },
   cancelled: { label: "Cancelled", color: "error", icon: <CancelOutlinedIcon sx={{ fontSize: 16 }} />, step: 0 },
 };
 
 function getOrderStatusInfo(order: Order) {
-  const statusKey = order.status?.toLowerCase() || "pending";
+  const statusKey = (order.status?.toLowerCase() || "pending").replace(/\s+/g, "_");
 
   if (statusKey === "payment_review" || statusKey === "cancelling") {
     return { ...STATUS_CONFIG.pending, label: statusKey === "payment_review" ? "Payment received — contact support" : "Cancellation processing", color: "warning" as const };

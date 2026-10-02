@@ -24,6 +24,7 @@ import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
 import PostExBookingModal from "@/components/admin/orders/PostExBookingModal";
+import BulkPostExBookingModal from "@/components/admin/orders/BulkPostExBookingModal";
 
 interface OrderItem {
   name: string;
@@ -118,6 +119,8 @@ export default function AdminOrdersPage() {
   const [labelModalOpen, setLabelModalOpen] = useState(false);
   const [selectedOrderForPostex, setSelectedOrderForPostex] = useState<Order | null>(null);
   const [postexModalOpen, setPostexModalOpen] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [bulkPostexModalOpen, setBulkPostexModalOpen] = useState(false);
 
   const handleOpenLabelModal = (order: Order) => {
     setSelectedOrderForLabel(order);
@@ -442,6 +445,20 @@ export default function AdminOrdersPage() {
         data={paymentFilter === "all" ? orders : filteredOrders}
         searchPlaceholder="Search by customer name..."
         loading={loading}
+        selectable
+        selectedIds={selectedOrderIds}
+        onSelectChange={setSelectedOrderIds}
+        batchActions={
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            startIcon={<LocalShippingIcon fontSize="small" />}
+            onClick={() => setBulkPostexModalOpen(true)}
+          >
+            Bulk PostEx Actions ({selectedOrderIds.length})
+          </Button>
+        }
         extraActions={(row) => [
           {
             label: "Print Shipping Label",
@@ -490,6 +507,13 @@ export default function AdminOrdersPage() {
         open={postexModalOpen}
         onClose={() => setPostexModalOpen(false)}
         order={selectedOrderForPostex}
+        onSuccess={fetchOrders}
+      />
+
+      <BulkPostExBookingModal
+        open={bulkPostexModalOpen}
+        onClose={() => setBulkPostexModalOpen(false)}
+        orders={orders.filter((o) => selectedOrderIds.includes(o._id))}
         onSuccess={fetchOrders}
       />
     </Box>

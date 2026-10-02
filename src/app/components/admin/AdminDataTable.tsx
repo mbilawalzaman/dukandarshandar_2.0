@@ -38,6 +38,10 @@ interface AdminDataTableProps<T> {
   onView?: (row: T) => void;
   extraActions?: (row: T) => TableRowAction<T>[];
   loading?: boolean;
+  selectable?: boolean;
+  selectedIds?: string[];
+  onSelectChange?: (selectedIds: string[]) => void;
+  batchActions?: React.ReactNode;
   serverPagination?: {
     total: number;
     page: number;
@@ -60,6 +64,10 @@ export default function AdminDataTable<T extends { _id?: string }>({
   onView,
   extraActions,
   loading = false,
+  selectable = false,
+  selectedIds = [],
+  onSelectChange,
+  batchActions,
   serverPagination,
 }: AdminDataTableProps<T>) {
   const [page, setPage] = useState(0);
@@ -102,6 +110,30 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
   const totalCount = isServer ? serverPagination!.total : filteredData.length;
 
+  const allDisplayIds = displayRows.map((r) => r._id!).filter(Boolean);
+  const isAllSelected = allDisplayIds.length > 0 && allDisplayIds.every((id) => selectedIds.includes(id));
+  const isSomeSelected = allDisplayIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onSelectChange) return;
+    if (event.target.checked) {
+      const combined = Array.from(new Set([...selectedIds, ...allDisplayIds]));
+      onSelectChange(combined);
+    } else {
+      const remaining = selectedIds.filter((id) => !allDisplayIds.includes(id));
+      onSelectChange(remaining);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    if (!onSelectChange) return;
+    if (selectedIds.includes(id)) {
+      onSelectChange(selectedIds.filter((item) => item !== id));
+    } else {
+      onSelectChange([...selectedIds, id]);
+    }
+  };
+
   return (
     <Paper
       elevation={0}
@@ -123,7 +155,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
           gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <Typography
             variant="h6"
             sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
@@ -131,27 +163,60 @@ export default function AdminDataTable<T extends { _id?: string }>({
             {title}
           </Typography>
           <Chip label={`${totalCount} entries`} size="small" color="primary" variant="outlined" />
+          {selectable && selectedIds.length > 0 && (
+            <Chip
+              label={`${selectedIds.length} selected`}
+              size="small"
+              color="secondary"
+              onDelete={() => onSelectChange?.([])}
+            />
+          )}
         </Box>
-        <TextField
-          size="small"
-          placeholder={searchPlaceholder}
-          value={activeSearch}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (isServer) serverPagination!.onSearchChange?.(value);
-            else {
-              setSearchTerm(value);
-              setPage(0);
-            }
-          }}
-          sx={{ width: { xs: "100%", sm: 260 } }}
-        />
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          {selectable && selectedIds.length > 0 && batchActions}
+          <TextField
+            size="small"
+            placeholder={searchPlaceholder}
+            value={activeSearch}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (isServer) serverPagination!.onSearchChange?.(value);
+              else {
+                setSearchTerm(value);
+                setPage(0);
+              }
+            }}
+            sx={{ width: { xs: "100%", sm: 260 } }}
+          />
+        </Box>
       </Box>
 
       <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
         <Table aria-label="admin data table" sx={{ minWidth: 600 }}>
           <TableHead sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", display: "table-header-group" }}>
             <TableRow sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
+              {selectable && (
+                <TableCell
+                  padding="checkbox"
+                  sx={{
+                    backgroundColor: "var(--theme-bg-default, #f8fafc)",
+                    borderBottom: "2px solid #e2e8f0",
+                    py: 1.75,
+                    pl: 2,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = isSomeSelected;
+                    }}
+                    onChange={handleSelectAll}
+                    style={{ width: 16, height: 16, cursor: "pointer" }}
+                  />
+                </TableCell>
+              )}
               {columns.map((column) => (
                 <TableCell
                   key={String(column.id)}
@@ -175,51 +240,71 @@ export default function AdminDataTable<T extends { _id?: string }>({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={columns.length + (selectable ? 1 : 0)} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">Loading data...</Typography>
                 </TableCell>
               </TableRow>
             ) : displayRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={columns.length + (selectable ? 1 : 0)} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">No records found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              displayRows.map((row, index) => (
-                <TableRow hover role="checkbox" tabIndex={-1} key={row._id || index}>
-                  {columns.map((column) => {
-                    if (column.id === "actions") {
+              displayRows.map((row, index) => {
+                const rowId = row._id!;
+                const isSelected = selectedIds.includes(rowId);
+                return (
+                  <TableRow
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={rowId || index}
+                    selected={isSelected}
+                  >
+                    {selectable && (
+                      <TableCell padding="checkbox" sx={{ py: 1.75, pl: 2 }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectRow(rowId)}
+                          style={{ width: 16, height: 16, cursor: "pointer" }}
+                        />
+                      </TableCell>
+                    )}
+                    {columns.map((column) => {
+                      if (column.id === "actions") {
+                        return (
+                          <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.5 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: column.align === "left" ? "flex-start" : column.align === "center" ? "center" : "flex-end",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Dropdown
+                                row={row}
+                                onView={onView}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                extraActions={extraActions}
+                              />
+                            </Box>
+                          </TableCell>
+                        );
+                      }
+
+                      const value = row[column.id as keyof T];
                       return (
-                        <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.5 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: column.align === "left" ? "flex-start" : column.align === "center" ? "center" : "flex-end",
-                              gap: 0.5,
-                            }}
-                          >
-                            <Dropdown
-                              row={row}
-                              onView={onView}
-                              onEdit={onEdit}
-                              onDelete={onDelete}
-                              extraActions={extraActions}
-                            />
-                          </Box>
+                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
+                          {column.format ? column.format(value, row) : String(value ?? "")}
                         </TableCell>
                       );
-                    }
-
-                    const value = row[column.id as keyof T];
-                    return (
-                      <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
-                        {column.format ? column.format(value, row) : String(value ?? "")}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))
+                    })}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

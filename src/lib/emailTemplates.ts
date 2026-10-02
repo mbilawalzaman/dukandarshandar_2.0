@@ -106,8 +106,64 @@ export function orderConfirmationEmail(input: {
   );
 }
 
-export function orderStatusEmail(input: { name: string; orderId: string; status: string; shopName?: string }) {
+export function orderStatusEmail(input: {
+  name: string;
+  orderId: string;
+  status: string;
+  courier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shopName?: string;
+}) {
   const storeName = input.shopName || "";
+  const statusLower = input.status.toLowerCase();
+  const courier = input.courier || "PostEx";
+  const trackingNumber = input.trackingNumber || "";
+  const trackingUrl = input.trackingUrl || (trackingNumber ? `https://postex.pk/tracking?cn=${trackingNumber}` : "");
+
+  if (statusLower === "ready to ship" || statusLower === "ready_to_ship") {
+    return layout(
+      `Order #${input.orderId} Ready to Ship 📦`,
+      `<p>Hi <strong>${escapeHtml(input.name)}</strong>,</p>
+       <p>Great news! Your package for order <strong>#${escapeHtml(input.orderId)}</strong> has been packed and assigned to <strong>${escapeHtml(courier)}</strong>${trackingNumber ? ` with tracking number: <span style="font-family: monospace; font-weight: bold; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${escapeHtml(trackingNumber)}</span>` : ""}.</p>
+       ${trackingNumber ? `
+       <div style="background: #f1f5f9; border-left: 4px solid ${gold}; border-radius: 6px; padding: 16px; margin: 20px 0;">
+         <p style="margin: 0 0 8px;"><strong>Courier Service:</strong> ${escapeHtml(courier)}</p>
+         <p style="margin: 0 0 8px;"><strong>Tracking Number:</strong> ${escapeHtml(trackingNumber)}</p>
+         ${trackingUrl ? `<p style="margin: 12px 0 0;"><a href="${trackingUrl}" style="background: ${navy}; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;" target="_blank">Track Package Live &rarr;</a></p>` : ""}
+       </div>` : ""}
+       <p style="font-size: 14px; color: #64748b;">You will receive another update as soon as PostEx picks up your package for transit.</p>
+       <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
+      storeName
+    );
+  }
+
+  if (statusLower === "shipped") {
+    return layout(
+      `Order #${input.orderId} Dispatched 🚚`,
+      `<p>Hi <strong>${escapeHtml(input.name)}</strong>,</p>
+       <p>Your parcel for order <strong>#${escapeHtml(input.orderId)}</strong> has been picked up by <strong>${escapeHtml(courier)}</strong> and is officially on its way to you!</p>
+       ${trackingNumber ? `
+       <div style="background: #f1f5f9; border-left: 4px solid #10b981; border-radius: 6px; padding: 16px; margin: 20px 0;">
+         <p style="margin: 0 0 8px;"><strong>Courier Service:</strong> ${escapeHtml(courier)}</p>
+         <p style="margin: 0 0 8px;"><strong>Tracking Number:</strong> <span style="font-family: monospace; font-weight: bold; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${escapeHtml(trackingNumber)}</span></p>
+         ${trackingUrl ? `<p style="margin: 12px 0 0;"><a href="${trackingUrl}" style="background: #10b981; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;" target="_blank">Track Live Shipment &rarr;</a></p>` : ""}
+       </div>` : ""}
+       <p style="font-size: 14px; color: #64748b;">Please ensure someone is available at the delivery address to receive the parcel.</p>
+       <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
+      storeName
+    );
+  }
+
+  if (statusLower === "delivered") {
+    return orderDeliveredEmail({
+      name: input.name,
+      orderId: input.orderId,
+      fullOrderId: input.orderId,
+      shopName: storeName,
+    });
+  }
+
   return layout(
     `Order ${input.status}`,
     `<p>Hi ${escapeHtml(input.name)},</p>
@@ -221,8 +277,7 @@ export function emailVerificationEmail(input: { name?: string; verifyUrl: string
        <a href="${input.verifyUrl}" style="background:${gold}; color:${navy}; font-size:15px; font-weight:bold; padding:14px 32px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
          Verify Email Address
        </a>
-     </div>
-     <p style="font-size:13px; color:#64748b;">If you did not request this email change, please secure your account immediately.</p>`,
+      <p style="font-size:13px; color:#64748b;">If you did not request this email change, please secure your account immediately.</p>`,
     storeName
   );
 }
