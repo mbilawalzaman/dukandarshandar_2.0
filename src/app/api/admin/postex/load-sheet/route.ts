@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const auth = requireAdmin(req);
     if (!auth.ok) return auth.response;
 
-    const { trackingNumbers, pickupAddress } = await req.json();
+    const { trackingNumbers, pickupAddress, pickupAddressCode } = await req.json();
 
     if (!Array.isArray(trackingNumbers) || trackingNumbers.length === 0) {
       return NextResponse.json(
@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
     const pdfBuffer = await PostExService.generateLoadSheet({
       trackingNumbers,
       pickupAddress: pickupAddress || "",
+      pickupAddressCode: pickupAddressCode || "",
     });
 
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

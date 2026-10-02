@@ -214,36 +214,61 @@ class PostExService {
   /**
    * 3.7 Generate Load Sheet API (Returns PDF Buffer)
    */
-  static async generateLoadSheet({ trackingNumbers, pickupAddress = '' }) {
+  static async generateLoadSheet({ trackingNumbers, pickupAddress = '', pickupAddressCode = '' }) {
     if (!Array.isArray(trackingNumbers) || trackingNumbers.length === 0) {
       throw new CustomError('Tracking numbers list is required to generate load sheet.', 400);
     }
 
-    let pickupAddr = pickupAddress;
-    if (!pickupAddr) {
+    let resolvedCode = pickupAddressCode;
+    let resolvedAddress = pickupAddress;
+
+    try {
+      const addressesRes = await this.getPickupAddresses();
+      const defaultAddr = Array.isArray(addressesRes?.dist)
+        ? addressesRes.dist.find((a) => a.addressCode === '001') || addressesRes.dist[0]
+        : null;
+
+      if (defaultAddr) {
+        if (!resolvedCode) resolvedCode = defaultAddr.addressCode || '001';
+        if (!resolvedAddress) resolvedAddress = defaultAddr.address || defaultAddr.cityName || '';
+      }
+    } catch {
+      /* fallback */
+    }
+
+    if (!resolvedCode) resolvedCode = POSTEX_CONFIG.DEFAULT_PICKUP_ADDRESS_CODE || '001';
+    if (!resolvedAddress) resolvedAddress = resolvedCode;
+
+    const payloadVariants = [
+      { pickupAddress: resolvedAddress, pickupAddressCode: resolvedCode, pickUpAddressCode: resolvedCode, trackingNumbers },
+      { pickupAddressCode: resolvedCode, trackingNumbers },
+      { pickupAddress: resolvedAddress, trackingNumbers },
+      { pickupAddress: resolvedCode, trackingNumbers },
+      { trackingNumbers },
+    ];
+
+    let lastError = null;
+
+    for (const body of payloadVariants) {
       try {
-        const addressesRes = await this.getPickupAddresses();
-        const defaultAddr = Array.isArray(addressesRes?.dist)
-          ? addressesRes.dist.find((a) => a.addressCode === '001') || addressesRes.dist[0]
-          : null;
-        if (defaultAddr) {
-          pickupAddr = defaultAddr.addressCode || defaultAddr.address || '001';
+        const result = await this._request('/services/integration/api/order/v2/generate-load-sheet', {
+          method: 'POST',
+          body,
+          responseType: 'arraybuffer',
+        });
+        if (Buffer.isBuffer(result) && result.length > 0) {
+          return result;
         }
-      } catch {
-        pickupAddr = POSTEX_CONFIG.DEFAULT_PICKUP_ADDRESS_CODE || '001';
+      } catch (err) {
+        lastError = err;
+        const msg = String(err?.message || '').toLowerCase();
+        if (!msg.includes('pickup') && !msg.includes('address') && !msg.includes('invalid') && !msg.includes('400')) {
+          throw err;
+        }
       }
     }
 
-    const body = {
-      pickupAddress: pickupAddr || '001',
-      pickupAddressCode: pickupAddr || '001',
-      trackingNumbers,
-    };
-    return await this._request('/services/integration/api/order/v2/generate-load-sheet', {
-      method: 'POST',
-      body,
-      responseType: 'arraybuffer',
-    });
+    throw lastError || new CustomError('Failed to generate PostEx Load Sheet PDF', 400);
   }
 
   /**
