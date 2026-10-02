@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PrintIcon from "@mui/icons-material/Print";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 interface PostExBookingModalProps {
   open: boolean;
@@ -109,7 +110,43 @@ export default function PostExBookingModal({
     }
   };
 
-    const handlePrintAirwayBill = async () => {
+    const [loadSheetLoading, setLoadSheetLoading] = useState<boolean>(false);
+
+  const handleGenerateLoadSheet = async () => {
+    if (!trackingNumber) {
+      setError("No tracking number available to generate Load Sheet.");
+      return;
+    }
+
+    setLoadSheetLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/admin/postex/load-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trackingNumbers: [trackingNumber],
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errData.error || "Failed to generate PostEx Load Sheet PDF");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      setError(errorObj.message || "Failed to generate Load Sheet");
+    } finally {
+      setLoadSheetLoading(false);
+    }
+  };
+
+  const handlePrintAirwayBill = async () => {
     if (!trackingNumber) {
       setError("No tracking number available to print label.");
       return;
@@ -190,7 +227,7 @@ export default function PostExBookingModal({
               <Chip label={currentPostExStatus} color="info" size="small" />
             </Box>
 
-            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+            <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
               <Button
                 variant="contained"
                 color="secondary"
@@ -198,6 +235,15 @@ export default function PostExBookingModal({
                 onClick={handlePrintAirwayBill}
               >
                 Print Airway Bill PDF
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<PictureAsPdfIcon />}
+                onClick={handleGenerateLoadSheet}
+                disabled={loadSheetLoading}
+              >
+                {loadSheetLoading ? "Generating..." : "Generate Load Sheet PDF"}
               </Button>
               <Button
                 variant="outlined"
