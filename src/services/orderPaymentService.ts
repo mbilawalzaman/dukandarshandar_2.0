@@ -43,6 +43,7 @@ export class OrderPaymentService {
     const existing = await db.collection("orders").findOne({ _id });
     if (existing) return reuse(existing);
     const validation = await this.validateCartItems(body.items);
+    if (!validation.ok) throw new CheckoutError(validation.message);
     const rawShippingFee = (body as unknown as { shippingFee?: number }).shippingFee;
     const quote = await quoteCart({
       items: body.items,

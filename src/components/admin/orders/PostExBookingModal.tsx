@@ -56,6 +56,7 @@ export default function PostExBookingModal({
   const [trackingInfo, setTrackingInfo] = useState<Record<string, unknown> | null>(null);
   const [trackingLoading, setTrackingLoading] = useState<boolean>(false);
   const [newlyBookedTrackingNumber, setNewlyBookedTrackingNumber] = useState<string | null>(null);
+  const [loadSheetLoading, setLoadSheetLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (open) {
@@ -109,8 +110,6 @@ export default function PostExBookingModal({
       setLoading(false);
     }
   };
-
-    const [loadSheetLoading, setLoadSheetLoading] = useState<boolean>(false);
 
   const handleGenerateLoadSheet = async () => {
     if (!trackingNumber) {
