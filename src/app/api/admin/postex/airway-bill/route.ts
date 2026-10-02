@@ -41,9 +41,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const err = error as { message?: string; statusCode?: number };
+    const statusCode = err.statusCode === 404 ? 400 : (err.statusCode || 500);
+    const errorMessage =
+      err.statusCode === 404
+        ? "PostEx Airway Bill PDF not found (404). The tracking number may still be in 'Unbooked' status or not registered on PostEx servers."
+        : err.message || "Failed to generate Airway Bill PDF";
+
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to generate Airway Bill PDF" },
-      { status: err.statusCode || 500 }
+      { success: false, error: errorMessage },
+      { status: statusCode }
     );
   }
 }
