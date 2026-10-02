@@ -302,7 +302,10 @@ class PostExService {
    * 3.10 Airway Bill API (Returns PDF Buffer - Max 10 tracking numbers per request)
    */
   static async getAirwayBillPDF(trackingNumbers) {
-    const numbersArray = Array.isArray(trackingNumbers) ? trackingNumbers : [trackingNumbers];
+    const numbersArray = (Array.isArray(trackingNumbers) ? trackingNumbers : [trackingNumbers])
+      .map((tn) => String(tn).trim())
+      .filter(Boolean);
+
     if (numbersArray.length === 0) {
       throw new CustomError('At least one tracking number is required for Airway Bill.', 400);
     }
@@ -311,10 +314,31 @@ class PostExService {
       throw new CustomError('PostEx limits Airway Bill requests to a maximum of 10 tracking numbers per request.', 400);
     }
 
-    const query = `?trackingNumbers=${encodeURIComponent(numbersArray.join(','))}`;
-    return await this._request(`/services/integration/api/order/v1/getinvoice${query}`, {
-      responseType: 'arraybuffer',
-    });
+    // Unencoded comma-separated tracking numbers query (PostEx API requires literal commas in trackingNumbers query param)
+    const rawCommaJoined = numbersArray.map((tn) => encodeURIComponent(tn)).join(',');
+    const query = `?trackingNumbers=${rawCommaJoined}`;
+
+    try {
+      return await this._request(`/services/integration/api/order/v1/getinvoice${query}`, {
+        responseType: 'arraybuffer',
+      });
+    } catch (err) {
+      // Fallback 1: If 404 and single tracking number, try singular query parameter `?trackingNumber=...`
+      if (err && err.statusCode === 404 && numbersArray.length === 1) {
+        const singularQuery = `?trackingNumber=${encodeURIComponent(numbersArray[0])}`;
+        return await this._request(`/services/integration/api/order/v1/getinvoice${singularQuery}`, {
+          responseType: 'arraybuffer',
+        });
+      }
+      // Fallback 2: Multi-parameter format `?trackingNumbers=TN1&trackingNumbers=TN2`
+      if (err && err.statusCode === 404 && numbersArray.length > 1) {
+        const multiQuery = '?' + numbersArray.map((tn) => `trackingNumbers=${encodeURIComponent(tn)}`).join('&');
+        return await this._request(`/services/integration/api/order/v1/getinvoice${multiQuery}`, {
+          responseType: 'arraybuffer',
+        });
+      }
+      throw err;
+    }
   }
 
   /**
