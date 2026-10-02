@@ -117,8 +117,8 @@ export default function AdminSettingsPage() {
     setSuccess("");
 
     const fee = Math.max(0, Number(form.fee) || 0);
-    if (form.feeEnabled && fee <= 0) {
-      setError("Enter a delivery fee greater than 0, or turn off the delivery fee toggle.");
+    if (form.feeEnabled && fee < 0) {
+      setError("Delivery fee discount cannot be negative.");
       return;
     }
 
