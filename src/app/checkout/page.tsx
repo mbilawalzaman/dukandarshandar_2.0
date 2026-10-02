@@ -55,6 +55,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
   const [emailRequiredHint, setEmailRequiredHint] = useState(false);
+  const [calculatedShippingFee, setCalculatedShippingFee] = useState<number | null>(null);
   const [form, setForm] = useState<CheckoutShippingFormType>({
     customer_name: "",
     customer_email: "",
@@ -240,7 +241,37 @@ export default function CheckoutPage() {
     toast("Voucher removed", "info");
   };
 
-  const quote = serverQuote ?? quoteLocal(engineItems, { shippingFee: getShipping(localSubtotal), voucherCode: appliedCode });
+  useEffect(() => {
+    if (!form.city || !form.city.trim()) return;
+
+    let isMounted = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/shipping/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            province: form.province,
+            city: form.city,
+          }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.success && typeof data.fee === "number") {
+          setCalculatedShippingFee(data.fee);
+        }
+      } catch (err) {
+        console.warn("PostEx shipping calculation error:", err);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [form.city, form.province]);
+
+  const standardFee = calculatedShippingFee ?? settings.fee;
+  const quote = serverQuote ?? quoteLocal(engineItems, { shippingFee: getShipping(localSubtotal, standardFee), voucherCode: appliedCode });
   const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
   const subtotal = quote.subtotal;
   const shipping = quote.shipping;
@@ -635,7 +666,7 @@ export default function CheckoutPage() {
 
             <Grid item xs={12} md={5}>
               <Paper sx={{ p: 4, borderRadius: 4, position: "sticky", top: 90 }}>
-                {promoActive && <FreeDeliveryPromoBanner savedAmount={settings.fee} compact />}
+                {promoActive && <FreeDeliveryPromoBanner savedAmount={standardFee} compact />}
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                   Order summary
                 </Typography>
@@ -652,7 +683,7 @@ export default function CheckoutPage() {
                 {/* PROMOTIONS & VOUCHERS */}
                 <VoucherPicker
                   items={engineItems}
-                  shippingFee={getShipping(localSubtotal)}
+                  shippingFee={getShipping(localSubtotal, standardFee)}
                   appliedCode={appliedCode}
                   applying={quoting}
                   onApply={applyVoucher}
@@ -674,7 +705,7 @@ export default function CheckoutPage() {
                 <DeliveryShippingLine
                   shipping={shipping}
                   isPromo={promoActive}
-                  standardFee={settings.fee}
+                  standardFee={standardFee}
                   label="Shipping"
                 />
                 {quote.voucher && quote.voucher.kind === "voucher" && quote.voucherDiscount > 0 && quote.shippingDiscount === 0 && (

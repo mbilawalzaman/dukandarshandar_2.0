@@ -39,14 +39,15 @@ export default function DeliveryFeeSection({
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {feeEnabled
-          ? "Customers will be charged the delivery fee at checkout."
+          ? "Customers will be charged the PostEx live calculated shipping fee minus the delivery fee discount."
           : "Free delivery promotion is active, customers see “Free delivery on us” and pay PKR 0 for delivery."}
       </Typography>
 
       <TextField
         fullWidth
         type="number"
-        label="Delivery fee (PKR)"
+        label="Delivery fee discount (PKR)"
+        helperText={feeEnabled ? "Amount entered here is deducted from the PostEx live shipping fee (e.g. enter 100 to deduct PKR 100)." : undefined}
         value={fee === 0 ? "" : fee}
         onChange={(e) => {
           const raw = e.target.value;

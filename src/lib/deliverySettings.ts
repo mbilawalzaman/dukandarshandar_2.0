@@ -51,11 +51,23 @@ export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   },
 };
 
-export function computeShipping(subtotal: number, settings: DeliverySettings): number {
+export function computeShipping(
+  subtotal: number,
+  settings: DeliverySettings,
+  calculatedFee?: number | null
+): number {
   if (subtotal <= 0) return 0;
   if (!settings.feeEnabled) return 0;
-  const fee = Number(settings.fee);
-  return Number.isFinite(fee) && fee >= 0 ? fee : DEFAULT_DELIVERY_SETTINGS.fee;
+
+  const basePostExFee =
+    typeof calculatedFee === "number" && calculatedFee >= 0
+      ? calculatedFee
+      : DEFAULT_DELIVERY_SETTINGS.fee;
+
+  const discount = Number.isFinite(Number(settings.fee)) && Number(settings.fee) > 0 ? Number(settings.fee) : 0;
+  const finalFee = Math.max(0, basePostExFee - discount);
+
+  return Number.isFinite(finalFee) ? finalFee : 0;
 }
 
 /** Store promotion: delivery fee waived when admin turns off the fee toggle. */
