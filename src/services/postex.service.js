@@ -261,8 +261,14 @@ class PostExService {
         }
       } catch (err) {
         lastError = err;
-        const msg = String(err?.message || '').toLowerCase();
-        if (!msg.includes('pickup') && !msg.includes('address') && !msg.includes('invalid') && !msg.includes('400')) {
+        const msg = String(err?.message || '').toUpperCase();
+        if (msg.includes('INVALID TRACKING NUMBER')) {
+          throw new CustomError(
+            'PostEx Load Sheets can only be generated for active unbooked shipments. One or more tracking numbers have already been assigned to a load sheet or processed on PostEx. Use "Print Airway Bills PDF" to print shipping labels.',
+            400
+          );
+        }
+        if (!msg.includes('PICKUP') && !msg.includes('ADDRESS') && !msg.includes('INVALID') && !msg.includes('400')) {
           throw err;
         }
       }
