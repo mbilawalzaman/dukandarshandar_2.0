@@ -18,6 +18,7 @@ import {
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PrintIcon from "@mui/icons-material/Print";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import PostExTrackingTimeline from "@/app/components/orders/PostExTrackingTimeline";
 
 interface PostExBookingModalProps {
   open: boolean;
@@ -261,11 +262,14 @@ export default function PostExBookingModal({
             )}
 
             {trackingInfo && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
-                <Typography variant="subtitle2">PostEx Status Details:</Typography>
-                <pre style={{ fontSize: "12px", overflowX: "auto" }}>
-                  {JSON.stringify(trackingInfo, null, 2)}
-                </pre>
+              <Box sx={{ mt: 2.5 }}>
+                <PostExTrackingTimeline
+                  trackingNumber={trackingNumber}
+                  currentStatus={currentPostExStatus}
+                  data={trackingInfo}
+                  loading={trackingLoading}
+                  onRefresh={handleTrackPackage}
+                />
               </Box>
             )}
           </Box>

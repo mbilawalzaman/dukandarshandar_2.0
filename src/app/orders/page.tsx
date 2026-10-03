@@ -40,6 +40,7 @@ import PageBanner from "../components/PageBanner";
 import ConfirmModal from "../components/ConfirmModal";
 import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
 import OrderFeedbackModal from "../components/reviews/OrderFeedbackModal";
+import ParcelTrackingModal from "../components/orders/ParcelTrackingModal";
 import type { OrderFilterState } from "../components/orders/OrderFilterSidebar";
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
@@ -114,6 +115,8 @@ function OrdersContent() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
+  const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<Order | null>(null);
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: "",
@@ -699,6 +702,28 @@ function OrdersContent() {
                                     Rate Products
                                   </Button>
                                 )}
+                                {Boolean(order.trackingNumber || order.postexDetails?.trackingNumber) && (
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => {
+                                      setSelectedOrderForTracking(order);
+                                      setTrackingModalOpen(true);
+                                    }}
+                                    startIcon={<LocalShippingOutlinedIcon fontSize="small" />}
+                                    sx={{
+                                      textTransform: "none",
+                                      fontSize: "0.78rem",
+                                      borderRadius: 1.5,
+                                      fontWeight: 700,
+                                      backgroundColor: "var(--theme-primary-main, #0284c7)",
+                                      color: "#ffffff",
+                                      "&:hover": { backgroundColor: "#0369a1" },
+                                    }}
+                                  >
+                                    Track Parcel
+                                  </Button>
+                                )}
                                 <Button
                                   component={Link}
                                   href="/shop"
@@ -839,6 +864,17 @@ function OrdersContent() {
         open={Boolean(feedbackOrderId)}
         onClose={() => setFeedbackOrderId(null)}
         orderId={feedbackOrderId}
+      />
+
+      <ParcelTrackingModal
+        open={trackingModalOpen}
+        onClose={() => {
+          setTrackingModalOpen(false);
+          setSelectedOrderForTracking(null);
+        }}
+        orderId={selectedOrderForTracking?._id}
+        trackingNumber={selectedOrderForTracking?.postexDetails?.trackingNumber || selectedOrderForTracking?.trackingNumber}
+        orderNumber={selectedOrderForTracking?._id ? selectedOrderForTracking._id.slice(-8).toUpperCase() : ""}
       />
     </Box>
   );

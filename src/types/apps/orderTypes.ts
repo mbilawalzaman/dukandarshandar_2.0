@@ -49,6 +49,13 @@ export type OrderType = {
   payment_method?: PaymentMethod | string;
   created_at?: string;
   updated_at?: string;
+  trackingNumber?: string;
+  postexStatus?: string;
+  postexDetails?: {
+    trackingNumber?: string;
+    orderStatus?: string;
+    statusHistory?: Array<Record<string, unknown>>;
+  };
   items: OrderItemType[];
 };
 
