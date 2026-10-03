@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Button,
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 import SupportChatPanel from "@/app/components/chat/SupportChatPanel";
@@ -29,7 +30,7 @@ function AdminSupportContent() {
   const router = useRouter();
   const params = useSearchParams();
   const selectedId = params.get("c");
-  const { firebaseUser, ready } = useFirebase();
+  const { firebaseUser, ready, error: firebaseError, refreshFirebaseAuth } = useFirebase();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(selectedId || getSyncedSelectedConversation());
@@ -78,10 +79,27 @@ function AdminSupportContent() {
     return <Alert severity="info">Support chat is not enabled in this environment.</Alert>;
   }
 
-  if (loading || !ready || !firebaseUser) {
+  if (loading || !ready) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (firebaseError || !firebaseUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refreshFirebaseAuth()}>
+              Retry
+            </Button>
+          }
+        >
+          {firebaseError || "Support chat session expired or unauthorized. Please log in again."}
+        </Alert>
       </Box>
     );
   }
