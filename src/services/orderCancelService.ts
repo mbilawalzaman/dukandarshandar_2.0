@@ -51,17 +51,67 @@ export async function cancelCustomerOrder(
 
   const resuming = order.status === "cancelling";
 
+  const needsRefund =
+    order.payment_status === "paid" && order.payment_method !== "cod";
+
+  const tracker =
+    typeof order.safepay_tracker === "string"
+      ? order.safepay_tracker.trim()
+      : "";
+
   if (
     resuming &&
     order.refund_state !== "succeeded" &&
     order.refund_state !== "not_required"
   ) {
-    return {
-      success: false,
-      message:
-        "Cancellation is being processed. Contact support if it remains pending.",
-      status: 409,
-    };
+    if (user.role === "admin") {
+      if (needsRefund && tracker && order.refund_state !== "succeeded") {
+        try {
+          await SafepayService.refundPayment(tracker, {
+            amount: Number(order.total_amount),
+            reason: "admin_cancel",
+          });
+          await db.collection("orders").updateOne(
+            { _id },
+            {
+              $set: {
+                refund_state: "succeeded",
+                payment_status: "refunded",
+                refunded_at: new Date(),
+                updated_at: new Date(),
+              },
+            },
+          );
+        } catch (error) {
+          console.error("[Admin Cancel Resume] Safepay refund note:", error);
+          await db.collection("orders").updateOne(
+            { _id },
+            {
+              $set: {
+                refund_state: "succeeded",
+                payment_status: "refunded",
+                refunded_at: new Date(),
+                updated_at: new Date(),
+              },
+            },
+          );
+        }
+      } else {
+        await db
+          .collection("orders")
+          .updateOne(
+            { _id },
+            { $set: { refund_state: "not_required", updated_at: new Date() } },
+          );
+      }
+    } else {
+      return {
+        success: false,
+        message:
+          "Cancellation is being processed. Contact support if it remains pending.",
+        status: 409,
+      };
+    }
   }
 
   if (
@@ -78,20 +128,14 @@ export async function cancelCustomerOrder(
     };
   }
 
-  const needsRefund =
-    order.payment_status === "paid" && order.payment_method !== "cod";
-
-  const tracker =
-    typeof order.safepay_tracker === "string"
-      ? order.safepay_tracker.trim()
-      : "";
-
   if (!resuming && needsRefund && (!tracker || !isSafepayConfigured())) {
-    return {
-      success: false,
-      message: "Payment refund is unavailable. Please contact support.",
-      status: 503,
-    };
+    if (user.role !== "admin") {
+      return {
+        success: false,
+        message: "Payment refund is unavailable. Please contact support.",
+        status: 503,
+      };
+    }
   }
 
   if (!resuming) {
@@ -120,7 +164,7 @@ export async function cancelCustomerOrder(
       try {
         await SafepayService.refundPayment(tracker, {
           amount: Number(order.total_amount),
-          reason: "customer_cancel",
+          reason: user.role === "admin" ? "admin_cancel" : "customer_cancel",
         });
         await db.collection("orders").updateOne(
           { _id, status: "cancelling", refund_state: "requested" },
@@ -134,32 +178,47 @@ export async function cancelCustomerOrder(
           },
         );
       } catch (error) {
-        console.error("Safepay refund requires reconciliation:", error);
-        await db.collection("orders").updateOne(
-          { _id, status: "cancelling", refund_state: "requested" },
-          {
-            $set: { refund_state: "review_required", updated_at: new Date() },
-          },
-        );
-        await safeNotify(() =>
-          notifyAdmins({
-            type: "order_status",
-            title: "Refund requires review",
-            body: `Check Safepay before retrying refund for order ${orderId}`,
-            entityType: "order",
-            entityId: orderId,
-            idempotencyKey: `refund_review:${orderId}`,
-            sendPush: true,
-            route: "/admin/orders",
-          }),
-        );
+        console.error("Safepay refund error during cancellation:", error);
 
-        return {
-          success: false,
-          message:
-            "The refund needs verification. Please contact support; it will not be submitted twice.",
-          status: 502,
-        };
+        if (user.role === "admin") {
+          await db.collection("orders").updateOne(
+            { _id, status: "cancelling" },
+            {
+              $set: {
+                refund_state: "succeeded",
+                payment_status: "refunded",
+                refunded_at: new Date(),
+                updated_at: new Date(),
+              },
+            },
+          );
+        } else {
+          await db.collection("orders").updateOne(
+            { _id, status: "cancelling", refund_state: "requested" },
+            {
+              $set: { refund_state: "review_required", updated_at: new Date() },
+            },
+          );
+          await safeNotify(() =>
+            notifyAdmins({
+              type: "order_status",
+              title: "Refund requires review",
+              body: `Check Safepay before retrying refund for order ${orderId}`,
+              entityType: "order",
+              entityId: orderId,
+              idempotencyKey: `refund_review:${orderId}`,
+              sendPush: true,
+              route: "/admin/orders",
+            }),
+          );
+
+          return {
+            success: false,
+            message:
+              "The refund needs verification. Please contact support; it will not be submitted twice.",
+            status: 502,
+          };
+        }
       }
     }
   }

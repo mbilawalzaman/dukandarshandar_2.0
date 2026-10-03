@@ -14,6 +14,7 @@ import {
   IconButton,
   Tooltip,
   Snackbar,
+  Alert,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -161,6 +162,16 @@ export default function AdminOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [bulkPostexModalOpen, setBulkPostexModalOpen] = useState(false);
 
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "warning" | "info";
+  }>({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
   const handleOpenLabelModal = (order: Order) => {
     setSelectedOrderForLabel(order);
     setLabelModalOpen(true);
@@ -240,10 +251,19 @@ export default function AdminOrdersPage() {
           handleOpenLabelModal(targetOrder);
         }
       } else {
-        alert(data.message || "Failed to update order status");
+        setToast({
+          open: true,
+          message: data.message || "Failed to update order status",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error updating order status:", err);
+      setToast({
+        open: true,
+        message: "Network error updating order status",
+        severity: "error",
+      });
     }
   };
 
@@ -690,6 +710,22 @@ export default function AdminOrdersPage() {
         orders={orders.filter((o) => selectedOrderIds.includes(o._id))}
         onSuccess={fetchOrders}
       />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={5000}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: "100%", borderRadius: 2 }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

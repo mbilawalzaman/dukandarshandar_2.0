@@ -13,6 +13,8 @@ import {
   Tabs,
   Tab,
   Paper,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -74,6 +76,16 @@ export default function AdminProductsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "warning" | "info";
+  }>({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
@@ -155,11 +167,19 @@ export default function AdminProductsPage() {
         fetchProducts();
         setIsDeleteModalOpen(false);
       } else {
-        alert(data.message || "Failed to delete product");
+        setToast({
+          open: true,
+          message: data.message || "Failed to delete product",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error deleting product:", err);
-      alert("Error deleting product.");
+      setToast({
+        open: true,
+        message: "Error deleting product.",
+        severity: "error",
+      });
     } finally {
       setDeleting(false);
     }
@@ -389,6 +409,22 @@ export default function AdminProductsPage() {
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={5000}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: "100%", borderRadius: 2 }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

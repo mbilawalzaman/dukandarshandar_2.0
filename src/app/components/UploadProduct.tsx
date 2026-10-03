@@ -37,6 +37,11 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
     created_by: "",
   });
 
+  const [statusMsg, setStatusMsg] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
+
   const handleBase64 = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
@@ -55,22 +60,23 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setStatusMsg(null);
 
     if (!selectedImage) {
-      alert("Please upload an image");
+      setStatusMsg({ text: "Please upload an image", type: "error" });
 
       return;
     }
 
     try {
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token"); // Fetch JWT from storage
+        const token = localStorage.getItem("token");
 
         const response = await fetch("/api/products/upload", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // 🔥 Add this line
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ ...product, image: selectedImage }),
         });
@@ -78,33 +84,51 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
         const data = await response.json();
 
         if (data.success) {
-          alert("Product added successfully!");
+          setStatusMsg({
+            text: "Product added successfully!",
+            type: "success",
+          });
           onProductUpload();
           setProduct({
-            _id: "", // ✅ Reset ID
+            _id: "",
             name: "",
             category: "",
-            price: 0, // ✅ Ensure it's a number
-            quantity: 0, // ✅ Ensure it's a number
+            price: 0,
+            quantity: 0,
             description: "",
             rating: 0,
-            ratings: [], // ✅ Reset ratings array
-            image: "", // ✅ Reset image
-            created_by: "admin", // ✅ Reset created_by
+            ratings: [],
+            image: "",
+            created_by: "admin",
           });
           setSelectedImage("");
         } else {
-          alert("Error: " + data.message);
+          setStatusMsg({
+            text: data.message || "Failed to upload product",
+            type: "error",
+          });
         }
       }
     } catch (error) {
       console.error("Error:", error);
+      setStatusMsg({ text: "Network error uploading product", type: "error" });
     }
   };
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
       <h2 className="text-xl font-semibold mb-4">Upload Product</h2>
+      {statusMsg && (
+        <div
+          className={`p-3 mb-4 rounded text-sm font-medium ${
+            statusMsg.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {statusMsg.text}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
