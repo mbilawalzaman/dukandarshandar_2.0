@@ -78,6 +78,18 @@ export async function cancelCustomerOrder(
     return current.payment_status === "refunded";
   });
 
+  // Also cancel booking on PostEx API if order was booked with PostEx courier
+  const trackingNumber = order.postexDetails?.trackingNumber || order.trackingNumber;
+  if (trackingNumber && user.userId !== "postex_webhook") {
+    try {
+      const PostExService = (await import("@/services/postex.service.js")).default;
+      await PostExService.cancelOrder(trackingNumber);
+    } catch (postexErr: unknown) {
+      const err = postexErr as { message?: string };
+      console.warn(`[Order Cancel] PostEx API cancel notice for tracking ${trackingNumber}:`, err.message || err);
+    }
+  }
+
   const displayOrderId = String(orderId).slice(-8).toUpperCase();
 
   await safeNotify(() =>

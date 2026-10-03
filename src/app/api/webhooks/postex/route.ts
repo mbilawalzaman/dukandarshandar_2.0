@@ -85,6 +85,16 @@ export async function POST(req: NextRequest) {
 
       const isDeliveredState = statusCode === "0005" || statusCode === "5" || lowerStatus === "delivered";
       const isReturnedState = ["0002", "0006", "0007"].includes(statusCode) || lowerStatus.includes("return");
+      const isCancelledState =
+        rawStatus === "Un-Assigned By Me" ||
+        rawStatus === "Cancelled" ||
+        rawStatus === "Un-Assigned" ||
+        rawStatus === "Unassigned" ||
+        rawStatus === "Expired" ||
+        lowerStatus.includes("un-assigned") ||
+        lowerStatus.includes("unassigned") ||
+        lowerStatus.includes("cancelled") ||
+        lowerStatus.includes("expired");
 
       const updateFields: Record<string, unknown> = {
         postexStatus: rawStatus,
@@ -170,6 +180,12 @@ export async function POST(req: NextRequest) {
         }
       } else if (isReturnedState) {
         updateFields.status = "Returned";
+      } else if (isCancelledState && order.status !== "cancelled") {
+        const { cancelCustomerOrder } = await import("@/services/orderCancelService");
+        await cancelCustomerOrder(String(order._id), { role: "admin", userId: "postex_webhook" }).catch((err) => {
+          console.error("[PostEx Webhook] Error auto-cancelling order:", err);
+        });
+        updateFields.status = "cancelled";
       }
 
       return db.collection("orders").updateOne(
