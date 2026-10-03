@@ -68,7 +68,7 @@ export default function StoreProfileSection({
             label="Store Contact Phone"
             value={shopPhone}
             onChange={(e) => onFieldChange("shopPhone", e.target.value)}
-            placeholder="e.g. +92 300 8495148"
+            placeholder="e.g. 03234111111"
             helperText="Used as sender contact number"
           />
         </Grid>

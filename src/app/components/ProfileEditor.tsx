@@ -167,6 +167,24 @@ export default function ProfileEditor({
       return;
     }
 
+    if (form.phone.trim()) {
+      let cleaned = form.phone.trim().replace(/\D/g, "");
+
+      if (cleaned.startsWith("923")) {
+        cleaned = "0" + cleaned.substring(2);
+      } else if (cleaned.startsWith("3") && cleaned.length === 10) {
+        cleaned = "0" + cleaned;
+      }
+
+      if (!/^03\d{9}$/.test(cleaned)) {
+        setError(
+          "Phone number must be 11 digits starting with 03 (e.g. 03234111111)",
+        );
+
+        return;
+      }
+    }
+
     const normalizedEmail = form.email.trim().toLowerCase();
 
     const emailChangeRequested = Boolean(
@@ -411,6 +429,8 @@ export default function ProfileEditor({
                 fullWidth
                 name="phone"
                 label="Phone Number"
+                placeholder="03234111111"
+                helperText="Must be 11 digits starting with 03 (e.g. 03234111111)"
                 value={form.phone}
                 onChange={handleChange}
               />

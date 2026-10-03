@@ -257,7 +257,7 @@ class PostExService {
 
     if (!/^03\d{9}$/.test(formattedPhone)) {
       throw new CustomError(
-        "Invalid Customer Phone format for PostEx. Must be 11 digits (e.g. 03001234567)",
+        "Invalid Customer Phone format for PostEx. Must be 11 digits (e.g. 03234111111)",
         400,
       );
     }

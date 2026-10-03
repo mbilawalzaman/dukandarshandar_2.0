@@ -74,14 +74,19 @@ export function validateCheckout(
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer_email))
     throw new CheckoutError("Enter a valid email address");
-  const phone = field("phone", 30);
+  const rawPhone = field("phone", 30);
+  let cleanedPhone = rawPhone.replace(/\D/g, "");
 
-  if (
-    !/^\+?[\d\s()-]+$/.test(phone) ||
-    phone.replace(/\D/g, "").length < 10 ||
-    phone.replace(/\D/g, "").length > 15
-  )
-    throw new CheckoutError("Enter a valid phone number");
+  if (cleanedPhone.startsWith("923")) {
+    cleanedPhone = "0" + cleanedPhone.substring(2);
+  } else if (cleanedPhone.startsWith("3") && cleanedPhone.length === 10) {
+    cleanedPhone = "0" + cleanedPhone;
+  }
+
+  if (!/^03\d{9}$/.test(cleanedPhone))
+    throw new CheckoutError(
+      "Phone number must be 11 digits starting with 03 (e.g. 03234111111)",
+    );
   const payment_method = body.payment_method ?? allowedMethods[0];
 
   if (
@@ -93,7 +98,7 @@ export function validateCheckout(
   return {
     customer_name: field("customer_name", 120),
     customer_email,
-    phone,
+    phone: cleanedPhone,
     province: field("province", 100),
     city: field("city", 150),
     area: field("area", 150, false),

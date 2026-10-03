@@ -453,6 +453,23 @@ export default function CheckoutPage() {
       return false;
     }
 
+    let cleanedPhone = form.phone.replace(/\D/g, "");
+
+    if (cleanedPhone.startsWith("923")) {
+      cleanedPhone = "0" + cleanedPhone.substring(2);
+    } else if (cleanedPhone.startsWith("3") && cleanedPhone.length === 10) {
+      cleanedPhone = "0" + cleanedPhone;
+    }
+
+    if (!/^03\d{9}$/.test(cleanedPhone)) {
+      toast(
+        "Phone number must be 11 digits starting with 03 (e.g. 03234111111)",
+        "error",
+      );
+
+      return false;
+    }
+
     const areaCheck = await fetchAreas(form.city, form.province);
 
     if (areaCheck.hasCuratedAreas && !(form.area || "").trim()) {
@@ -743,7 +760,9 @@ export default function CheckoutPage() {
                       fullWidth
                       required
                       name="phone"
-                      label="Phone"
+                      label="Phone Number"
+                      placeholder="03234111111"
+                      helperText="Must be 11 digits starting with 03 (e.g. 03234111111)"
                       value={form.phone}
                       onChange={handleChange}
                       disabled={Boolean(paymentSession)}

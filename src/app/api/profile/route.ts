@@ -131,7 +131,32 @@ export async function PUT(req: Request) {
     }
 
     if (typeof body.phone === "string") {
-      updates.phone = body.phone.trim();
+      const raw = body.phone.trim();
+
+      if (raw) {
+        let cleaned = raw.replace(/\D/g, "");
+
+        if (cleaned.startsWith("923")) {
+          cleaned = "0" + cleaned.substring(2);
+        } else if (cleaned.startsWith("3") && cleaned.length === 10) {
+          cleaned = "0" + cleaned;
+        }
+
+        if (!/^03\d{9}$/.test(cleaned)) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Phone number must be 11 digits starting with 03 (e.g. 03234111111)",
+            },
+            { status: 400 },
+          );
+        }
+
+        updates.phone = cleaned;
+      } else {
+        updates.phone = "";
+      }
     }
 
     if (typeof body.province === "string") {
