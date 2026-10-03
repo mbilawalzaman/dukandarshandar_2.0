@@ -100,6 +100,18 @@ function getStatusChipColor(
   return "warning";
 }
 
+function formatStatusDisplay(status?: string): string {
+  if (!status) return "Booked";
+  const s = status.trim();
+  const lower = s.toLowerCase();
+
+  if (lower === "un-assigned by me" || lower === "un-assigned") {
+    return "Order Cancelled";
+  }
+
+  return s;
+}
+
 export default function PostExTrackingTimeline({
   trackingNumber,
   currentStatus,
@@ -115,6 +127,8 @@ export default function PostExTrackingTimeline({
 
   const activeStatus =
     dist.transactionStatus || dist.orderStatus || currentStatus || "Booked";
+
+  const displayStatus = formatStatusDisplay(activeStatus);
 
   const isCancelled =
     activeStatus.toLowerCase().includes("cancel") ||
@@ -213,7 +227,7 @@ export default function PostExTrackingTimeline({
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Chip
-            label={activeStatus}
+            label={displayStatus}
             color={getStatusChipColor(activeStatus)}
             sx={{ fontWeight: 700, fontSize: "0.825rem", px: 0.5 }}
           />
@@ -262,7 +276,7 @@ export default function PostExTrackingTimeline({
           icon={<CancelOutlinedIcon />}
           sx={{ borderRadius: 2.5, fontWeight: 600 }}
         >
-          This shipment is marked as <strong>{activeStatus}</strong>. Order
+          This shipment is marked as <strong>{displayStatus}</strong>. Order
           booking has been cancelled or un-assigned by courier.
         </Alert>
       ) : (
@@ -428,11 +442,13 @@ export default function PostExTrackingTimeline({
         ) : (
           <Stack spacing={0} sx={{ pl: 1 }}>
             {history.map((item, idx) => {
-              const message =
+              const rawMessage =
                 item.transactionStatusMessage ||
                 item.statusMessage ||
                 item.orderStatus ||
                 "Status Updated";
+
+              const message = formatStatusDisplay(rawMessage);
 
               const rawDate = item.createdAt || item.timestamp || item.date;
 
