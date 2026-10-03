@@ -156,7 +156,7 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
       .toArray(),
     db.collection("orders").countDocuments({
       ...baseQuery,
-      status: { $in: ["pending", "processing", "shipped", "pending_payment", "payment_review", "cancelling"] },
+      status: { $in: ["pending", "processing", "ready_to_ship", "Ready to Ship", "shipped", "pending_payment", "payment_review", "cancelling"] },
     }),
     db.collection("orders").countDocuments({ ...baseQuery, status: "delivered" }),
   ]);
@@ -164,6 +164,7 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
   const statusCounts: Record<string, number> = {
     pending: 0,
     processing: 0,
+    ready_to_ship: 0,
     shipped: 0,
     delivered: 0,
     cancelled: 0,
@@ -171,7 +172,7 @@ async function buildOrderSummary(db: Awaited<ReturnType<typeof getDb>>, baseQuer
     payment_failed: 0,
   };
   statusAgg.forEach((row) => {
-    const key = String(row._id || "pending").toLowerCase();
+    const key = String(row._id || "pending").toLowerCase().replace(/\s+/g, "_");
     statusCounts[key] = (statusCounts[key] || 0) + (row.count as number);
   });
 

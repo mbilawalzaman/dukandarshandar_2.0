@@ -72,14 +72,14 @@ export async function POST(req: NextRequest) {
 
       const lowerStatus = rawStatus.toLowerCase();
       const isPickedUpState =
-        rawStatus === "Booked" ||
         rawStatus === "Picked By PostEx" ||
         rawStatus === "Out For Delivery" ||
         rawStatus === "In Transit" ||
+        rawStatus === "Arrived at Warehouse" ||
+        rawStatus === "At PostEx Warehouse" ||
         statusCode === "0003" ||
         statusCode === "0004" ||
-        lowerStatus.includes("booked") ||
-        lowerStatus.includes("picked") ||
+        (lowerStatus.includes("picked") && !lowerStatus.includes("un-assigned")) ||
         lowerStatus.includes("transit") ||
         lowerStatus.includes("route");
 
