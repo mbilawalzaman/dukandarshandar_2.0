@@ -15,11 +15,14 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  TextField,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import PrintIcon from "@mui/icons-material/Print";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import { allowedOrderTransitions } from "@/lib/orderRules";
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
@@ -148,6 +151,9 @@ export default function AdminOrdersPage() {
   });
 
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
 
   const [selectedOrderForLabel, setSelectedOrderForLabel] =
@@ -201,6 +207,10 @@ export default function AdminOrdersPage() {
       });
 
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+      if (paymentFilter !== "all") params.set("payment", paymentFilter);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
 
       const res = await fetch(`/api/orders?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -218,7 +228,15 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, debouncedSearch]);
+  }, [
+    page,
+    rowsPerPage,
+    debouncedSearch,
+    paymentFilter,
+    statusFilter,
+    startDate,
+    endDate,
+  ]);
 
   useEffect(() => {
     fetchOrders();
@@ -276,34 +294,89 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setPaymentFilter("all");
+    setStatusFilter("all");
+    setStartDate("");
+    setEndDate("");
+    setPage(0);
+  };
+
+  const hasActiveFilters =
+    paymentFilter !== "all" ||
+    statusFilter !== "all" ||
+    Boolean(startDate) ||
+    Boolean(endDate);
+
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const method = order.payment_method || "cod";
       const paymentStatus = order.payment_status?.toLowerCase();
-      const status = order.status?.toLowerCase();
+      const status = (order.status || "").toLowerCase().replace(/\s+/g, "_");
+
+      let matchesPayment = true;
 
       switch (paymentFilter) {
         case "cod":
-          return method === "cod";
+          matchesPayment = method === "cod";
+          break;
         case "card":
-          return method === "card";
+          matchesPayment = method === "card";
+          break;
         case "paid":
-          return paymentStatus === "paid";
+          matchesPayment = paymentStatus === "paid";
+          break;
         case "unpaid":
-          return (
+          matchesPayment =
             paymentStatus !== "paid" &&
             method !== "cod" &&
-            status !== "cancelled"
-          );
+            status !== "cancelled";
+          break;
         case "awaiting":
-          return status === "pending_payment";
+          matchesPayment = status === "pending_payment";
+          break;
         case "failed":
-          return status === "payment_failed" || paymentStatus === "failed";
+          matchesPayment =
+            status === "payment_failed" || paymentStatus === "failed";
+          break;
         default:
-          return true;
+          matchesPayment = true;
       }
+
+      if (!matchesPayment) return false;
+
+      if (statusFilter !== "all") {
+        const targetStatus = statusFilter.toLowerCase();
+
+        if (targetStatus === "pending") {
+          if (status !== "pending" && status !== "confirmed") return false;
+        } else if (status !== targetStatus) {
+          return false;
+        }
+      }
+
+      if (startDate || endDate) {
+        if (!order.created_at) return false;
+        const orderDate = new Date(order.created_at);
+
+        if (isNaN(orderDate.getTime())) return false;
+
+        if (startDate) {
+          const start = new Date(`${startDate}T00:00:00.000`);
+
+          if (orderDate < start) return false;
+        }
+
+        if (endDate) {
+          const end = new Date(`${endDate}T23:59:59.999`);
+
+          if (orderDate > end) return false;
+        }
+      }
+
+      return true;
     });
-  }, [orders, paymentFilter]);
+  }, [orders, paymentFilter, statusFilter, startDate, endDate]);
 
   const pageStats = useMemo(() => {
     const awaitingPayment = orders.filter(
@@ -595,45 +668,191 @@ export default function AdminOrdersPage() {
 
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          mb: 2,
-          flexWrap: "wrap",
-          alignItems: "center",
+          p: 2.5,
+          mb: 3,
+          backgroundColor: "#ffffff",
+          borderRadius: 3,
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
         }}
       >
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="payment-filter-label">Payment filter</InputLabel>
-          <Select
-            labelId="payment-filter-label"
-            label="Payment filter"
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value as PaymentFilter)}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <FilterListIcon sx={{ color: "#475569", fontSize: 20 }} />
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 700, color: "#0f172a" }}
           >
-            <MenuItem value="all">All orders</MenuItem>
-            <MenuItem value="card">Card (Safepay)</MenuItem>
-            <MenuItem value="cod">Cash on Delivery</MenuItem>
-            <MenuItem value="paid">Paid online</MenuItem>
-            <MenuItem value="awaiting">Awaiting payment</MenuItem>
-            <MenuItem value="failed">Payment failed</MenuItem>
-            <MenuItem value="unpaid">Unpaid (non-COD)</MenuItem>
-          </Select>
-        </FormControl>
-        {paymentFilter !== "all" && (
-          <Chip
-            label={`Showing ${filteredOrders.length} of ${orders.length}`}
-            onDelete={() => setPaymentFilter("all")}
+            Filter Orders
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 180, flex: "1 1 180px" }}>
+            <InputLabel id="payment-filter-label">Payment Filter</InputLabel>
+            <Select
+              labelId="payment-filter-label"
+              label="Payment Filter"
+              value={paymentFilter}
+              onChange={(e) => {
+                setPaymentFilter(e.target.value as PaymentFilter);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="all">All Payments</MenuItem>
+              <MenuItem value="card">Card (Safepay)</MenuItem>
+              <MenuItem value="cod">Cash on Delivery</MenuItem>
+              <MenuItem value="paid">Paid Online</MenuItem>
+              <MenuItem value="awaiting">Awaiting Payment</MenuItem>
+              <MenuItem value="failed">Payment Failed</MenuItem>
+              <MenuItem value="unpaid">Unpaid (non-COD)</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 180, flex: "1 1 180px" }}>
+            <InputLabel id="status-filter-label">Order Status</InputLabel>
+            <Select
+              labelId="status-filter-label"
+              label="Order Status"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="all">All Statuses</MenuItem>
+              <MenuItem value="pending">Pending Orders</MenuItem>
+              <MenuItem value="processing">Processing</MenuItem>
+              <MenuItem value="ready_to_ship">Ready to Ship</MenuItem>
+              <MenuItem value="shipped">Shipped</MenuItem>
+              <MenuItem value="delivered">Delivered</MenuItem>
+              <MenuItem value="cancelled">Cancelled</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
             size="small"
-            color="primary"
-            variant="outlined"
+            type="date"
+            label="Start Date"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setPage(0);
+            }}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 160, flex: "1 1 160px" }}
           />
+
+          <TextField
+            size="small"
+            type="date"
+            label="End Date"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setPage(0);
+            }}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 160, flex: "1 1 160px" }}
+          />
+
+          {hasActiveFilters && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="secondary"
+              startIcon={<ClearIcon fontSize="small" />}
+              onClick={handleClearFilters}
+              sx={{ height: 40, borderRadius: 2, textTransform: "none" }}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </Box>
+
+        {hasActiveFilters && (
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              alignItems: "center",
+              mt: 2,
+              pt: 1.5,
+              borderTop: "1px dashed #e2e8f0",
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              Active Filters:
+            </Typography>
+
+            {paymentFilter !== "all" && (
+              <Chip
+                label={`Payment: ${paymentFilter}`}
+                onDelete={() => setPaymentFilter("all")}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {statusFilter !== "all" && (
+              <Chip
+                label={`Status: ${statusFilter.replace(/_/g, " ")}`}
+                onDelete={() => setStatusFilter("all")}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {startDate && (
+              <Chip
+                label={`From: ${startDate}`}
+                onDelete={() => setStartDate("")}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {endDate && (
+              <Chip
+                label={`To: ${endDate}`}
+                onDelete={() => setEndDate("")}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            <Chip
+              label={`Showing ${filteredOrders.length} entries`}
+              size="small"
+              color="info"
+              sx={{ fontWeight: 600 }}
+            />
+          </Box>
         )}
       </Box>
 
       <AdminDataTable
         title="Orders History"
         columns={columns}
-        data={paymentFilter === "all" ? orders : filteredOrders}
+        data={filteredOrders}
         searchPlaceholder="Search by customer name..."
         loading={loading}
         selectable
@@ -667,7 +886,7 @@ export default function AdminOrdersPage() {
           },
         ]}
         serverPagination={{
-          total: paymentFilter === "all" ? total : filteredOrders.length,
+          total: total,
           page,
           rowsPerPage,
           searchTerm,

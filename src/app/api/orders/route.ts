@@ -138,10 +138,60 @@ function buildOrderFilter(
 ) {
   const filter: Record<string, unknown> = { ...baseQuery };
   const status = searchParams.get("status");
+  const payment = searchParams.get("payment");
   const search = searchParams.get("search")?.trim();
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
+  const andConditions: Array<Record<string, unknown>> = [];
 
   if (status && status !== "all") {
-    filter.status = status;
+    const normStatus = status.toLowerCase();
+
+    if (normStatus === "pending") {
+      andConditions.push({
+        status: { $in: ["pending", "Pending", "confirmed", "Confirmed"] },
+      });
+    } else if (normStatus === "ready_to_ship") {
+      andConditions.push({
+        status: { $in: ["ready_to_ship", "Ready to Ship"] },
+      });
+    } else {
+      andConditions.push({
+        status: {
+          $regex: new RegExp(`^${normStatus.replace(/_/g, "[ _]")}$`, "i"),
+        },
+      });
+    }
+  }
+
+  if (payment && payment !== "all") {
+    switch (payment) {
+      case "cod":
+        andConditions.push({ payment_method: "cod" });
+        break;
+      case "card":
+        andConditions.push({ payment_method: "card" });
+        break;
+      case "paid":
+        andConditions.push({ payment_status: "paid" });
+        break;
+      case "unpaid":
+        andConditions.push({
+          payment_status: { $ne: "paid" },
+          payment_method: { $ne: "cod" },
+          status: { $ne: "cancelled" },
+        });
+        break;
+      case "awaiting":
+        andConditions.push({ status: "pending_payment" });
+        break;
+      case "failed":
+        andConditions.push({
+          $or: [{ status: "payment_failed" }, { payment_status: "failed" }],
+        });
+        break;
+    }
   }
 
   if (search) {
@@ -152,21 +202,53 @@ function buildOrderFilter(
       ...(ObjectId.isValid(search) ? [{ _id: new ObjectId(search) }] : []),
     ];
 
-    // Don't clobber ownership $or (registered users) — combine with $and
+    andConditions.push({ $or: searchOr });
+  }
+
+  if (startDate || endDate) {
+    const startObj = startDate ? new Date(`${startDate}T00:00:00.000Z`) : null;
+    const endObj = endDate ? new Date(`${endDate}T23:59:59.999Z`) : null;
+
+    const dateCond: Record<string, unknown> = {};
+    const stringDateCond: Record<string, unknown> = {};
+
+    if (startObj && !isNaN(startObj.getTime())) {
+      dateCond.$gte = startObj;
+      stringDateCond.$gte = startObj.toISOString();
+    }
+
+    if (endObj && !isNaN(endObj.getTime())) {
+      dateCond.$lte = endObj;
+      stringDateCond.$lte = endObj.toISOString();
+    }
+
+    if (Object.keys(dateCond).length > 0) {
+      andConditions.push({
+        $or: [{ created_at: dateCond }, { created_at: stringDateCond }],
+      });
+    }
+  } else {
+    const from = resolveTimeframeFrom(searchParams);
+
+    if (from) {
+      andConditions.push({
+        $or: [
+          { created_at: { $gte: from } },
+          { created_at: { $gte: from.toISOString() } },
+        ],
+      });
+    }
+  }
+
+  if (andConditions.length > 0) {
     if (filter.$or) {
       const ownershipOr = filter.$or;
 
       delete filter.$or;
-      filter.$and = [{ $or: ownershipOr }, { $or: searchOr }];
+      filter.$and = [{ $or: ownershipOr }, ...andConditions];
     } else {
-      filter.$or = searchOr;
+      filter.$and = andConditions;
     }
-  }
-
-  const from = resolveTimeframeFrom(searchParams);
-
-  if (from) {
-    filter.created_at = { $gte: from };
   }
 
   return filter;
