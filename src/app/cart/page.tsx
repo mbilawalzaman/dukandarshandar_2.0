@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
+import { computeShippingBreakdown } from "@/lib/deliverySettings";
 
 import {
   Container,
@@ -36,6 +38,11 @@ export default function CartPage() {
   const subtotal = items.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0,
+  );
+
+  const shippingBreakdown = useMemo(
+    () => computeShippingBreakdown(subtotal, settings),
+    [subtotal, settings],
   );
 
   const storeDeliveryPromo = isPromoActive(subtotal);
@@ -276,7 +283,10 @@ export default function CartPage() {
                 <DeliveryShippingLine
                   shipping={shipping}
                   isPromo={promoActive}
-                  standardFee={settings.fee}
+                  standardFee={shippingBreakdown.rawFee}
+                  rawFee={shippingBreakdown.rawFee}
+                  discount={shippingBreakdown.discount}
+                  discountApplied={shippingBreakdown.discountApplied}
                 />
                 <PromotionNudge
                   hints={quote.hints}

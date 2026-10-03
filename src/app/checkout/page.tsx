@@ -28,6 +28,7 @@ import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import { computeShippingBreakdown } from "@/lib/deliverySettings";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
 import VoucherPicker from "../components/checkout/VoucherPicker";
@@ -274,10 +275,13 @@ export default function CheckoutPage() {
     [items, form.customer_email, toast],
   );
 
-  const effectiveShippingFee = getShipping(
-    localSubtotal,
-    calculatedShippingFee ?? settings.fee,
+  const shippingBreakdown = useMemo(
+    () =>
+      computeShippingBreakdown(localSubtotal, settings, calculatedShippingFee),
+    [localSubtotal, settings, calculatedShippingFee],
   );
+
+  const effectiveShippingFee = shippingBreakdown.finalFee;
 
   useEffect(() => {
     requestQuote(appliedCode, effectiveShippingFee);
@@ -324,7 +328,9 @@ export default function CheckoutPage() {
         const data = await res.json();
 
         if (isMounted && data.success && typeof data.fee === "number") {
-          setCalculatedShippingFee(data.fee);
+          setCalculatedShippingFee(
+            typeof data.rawFee === "number" ? data.rawFee : data.fee,
+          );
         }
       } catch (err) {
         console.warn("PostEx shipping calculation error:", err);
@@ -336,12 +342,12 @@ export default function CheckoutPage() {
     };
   }, [form.city, form.province]);
 
-  const standardFee = calculatedShippingFee ?? settings.fee;
+  const standardFee = shippingBreakdown.rawFee;
 
   const quote =
     serverQuote ??
     quoteLocal(engineItems, {
-      shippingFee: getShipping(localSubtotal, standardFee),
+      shippingFee: effectiveShippingFee,
       voucherCode: appliedCode,
     });
 
@@ -945,7 +951,10 @@ export default function CheckoutPage() {
                 <DeliveryShippingLine
                   shipping={shipping}
                   isPromo={promoActive}
-                  standardFee={standardFee}
+                  standardFee={shippingBreakdown.rawFee}
+                  rawFee={shippingBreakdown.rawFee}
+                  discount={shippingBreakdown.discount}
+                  discountApplied={shippingBreakdown.discountApplied}
                   label="Shipping"
                 />
                 {quote.voucher &&
