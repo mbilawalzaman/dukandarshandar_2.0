@@ -1,6 +1,7 @@
 "use client";
 
 import { jwtDecode } from "jwt-decode";
+
 import { REFRESH_TOKEN_COOKIE, TOKEN_COOKIE } from "@/lib/constants";
 
 type RefreshResponse = {
@@ -16,6 +17,7 @@ let refreshPromise: Promise<string | null> | null = null;
 function expireCookie(name: string) {
   // Match path used when setting cookies; cover common host-only cookies.
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax; Secure`;
   }
@@ -39,15 +41,19 @@ export function clearClientAuth() {
 /** Full client logout helper used by Navbar / admin. */
 export async function logoutClientSession(): Promise<void> {
   clearClientAuth();
+
   try {
     // Drop cart so the next session starts empty
     const { clearCart } = await import("@/lib/cart");
+
     clearCart();
   } catch {
     localStorage.removeItem("cart");
     window.dispatchEvent(new Event("cartChange"));
   }
+
   localStorage.removeItem("userImage");
+
   try {
     await fetch("/api/auth", {
       method: "POST",
@@ -58,6 +64,7 @@ export async function logoutClientSession(): Promise<void> {
   } catch {
     /* ignore network errors — client cookies already cleared */
   }
+
   // Ensure cookies stay gone even if a racing refresh set them again
   clearClientAuth();
 }
@@ -77,13 +84,18 @@ export async function refreshAccessToken(): Promise<string | null> {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
         });
+
         const data = (await res.json()) as RefreshResponse;
+
         if (!res.ok || !data.success || !data.token) {
           localStorage.removeItem("token");
+
           return null;
         }
+
         if (sessionStorage.getItem(LOGOUT_GUARD_KEY) === "1") return null;
         persistAccessToken(data.token);
+
         return data.token;
       } catch {
         return null;
@@ -97,7 +109,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 }
 
 /** If access token missing or expires within `skewSeconds`, try refresh. */
-export async function ensureFreshAccessToken(skewSeconds = 120): Promise<string | null> {
+export async function ensureFreshAccessToken(
+  skewSeconds = 120,
+): Promise<string | null> {
   if (typeof window === "undefined") return null;
   if (sessionStorage.getItem(LOGOUT_GUARD_KEY) === "1") return null;
 
@@ -110,9 +124,12 @@ export async function ensureFreshAccessToken(skewSeconds = 120): Promise<string 
   try {
     const decoded = jwtDecode<{ exp?: number; role?: string }>(token);
     const exp = decoded.exp;
+
     if (!exp) return token;
     const now = Math.floor(Date.now() / 1000);
-    if (exp - now > skewSeconds || (decoded.role === "guest" && exp > now)) return token;
+
+    if (exp - now > skewSeconds || (decoded.role === "guest" && exp > now))
+      return token;
   } catch {
     /* fall through to refresh */
   }
@@ -123,15 +140,26 @@ export async function ensureFreshAccessToken(skewSeconds = 120): Promise<string 
 /**
  * fetch wrapper: credentials include + one 401 retry after refresh.
  */
-export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+export async function authFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
   await ensureFreshAccessToken();
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers = new Headers(init.headers || {});
+
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+
+  if (
+    !headers.has("Content-Type") &&
+    init.body &&
+    !(init.body instanceof FormData)
+  ) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -144,11 +172,18 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
   if (first.status !== 401) return first;
 
   const refreshed = await refreshAccessToken();
+
   if (!refreshed) return first;
 
   const retryHeaders = new Headers(init.headers || {});
+
   retryHeaders.set("Authorization", `Bearer ${refreshed}`);
-  if (!retryHeaders.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+
+  if (
+    !retryHeaders.has("Content-Type") &&
+    init.body &&
+    !(init.body instanceof FormData)
+  ) {
     retryHeaders.set("Content-Type", "application/json");
   }
 

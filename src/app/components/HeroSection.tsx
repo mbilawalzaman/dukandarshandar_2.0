@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Container, Grid, Card, CardContent, Typography, Box, Avatar } from "@mui/material";
+
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Avatar,
+} from "@mui/material";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ColorLensIcon from "@mui/icons-material/ColorLens";
@@ -27,12 +36,13 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
   const storeName = deliverySettings.shopName || "";
 
   const [heroConfig, setHeroConfig] = useState<HeroSectionConfig | null>(
-    propConfig !== undefined ? propConfig : null
+    propConfig !== undefined ? propConfig : null,
   );
 
   useEffect(() => {
     if (propConfig !== undefined) {
       setHeroConfig(propConfig);
+
       return;
     }
 
@@ -40,6 +50,7 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
       try {
         const res = await fetch("/api/page-settings");
         const data = await res.json();
+
         if (data.success && data.settings?.home?.heroSection) {
           setHeroConfig(data.settings.home.heroSection);
         } else {
@@ -49,6 +60,7 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
         console.error("Error loading hero section settings:", err);
       }
     };
+
     loadSettings();
   }, [propConfig]);
 
@@ -56,24 +68,45 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
     return null;
   }
 
-  const features = (heroConfig.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features).map(
-    (feat: HeroFeatureItem, idx: number) => {
-      const iconKey = feat.icon || (idx === 0 ? "verified" : idx === 1 ? "craft" : idx === 2 ? "shipping" : "security");
-      const iconInfo = ICON_MAP[iconKey] || ICON_MAP.verified!;
-      const displayTitle = (feat.title || "").replace(/\{storeName\}/g, storeName || "Our Store");
-      const displayDesc1 = (feat.desc1 || "").replace(/\{storeName\}/g, storeName || "our store");
-      const displayDesc2 = (feat.desc2 || "").replace(/\{storeName\}/g, storeName || "our store");
+  const features = (
+    heroConfig.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features
+  ).map((feat: HeroFeatureItem, idx: number) => {
+    const iconKey =
+      feat.icon ||
+      (idx === 0
+        ? "verified"
+        : idx === 1
+          ? "craft"
+          : idx === 2
+            ? "shipping"
+            : "security");
 
-      return {
-        ...feat,
-        icon: iconInfo.icon,
-        color: iconInfo.color,
-        title: displayTitle,
-        desc1: displayDesc1,
-        desc2: displayDesc2,
-      };
-    }
-  );
+    const iconInfo = ICON_MAP[iconKey] || ICON_MAP.verified!;
+
+    const displayTitle = (feat.title || "").replace(
+      /\{storeName\}/g,
+      storeName || "Our Store",
+    );
+
+    const displayDesc1 = (feat.desc1 || "").replace(
+      /\{storeName\}/g,
+      storeName || "our store",
+    );
+
+    const displayDesc2 = (feat.desc2 || "").replace(
+      /\{storeName\}/g,
+      storeName || "our store",
+    );
+
+    return {
+      ...feat,
+      icon: iconInfo.icon,
+      color: iconInfo.color,
+      title: displayTitle,
+      desc1: displayDesc1,
+      desc2: displayDesc2,
+    };
+  });
 
   return (
     <Box sx={{ py: 6, backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
@@ -105,13 +138,29 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
                   >
                     {feature.icon}
                   </Avatar>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", mb: 1, fontSize: "1.1rem" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      mb: 1,
+                      fontSize: "1.1rem",
+                    }}
+                  >
                     {feature.title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, lineHeight: 1.5 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1, lineHeight: 1.5 }}
+                  >
                     {feature.desc1}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.5 }}
+                  >
                     {feature.desc2}
                   </Typography>
                 </CardContent>

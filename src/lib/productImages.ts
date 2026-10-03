@@ -13,15 +13,21 @@ export function getProductImages(product: {
   if (Array.isArray(product.images) && product.images.length > 0) {
     return product.images.filter((img) => img?.url);
   }
+
   if (product.image) {
     return [{ url: product.image, publicId: product.image_public_id }];
   }
+
   return [];
 }
 
 export function getProductThumbnail(
-  product: { image?: string; images?: ProductImage[]; image_public_id?: string },
-  fallback = ""
+  product: {
+    image?: string;
+    images?: ProductImage[];
+    image_public_id?: string;
+  },
+  fallback = "",
 ): string {
   return getProductImages(product)[0]?.url || fallback;
 }

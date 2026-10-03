@@ -11,8 +11,8 @@ export const firebasePublicConfig = {
 export function isFirebaseClientConfigured() {
   return Boolean(
     firebasePublicConfig.apiKey &&
-      firebasePublicConfig.authDomain &&
-      firebasePublicConfig.projectId
+    firebasePublicConfig.authDomain &&
+    firebasePublicConfig.projectId,
   );
 }
 
@@ -20,17 +20,22 @@ export function isFirebaseClientConfigured() {
 export function isFirebaseServerConfigured() {
   return Boolean(
     isFirebaseClientConfigured() &&
-      process.env.FIREBASE_CLIENT_EMAIL &&
-      process.env.FIREBASE_PRIVATE_KEY
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY,
   );
 }
 
 /** @deprecated use isFirebaseClientConfigured or isFirebaseServerConfigured */
 export function isFirebaseConfigured() {
-  return typeof window === "undefined" ? isFirebaseServerConfigured() : isFirebaseClientConfigured();
+  return typeof window === "undefined"
+    ? isFirebaseServerConfigured()
+    : isFirebaseClientConfigured();
 }
 
 export function isChatEnabled() {
   if (process.env.NEXT_PUBLIC_CHAT_ENABLED === "false") return false;
-  return typeof window === "undefined" ? isFirebaseServerConfigured() : isFirebaseClientConfigured();
+
+  return typeof window === "undefined"
+    ? isFirebaseServerConfigured()
+    : isFirebaseClientConfigured();
 }

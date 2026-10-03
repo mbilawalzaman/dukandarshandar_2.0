@@ -1,7 +1,17 @@
 "use client";
 
 import React from "react";
-import { Grid, Typography, Box, Paper, Chip, CircularProgress } from "@mui/material";
+
+import Link from "next/link";
+
+import {
+  Grid,
+  Typography,
+  Box,
+  Paper,
+  Chip,
+  CircularProgress,
+} from "@mui/material";
 import {
   AreaChart,
   Area,
@@ -20,6 +30,9 @@ import {
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
+
+import PaymentsIcon from "@mui/icons-material/Payments";
+
 import {
   CATEGORY_COLORS,
   STATUS_COLORS,
@@ -29,8 +42,6 @@ import {
   type OrderStatusPoint,
   type PaymentBreakdownPoint,
 } from "@/types/apps/adminDashboardTypes";
-import PaymentsIcon from "@mui/icons-material/Payments";
-import Link from "next/link";
 
 interface DashboardChartsProps {
   salesTrend?: SalesTrendPoint[];
@@ -64,47 +75,118 @@ export default function DashboardCharts({
               flexDirection: "column",
             }}
           >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUpIcon sx={{ color: "var(--theme-primary-main, #0284c7)" }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                <TrendingUpIcon
+                  sx={{ color: "var(--theme-primary-main, #0284c7)" }}
+                />
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#0f172a" }}
+                >
                   Revenue & Order Volume Trend
                 </Typography>
               </Box>
               <Chip label="Last 6 Months" size="small" variant="outlined" />
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Monthly fulfilled sales revenue (PKR) and total purchase orders count.
+              Monthly fulfilled sales revenue (PKR) and total purchase orders
+              count.
             </Typography>
 
             <Box sx={{ width: "100%", height: 300, mt: "auto" }}>
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <CircularProgress size={32} />
                 </Box>
               ) : salesTrend.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={salesTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart
+                    data={salesTrend}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
                     <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--theme-primary-main, #0284c7)" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="var(--theme-primary-main, #0284c7)" stopOpacity={0} />
+                      <linearGradient
+                        id="colorRevenue"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="var(--theme-primary-main, #0284c7)"
+                          stopOpacity={0.4}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="var(--theme-primary-main, #0284c7)"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
-                      <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      <linearGradient
+                        id="colorOrders"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#f59e0b"
+                          stopOpacity={0.4}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#f59e0b"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#64748b" }} />
-                    <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "#64748b" }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--theme-bg-default, #f1f5f9)"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
                     <RechartsTooltip
                       formatter={(val, name) => [
-                        name === "revenue" ? `PKR ${Number(val).toLocaleString()}` : val,
+                        name === "revenue"
+                          ? `PKR ${Number(val).toLocaleString()}`
+                          : val,
                         name === "revenue" ? "Revenue" : "Orders Count",
                       ]}
-                      contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                      }}
                     />
                     <Legend />
                     <Area
@@ -130,7 +212,14 @@ export default function DashboardCharts({
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     No orders placed in this timeline yet.
                   </Typography>
@@ -155,7 +244,10 @@ export default function DashboardCharts({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
               <PieChartIcon sx={{ color: "#8b5cf6" }} />
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "#0f172a" }}
+              >
                 Category Breakdown
               </Typography>
             </Box>
@@ -165,7 +257,14 @@ export default function DashboardCharts({
 
             <Box sx={{ width: "100%", height: 300, mt: "auto" }}>
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <CircularProgress size={32} />
                 </Box>
               ) : categoryDistribution.length > 0 ? (
@@ -182,18 +281,36 @@ export default function DashboardCharts({
                       paddingAngle={4}
                     >
                       {categoryDistribution.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <RechartsTooltip
                       formatter={(val) => [`${val} products`, "Count"]}
-                      contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                      }}
                     />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11 }} />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      wrapperStyle={{ fontSize: 11 }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     No products added yet.
                   </Typography>
@@ -220,7 +337,10 @@ export default function DashboardCharts({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
               <DonutLargeIcon sx={{ color: "#10b981" }} />
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "#0f172a" }}
+              >
                 Order Fulfillment Status
               </Typography>
             </Box>
@@ -230,7 +350,14 @@ export default function DashboardCharts({
 
             <Box sx={{ width: "100%", height: 220, mt: "auto" }}>
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <CircularProgress size={32} />
                 </Box>
               ) : orderStatusBreakdown.length > 0 ? (
@@ -240,25 +367,49 @@ export default function DashboardCharts({
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="35%"
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
-                    <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--theme-bg-default, #f1f5f9)"
+                    />
+                    <XAxis
+                      dataKey="status"
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
                     <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
                     <RechartsTooltip
                       formatter={(val, _, item) => [
                         `${val} orders (PKR ${Number(item.payload.value || 0).toLocaleString()})`,
                         "Orders",
                       ]}
-                      contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                      }}
                     />
                     <Bar dataKey="count" maxBarSize={48} radius={[6, 6, 0, 0]}>
                       {orderStatusBreakdown.map((entry, index) => (
-                        <Cell key={`status-cell-${index}`} fill={STATUS_COLORS[entry.status.toLowerCase()] || "var(--theme-primary-main, #0284c7)"} />
+                        <Cell
+                          key={`status-cell-${index}`}
+                          fill={
+                            STATUS_COLORS[entry.status.toLowerCase()] ||
+                            "var(--theme-primary-main, #0284c7)"
+                          }
+                        />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     No orders placed yet.
                   </Typography>
@@ -280,10 +431,22 @@ export default function DashboardCharts({
               flexDirection: "column",
             }}
           >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PaymentsIcon sx={{ color: "var(--theme-primary-main, #0284c7)" }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                <PaymentsIcon
+                  sx={{ color: "var(--theme-primary-main, #0284c7)" }}
+                />
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#0f172a" }}
+                >
                   Payment Overview
                 </Typography>
               </Box>
@@ -303,7 +466,14 @@ export default function DashboardCharts({
 
             <Box sx={{ width: "100%", height: 220, mt: "auto" }}>
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <CircularProgress size={32} />
                 </Box>
               ) : paymentBreakdown.length > 0 ? (
@@ -313,28 +483,49 @@ export default function DashboardCharts({
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                     barCategoryGap="35%"
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--theme-bg-default, #f1f5f9)" />
-                    <XAxis dataKey="status" tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--theme-bg-default, #f1f5f9)"
+                    />
+                    <XAxis
+                      dataKey="status"
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
                     <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
                     <RechartsTooltip
                       formatter={(val, _, item) => [
                         `${val} payments (PKR ${Number(item.payload.value || 0).toLocaleString()})`,
                         "Count",
                       ]}
-                      contentStyle={{ backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                      }}
                     />
                     <Bar dataKey="count" maxBarSize={48} radius={[6, 6, 0, 0]}>
                       {paymentBreakdown.map((entry, index) => (
                         <Cell
                           key={`payment-cell-${index}`}
-                          fill={PAYMENT_COLORS[entry.status.toLowerCase()] || "var(--theme-primary-main, #0284c7)"}
+                          fill={
+                            PAYMENT_COLORS[entry.status.toLowerCase()] ||
+                            "var(--theme-primary-main, #0284c7)"
+                          }
                         />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     No payment records yet.
                   </Typography>

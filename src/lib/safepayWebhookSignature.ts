@@ -1,4 +1,5 @@
 import crypto from "crypto";
+
 import { getSafepayWebhookSecret } from "@/lib/safepayConfig";
 
 type SigningKeyStrategy = "hex-decode" | "base64-decode" | "utf8";
@@ -27,7 +28,9 @@ export interface WebhookVerifyResult {
   debug: VerifyDebugInfo;
 }
 
-function deriveSigningKeys(secret: string): Array<{ strategy: SigningKeyStrategy; key: Buffer }> {
+function deriveSigningKeys(
+  secret: string,
+): Array<{ strategy: SigningKeyStrategy; key: Buffer }> {
   const trimmed = secret.trim();
   const keys: Array<{ strategy: SigningKeyStrategy; key: Buffer }> = [];
 
@@ -39,6 +42,7 @@ function deriveSigningKeys(secret: string): Array<{ strategy: SigningKeyStrategy
 
   try {
     const decoded = Buffer.from(trimmed, "base64");
+
     if (decoded.length > 0) {
       keys.push({ strategy: "base64-decode", key: decoded });
     }
@@ -47,10 +51,13 @@ function deriveSigningKeys(secret: string): Array<{ strategy: SigningKeyStrategy
   }
 
   const seen = new Set<string>();
+
   return keys.filter(({ key, strategy }) => {
     const id = `${strategy}:${key.toString("base64")}`;
+
     if (seen.has(id)) return false;
     seen.add(id);
+
     return true;
   });
 }
@@ -58,21 +65,31 @@ function deriveSigningKeys(secret: string): Array<{ strategy: SigningKeyStrategy
 function timingSafeEqualString(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
+
   if (left.length !== right.length) return false;
+
   return crypto.timingSafeEqual(left, right);
 }
 
-function computeDigest(algorithm: "sha256" | "sha512", key: Buffer, payload: string): string {
+function computeDigest(
+  algorithm: "sha256" | "sha512",
+  key: Buffer,
+  payload: string,
+): string {
   return crypto.createHmac(algorithm, key).update(payload).digest("hex");
 }
 
 function signatureMatches(digest: string, provided: string): boolean {
   const normalized = provided.trim();
   const candidates = [`sha256=${digest}`, digest];
+
   if (digest.length === 128) {
     candidates.push(`sha512=${digest}`);
   }
-  return candidates.some((candidate) => timingSafeEqualString(candidate, normalized));
+
+  return candidates.some((candidate) =>
+    timingSafeEqualString(candidate, normalized),
+  );
 }
 
 const VERIFY_STRATEGIES: VerifyStrategy[] = [
@@ -122,19 +139,25 @@ const VERIFY_STRATEGIES: VerifyStrategy[] = [
 
 function secretFormat(secret: string): VerifyDebugInfo["secretFormat"] {
   const trimmed = secret.trim();
+
   if (/^[0-9a-fA-F]{64}$/.test(trimmed)) return "hex-64";
   if (/^[A-Za-z0-9+/]+=*$/.test(trimmed)) return "base64-like";
+
   return "other";
 }
 
 export function verifySafepayWebhookSignature(
   rawBody: string,
   signature: string | null,
-  timestamp: string | null
+  timestamp: string | null,
 ): WebhookVerifyResult {
   const debug: VerifyDebugInfo = {
     bodyLength: rawBody.length,
-    bodySha256: crypto.createHash("sha256").update(rawBody).digest("hex").slice(0, 16),
+    bodySha256: crypto
+      .createHash("sha256")
+      .update(rawBody)
+      .digest("hex")
+      .slice(0, 16),
     timestamp,
     signaturePrefix: signature ? signature.slice(0, 12) : null,
     signatureLength: signature?.length ?? 0,
@@ -151,7 +174,10 @@ export function verifySafepayWebhookSignature(
   for (const strategy of VERIFY_STRATEGIES) {
     if (strategy.requiresTimestamp && !timestamp) continue;
 
-    const keyEntry = signingKeys.find((entry) => entry.strategy === strategy.keyStrategy);
+    const keyEntry = signingKeys.find(
+      (entry) => entry.strategy === strategy.keyStrategy,
+    );
+
     if (!keyEntry) continue;
 
     debug.tried.push(`${strategy.name}/${strategy.keyStrategy}`);
@@ -160,7 +186,11 @@ export function verifySafepayWebhookSignature(
     const digest = computeDigest(strategy.algorithm, keyEntry.key, payload);
 
     if (signatureMatches(digest, signature)) {
-      return { valid: true, strategy: `${strategy.name}/${strategy.keyStrategy}`, debug };
+      return {
+        valid: true,
+        strategy: `${strategy.name}/${strategy.keyStrategy}`,
+        debug,
+      };
     }
   }
 

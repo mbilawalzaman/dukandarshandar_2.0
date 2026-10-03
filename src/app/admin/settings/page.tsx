@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Grid, Typography } from "@mui/material";
+
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Grid,
+  Typography,
+} from "@mui/material";
+
 import { useMarketplaceTheme } from "@/app/providers/MarketplaceThemeProvider";
 import { useStoreSettings } from "@/app/providers/StoreSettingsProvider";
 import type { ThemeKey } from "@/lib/themePresets";
@@ -36,8 +45,14 @@ type SettingsForm = {
 };
 
 export default function AdminSettingsPage() {
-  const { previewThemeKey, setPreviewThemeKey, savedThemeKey } = useMarketplaceTheme();
-  const { settings, loading: settingsLoading, updateSettingsInState } = useStoreSettings();
+  const { previewThemeKey, setPreviewThemeKey, savedThemeKey } =
+    useMarketplaceTheme();
+
+  const {
+    settings,
+    loading: settingsLoading,
+    updateSettingsInState,
+  } = useStoreSettings();
 
   const [form, setForm] = useState<SettingsForm>({
     feeEnabled: true,
@@ -63,7 +78,9 @@ export default function AdminSettingsPage() {
   const [success, setSuccess] = useState("");
 
   const authHeaders = useCallback(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
     return {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -75,6 +92,7 @@ export default function AdminSettingsPage() {
       setLoading(true);
       setError("");
       const data = { success: true, settings, message: "" };
+
       if (data.success && data.settings) {
         setForm({
           feeEnabled: Boolean(data.settings.feeEnabled),
@@ -117,19 +135,24 @@ export default function AdminSettingsPage() {
     setSuccess("");
 
     const fee = Math.max(0, Number(form.fee) || 0);
+
     if (form.feeEnabled && fee < 0) {
       setError("Delivery fee discount cannot be negative.");
+
       return;
     }
 
     const cleanWhatsApp = form.whatsAppNumber.replace(/[^0-9]/g, "");
+
     if (!cleanWhatsApp) {
       setError("Please enter a valid WhatsApp phone number (digits only).");
+
       return;
     }
 
     try {
       setSaving(true);
+
       const res = await fetch("/api/settings/delivery", {
         method: "PUT",
         headers: authHeaders(),
@@ -147,11 +170,21 @@ export default function AdminSettingsPage() {
           whatsAppNumber: cleanWhatsApp,
         }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         const updatedThemeKey = normalizeThemeKey(data.settings.activeThemeKey);
-        updateSettingsInState({ ...data.settings, activeThemeKey: updatedThemeKey });
-        setForm((previous) => ({ ...previous, ...data.settings, activeThemeKey: updatedThemeKey }));
+
+        updateSettingsInState({
+          ...data.settings,
+          activeThemeKey: updatedThemeKey,
+        });
+        setForm((previous) => ({
+          ...previous,
+          ...data.settings,
+          activeThemeKey: updatedThemeKey,
+        }));
         setPreviewThemeKey(null);
         setSuccess("Store settings and theme saved successfully.");
       } else {
@@ -174,15 +207,27 @@ export default function AdminSettingsPage() {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: "text.primary" }}>
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 800, mb: 1, color: "text.primary" }}
+      >
         Settings
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Manage your store profile, marketplace theme design, delivery details, and social links.
+        Manage your store profile, marketplace theme design, delivery details,
+        and social links.
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
 
       <Box component="form" onSubmit={handleSave} sx={{ width: "100%" }}>
         <Grid container spacing={3} sx={{ width: "100%" }}>
@@ -196,7 +241,10 @@ export default function AdminSettingsPage() {
               }}
               onClearPreview={() => {
                 setPreviewThemeKey(null);
-                setForm((previous) => ({ ...previous, activeThemeKey: savedThemeKey }));
+                setForm((previous) => ({
+                  ...previous,
+                  activeThemeKey: savedThemeKey,
+                }));
               }}
             />
           </Grid>
@@ -210,12 +258,22 @@ export default function AdminSettingsPage() {
               city={form.city}
               area={form.area}
               address={form.address}
-              onFieldChange={(field, val) => setForm((prev) => ({ ...prev, [field]: val }))}
+              onFieldChange={(field, val) =>
+                setForm((prev) => ({ ...prev, [field]: val }))
+              }
               onLocationChange={(fields) => {
                 setForm((prev) => {
                   const next = { ...prev, ...fields };
-                  const parts = [next.address, next.area, next.city, next.province].filter(Boolean);
+
+                  const parts = [
+                    next.address,
+                    next.area,
+                    next.city,
+                    next.province,
+                  ].filter(Boolean);
+
                   if (parts.length > 0) next.shopAddress = parts.join(", ");
+
                   return next;
                 });
               }}
@@ -226,7 +284,9 @@ export default function AdminSettingsPage() {
             <DeliveryFeeSection
               feeEnabled={form.feeEnabled}
               fee={form.fee}
-              onFeeToggle={(enabled) => setForm((prev) => ({ ...prev, feeEnabled: enabled }))}
+              onFeeToggle={(enabled) =>
+                setForm((prev) => ({ ...prev, feeEnabled: enabled }))
+              }
               onFeeAmountChange={(fee) => setForm((prev) => ({ ...prev, fee }))}
             />
           </Grid>
@@ -234,7 +294,9 @@ export default function AdminSettingsPage() {
           <Grid item xs={12} md={6}>
             <WhatsAppSupportSection
               whatsAppNumber={form.whatsAppNumber}
-              onNumberChange={(cleaned) => setForm((prev) => ({ ...prev, whatsAppNumber: cleaned }))}
+              onNumberChange={(cleaned) =>
+                setForm((prev) => ({ ...prev, whatsAppNumber: cleaned }))
+              }
             />
           </Grid>
 
@@ -242,8 +304,12 @@ export default function AdminSettingsPage() {
             <LogoAndQRUploadSection
               storeLogo={form.storeLogo}
               qrCodeImage={form.qrCodeImage}
-              onStoreLogoChange={(logo) => setForm((prev) => ({ ...prev, storeLogo: logo }))}
-              onQRImageChange={(qr) => setForm((prev) => ({ ...prev, qrCodeImage: qr }))}
+              onStoreLogoChange={(logo) =>
+                setForm((prev) => ({ ...prev, storeLogo: logo }))
+              }
+              onQRImageChange={(qr) =>
+                setForm((prev) => ({ ...prev, qrCodeImage: qr }))
+              }
               onError={setError}
             />
           </Grid>
@@ -261,7 +327,12 @@ export default function AdminSettingsPage() {
           </Grid>
 
           <Grid item xs={12}>
-            <Button type="submit" variant="contained" disabled={saving} sx={{ px: 4, py: 1.2, fontWeight: 700 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={saving}
+              sx={{ px: 4, py: 1.2, fontWeight: 700 }}
+            >
               {saving ? "Saving settings..." : "Save settings"}
             </Button>
           </Grid>

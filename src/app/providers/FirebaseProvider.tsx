@@ -1,7 +1,21 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInWithCustomToken, signOut, type User } from "firebase/auth";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  onAuthStateChanged,
+  signInWithCustomToken,
+  signOut,
+  type User,
+} from "firebase/auth";
+
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { authHeaders } from "@/lib/cart";
@@ -24,18 +38,23 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     if (!isChatEnabled()) {
       setReady(true);
       setFirebaseUser(null);
+
       return;
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
     if (!token) {
       try {
         await signOut(getFirebaseAuth());
       } catch {
         /* ignore */
       }
+
       setFirebaseUser(null);
       setReady(true);
+
       return;
     }
 
@@ -44,22 +63,28 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         headers: authHeaders(),
       });
+
       const raw = await res.text();
       let data: { success?: boolean; token?: string; message?: string } = {};
+
       try {
         data = JSON.parse(raw);
       } catch {
         setError("Firebase authentication server error");
         setFirebaseUser(null);
         setReady(true);
+
         return;
       }
+
       if (!res.ok || !data.success) {
         setError(data.message || "Firebase auth failed");
         setFirebaseUser(null);
         setReady(true);
+
         return;
       }
+
       await signInWithCustomToken(getFirebaseAuth(), data.token!);
       setError(null);
     } catch (err) {
@@ -74,12 +99,14 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isChatEnabled()) {
       setReady(true);
+
       return;
     }
 
     refreshFirebaseAuth();
 
     const auth = getFirebaseAuth();
+
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
     });
@@ -88,6 +115,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       setReady(false);
       refreshFirebaseAuth();
     };
+
     window.addEventListener("authChange", onAuthChange);
     window.addEventListener("storage", onAuthChange);
 
@@ -100,14 +128,20 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ ready, firebaseUser, error, refreshFirebaseAuth }),
-    [ready, firebaseUser, error, refreshFirebaseAuth]
+    [ready, firebaseUser, error, refreshFirebaseAuth],
   );
 
-  return <FirebaseContext.Provider value={value}>{children}</FirebaseContext.Provider>;
+  return (
+    <FirebaseContext.Provider value={value}>
+      {children}
+    </FirebaseContext.Provider>
+  );
 }
 
 export function useFirebase() {
   const ctx = useContext(FirebaseContext);
+
   if (!ctx) throw new Error("useFirebase must be used within FirebaseProvider");
+
   return ctx;
 }

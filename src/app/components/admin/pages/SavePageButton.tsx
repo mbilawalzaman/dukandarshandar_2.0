@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { Button, CircularProgress } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
+
 import type { PageSettingsKey } from "@/lib/pageSettings";
 
 const PAGE_LABELS: Record<PageSettingsKey, string> = {
@@ -34,7 +36,9 @@ export default function SavePageButton({
   return (
     <Button
       variant="contained"
-      startIcon={isSaving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+      startIcon={
+        isSaving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />
+      }
       onClick={() => onSave(page)}
       disabled={savingPage !== null || modalUploading}
       sx={{

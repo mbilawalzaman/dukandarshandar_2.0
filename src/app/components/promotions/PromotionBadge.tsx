@@ -1,6 +1,7 @@
 "use client";
 
 import { Chip, type SxProps, type Theme } from "@mui/material";
+
 import type { PromotionBadge as Badge } from "@/types/apps/promotionTypes";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 /** Coloured pill used on product cards, cart lines, admin tables and previews. */
 export default function PromotionBadge({ badge, size = "small", sx }: Props) {
   if (!badge?.label) return null;
+
   return (
     <Chip
       label={badge.label}

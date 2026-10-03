@@ -9,11 +9,13 @@ export type SendMailOptions = {
 };
 
 export type SendMailResult =
-  | { success: true }
-  | { success: false; skipped?: boolean; error: string };
+  { success: true } | { success: false; skipped?: boolean; error: string };
 
 function stripHtml(html: string) {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function mailUser() {
@@ -32,12 +34,15 @@ export function isMailConfigured() {
   return Boolean(mailUser() && mailPass());
 }
 
-export async function sendMail(options: SendMailOptions): Promise<SendMailResult> {
+export async function sendMail(
+  options: SendMailOptions,
+): Promise<SendMailResult> {
   const user = mailUser();
   const pass = mailPass();
 
   if (!user || !pass) {
     console.warn("sendMail skipped: EMAIL_USER / EMAIL_PASS are not set");
+
     return { success: false, skipped: true, error: "Email is not configured" };
   }
 
@@ -66,8 +71,11 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
 
     return { success: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to send email";
+    const message =
+      error instanceof Error ? error.message : "Failed to send email";
+
     console.error("sendMail error:", error);
+
     return { success: false, error: message };
   }
 }

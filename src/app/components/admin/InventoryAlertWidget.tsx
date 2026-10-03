@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+
+import Link from "next/link";
+
 import {
   Box,
   Typography,
@@ -15,7 +18,7 @@ import {
   TableRow,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import Link from "next/link";
+
 import type { LowStockProduct } from "@/types/apps/adminDashboardTypes";
 import type { ProductFormData } from "./ProductFormModal";
 
@@ -49,7 +52,16 @@ export default function InventoryAlertWidget({
         backgroundColor: "#fffbeb",
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <WarningAmberIcon sx={{ color: "#d97706", fontSize: 26 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: "#9a3412" }}>
@@ -58,27 +70,66 @@ export default function InventoryAlertWidget({
         </Box>
         <Box sx={{ display: "flex", gap: 1 }}>
           {outOfStockCount > 0 && (
-            <Chip label={`${outOfStockCount} Out of Stock`} size="small" color="error" sx={{ fontWeight: 700 }} />
+            <Chip
+              label={`${outOfStockCount} Out of Stock`}
+              size="small"
+              color="error"
+              sx={{ fontWeight: 700 }}
+            />
           )}
           {lowStockCount > 0 && (
-            <Chip label={`${lowStockCount} Low Stock (≤ 5)`} size="small" color="warning" sx={{ fontWeight: 700 }} />
+            <Chip
+              label={`${lowStockCount} Low Stock (≤ 5)`}
+              size="small"
+              color="warning"
+              sx={{ fontWeight: 700 }}
+            />
           )}
-          <Button component={Link} href="/admin/products" size="small" variant="outlined" color="warning" sx={{ textTransform: "none" }}>
+          <Button
+            component={Link}
+            href="/admin/products"
+            size="small"
+            variant="outlined"
+            color="warning"
+            sx={{ textTransform: "none" }}
+          >
             View In Inventory →
           </Button>
         </Box>
       </Box>
 
       {lowStockProducts.length > 0 ? (
-        <TableContainer sx={{ backgroundColor: "#ffffff", borderRadius: 2, border: "1px solid #fde68a" }}>
+        <TableContainer
+          sx={{
+            backgroundColor: "#ffffff",
+            borderRadius: 2,
+            border: "1px solid #fde68a",
+          }}
+        >
           <Table size="small">
             <TableHead sx={{ backgroundColor: "#fef3c7" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>Product Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>Category</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#92400e" }} align="center">Stock Level</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#92400e" }} align="right">Quick Action</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>
+                  Product Name
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>
+                  Category
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#92400e" }}>
+                  Price
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 700, color: "#92400e" }}
+                  align="center"
+                >
+                  Stock Level
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 700, color: "#92400e" }}
+                  align="right"
+                >
+                  Quick Action
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -86,10 +137,16 @@ export default function InventoryAlertWidget({
                 <TableRow key={prod._id} hover>
                   <TableCell sx={{ fontWeight: 600 }}>{prod.name}</TableCell>
                   <TableCell>{prod.category || "General"}</TableCell>
-                  <TableCell>PKR {Number(prod.price).toLocaleString()}</TableCell>
+                  <TableCell>
+                    PKR {Number(prod.price).toLocaleString()}
+                  </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={prod.quantity <= 0 ? "0 (Out of stock)" : `${prod.quantity} remaining`}
+                      label={
+                        prod.quantity <= 0
+                          ? "0 (Out of stock)"
+                          : `${prod.quantity} remaining`
+                      }
                       size="small"
                       color={prod.quantity <= 0 ? "error" : "warning"}
                       sx={{ fontWeight: 700, fontSize: "0.75rem" }}
@@ -112,7 +169,12 @@ export default function InventoryAlertWidget({
                           featured: Boolean(prod.featured),
                         })
                       }
-                      sx={{ textTransform: "none", py: 0.25, px: 1.5, fontSize: "0.8rem" }}
+                      sx={{
+                        textTransform: "none",
+                        py: 0.25,
+                        px: 1.5,
+                        fontSize: "0.8rem",
+                      }}
                     >
                       Restock
                     </Button>
@@ -123,8 +185,18 @@ export default function InventoryAlertWidget({
           </Table>
         </TableContainer>
       ) : (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 3 }}>
-          <Typography variant="body2" sx={{ color: "#15803d", fontWeight: 600 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            p: 3,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: "#15803d", fontWeight: 600 }}
+          >
             ✓ All products are adequately stocked!
           </Typography>
         </Box>

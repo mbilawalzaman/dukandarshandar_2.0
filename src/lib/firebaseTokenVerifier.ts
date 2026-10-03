@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-let googlePublicKeysCache: { keys: Record<string, string>; expiresAt: number } | null = null;
+let googlePublicKeysCache: {
+  keys: Record<string, string>;
+  expiresAt: number;
+} | null = null;
 
 /**
  * Fetch Google's public RS256 certificates for Firebase ID token verification.
@@ -8,19 +11,23 @@ let googlePublicKeysCache: { keys: Record<string, string>; expiresAt: number } |
  */
 async function getGooglePublicKeys(): Promise<Record<string, string>> {
   const now = Date.now();
+
   if (googlePublicKeysCache && googlePublicKeysCache.expiresAt > now) {
     return googlePublicKeysCache.keys;
   }
 
   const res = await fetch(
-    "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com",
   );
+
   if (!res.ok) {
-    throw new Error("Failed to fetch Google public certificates for token verification");
+    throw new Error(
+      "Failed to fetch Google public certificates for token verification",
+    );
   }
 
   const keys = (await res.json()) as Record<string, string>;
-  
+
   // Parse Cache-Control header if present, fallback to 1 hour
   const cacheControl = res.headers.get("cache-control") || "";
   const maxAgeMatch = cacheControl.match(/max-age=(\d+)/);
@@ -46,19 +53,27 @@ export type VerifiedFirebaseToken = {
  * Native, lightweight Firebase ID Token verifier using jsonwebtoken & Google's public certs.
  * Completely eliminates dependency on jwks-rsa / jose.
  */
-export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFirebaseToken> {
+export async function verifyFirebaseIdToken(
+  idToken: string,
+): Promise<VerifiedFirebaseToken> {
   const projectId =
     process.env.FIREBASE_PROJECT_ID ||
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
     "";
 
   const decodedHeader = jwt.decode(idToken, { complete: true });
-  if (!decodedHeader || typeof decodedHeader === "string" || !decodedHeader.header.kid) {
+
+  if (
+    !decodedHeader ||
+    typeof decodedHeader === "string" ||
+    !decodedHeader.header.kid
+  ) {
     throw new Error("Invalid Firebase ID token format");
   }
 
   const keys = await getGooglePublicKeys();
   const publicKey = keys[decodedHeader.header.kid];
+
   if (!publicKey) {
     throw new Error("Google public key not found for token key ID");
   }
@@ -89,7 +104,10 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
  * Create a Firebase Custom Token natively using RS256 private key & jsonwebtoken.
  * Completely eliminates dependency on firebase-admin/auth, jwks-rsa, and jose.
  */
-export function createFirebaseCustomTokenNative(userId: string, claims?: Record<string, unknown>): string {
+export function createFirebaseCustomTokenNative(
+  userId: string,
+  claims?: Record<string, unknown>,
+): string {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY || "";
   const privateKey = privateKeyRaw.replace(/\\n/g, "\n");
@@ -99,6 +117,7 @@ export function createFirebaseCustomTokenNative(userId: string, claims?: Record<
   }
 
   const now = Math.floor(Date.now() / 1000);
+
   const payload = {
     iss: clientEmail,
     sub: clientEmail,

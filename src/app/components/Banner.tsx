@@ -1,9 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import React from "react";
+
+import Link from "next/link";
+
 import Slider from "react-slick";
 import { Box } from "@mui/material";
+
 import type { BannerItem, HomeBannerMode } from "@/lib/pageSettings";
 import BannerMediaRenderer from "./ui/BannerMediaRenderer";
 import "slick-carousel/slick/slick.css";
@@ -19,26 +22,39 @@ interface BannerProps {
   images?: string[];
 }
 
-const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: BannerProps) => {
+const Banner = ({
+  banners,
+  singleBanner,
+  bannerMode = "image_slider",
+  images,
+}: BannerProps) => {
   const { settings: storeDeliverySettings } = useDeliverySettings();
   const storeName = storeDeliverySettings.shopName || "";
+
   const mode: HomeBannerMode =
-    bannerMode === "single_video" || bannerMode === "single_lottie" ? "single_video" : "image_slider";
+    bannerMode === "single_video" || bannerMode === "single_lottie"
+      ? "single_video"
+      : "image_slider";
 
   if (mode === "single_video") {
-    const mediaToRender =
-      singleBanner?.activeMedia?.url
-        ? singleBanner.activeMedia
-        : banners?.[0]?.activeMedia?.url
-          ? banners[0].activeMedia
-          : null;
+    const mediaToRender = singleBanner?.activeMedia?.url
+      ? singleBanner.activeMedia
+      : banners?.[0]?.activeMedia?.url
+        ? banners[0].activeMedia
+        : null;
 
     if (!mediaToRender?.url) {
       return null;
     }
 
-    const goToLink = safeNavigationHref(singleBanner?.goToLink || banners?.[0]?.goToLink);
-    const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
+    const goToLink = safeNavigationHref(
+      singleBanner?.goToLink || banners?.[0]?.goToLink,
+    );
+
+    const isExternal = Boolean(
+      goToLink &&
+      (goToLink.startsWith("http://") || goToLink.startsWith("https://")),
+    );
 
     const singleContent = (
       <Box
@@ -88,18 +104,18 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
   let activeBanners: BannerItem[] = [];
 
   if (Array.isArray(banners) && banners.length > 0) {
-    activeBanners = banners.filter((b) => b.isActive !== false && b.activeMedia?.url);
+    activeBanners = banners.filter(
+      (b) => b.isActive !== false && b.activeMedia?.url,
+    );
   } else if (Array.isArray(images) && images.length > 0) {
-    activeBanners = images
-      .filter(Boolean)
-      .map((img, idx) => ({
-        id: `banner-${idx + 1}`,
-        title: `Banner ${idx + 1}`,
-        order: idx + 1,
-        isActive: true,
-        activeMedia: { type: "image" as const, url: img },
-        processingStatus: "idle" as const,
-      }));
+    activeBanners = images.filter(Boolean).map((img, idx) => ({
+      id: `banner-${idx + 1}`,
+      title: `Banner ${idx + 1}`,
+      order: idx + 1,
+      isActive: true,
+      activeMedia: { type: "image" as const, url: img },
+      processingStatus: "idle" as const,
+    }));
   }
 
   if (activeBanners.length === 0) {
@@ -157,7 +173,11 @@ const Banner = ({ banners, singleBanner, bannerMode = "image_slider", images }: 
       <Slider {...settings}>
         {activeBanners.map((banner, index) => {
           const goToLink = safeNavigationHref(banner.goToLink);
-          const isExternal = Boolean(goToLink && (goToLink.startsWith("http://") || goToLink.startsWith("https://")));
+
+          const isExternal = Boolean(
+            goToLink &&
+            (goToLink.startsWith("http://") || goToLink.startsWith("https://")),
+          );
 
           const slideContent = (
             <Box

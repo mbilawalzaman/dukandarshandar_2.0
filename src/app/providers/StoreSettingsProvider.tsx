@@ -1,7 +1,16 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { usePathname } from "next/navigation";
+
 import {
   DEFAULT_DELIVERY_SETTINGS,
   type DeliverySettings,
@@ -15,20 +24,36 @@ interface StoreSettingsContextType {
   refetchSettings: () => Promise<void>;
 }
 
-const StoreSettingsContext = createContext<StoreSettingsContextType | undefined>(undefined);
+const StoreSettingsContext = createContext<
+  StoreSettingsContextType | undefined
+>(undefined);
 
-export function StoreSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+export function StoreSettingsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [settings, setSettings] = useState<DeliverySettings>(
+    DEFAULT_DELIVERY_SETTINGS,
+  );
+
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const revision = useRef(0);
 
   const fetchSettings = useCallback(async () => {
     const request = ++revision.current;
+
     try {
       const res = await fetch("/api/settings/delivery", { cache: "no-store" });
       const data = await res.json();
-      if (request === revision.current && res.ok && data.success && data.settings) {
+
+      if (
+        request === revision.current &&
+        res.ok &&
+        data.success &&
+        data.settings
+      ) {
         setSettings({
           feeEnabled: Boolean(data.settings.feeEnabled),
           fee: Number(data.settings.fee) || 0,
@@ -60,34 +85,44 @@ export function StoreSettingsProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     void fetchSettings();
-    return () => { revision.current += 1; };
+
+    return () => {
+      revision.current += 1;
+    };
   }, [pathname, fetchSettings]);
 
   useEffect(() => {
     if (typeof document !== "undefined" && settings.shopName) {
       document.title = settings.shopName;
     }
+
     if (typeof document !== "undefined" && settings.storeLogo) {
-      let iconLink: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      let iconLink: HTMLLinkElement | null =
+        document.querySelector("link[rel~='icon']");
+
       if (!iconLink) {
         iconLink = document.createElement("link");
         iconLink.rel = "icon";
         document.head.appendChild(iconLink);
       }
+
       iconLink.href = settings.storeLogo;
     }
   }, [settings.shopName, settings.storeLogo]);
 
-  const updateSettingsInState = useCallback((partial: Partial<DeliverySettings>) => {
-    revision.current += 1;
-    setSettings((prev) => ({
-      ...prev,
-      ...partial,
-      ...(partial.activeThemeKey !== undefined
-        ? { activeThemeKey: normalizeThemeKey(partial.activeThemeKey) }
-        : {}),
-    }));
-  }, []);
+  const updateSettingsInState = useCallback(
+    (partial: Partial<DeliverySettings>) => {
+      revision.current += 1;
+      setSettings((prev) => ({
+        ...prev,
+        ...partial,
+        ...(partial.activeThemeKey !== undefined
+          ? { activeThemeKey: normalizeThemeKey(partial.activeThemeKey) }
+          : {}),
+      }));
+    },
+    [],
+  );
 
   return (
     <StoreSettingsContext.Provider
@@ -105,24 +140,31 @@ export function StoreSettingsProvider({ children }: { children: React.ReactNode 
 
 export function useStoreSettings() {
   const context = useContext(StoreSettingsContext);
+
   if (!context) {
-    throw new Error("useStoreSettings must be used within a StoreSettingsProvider");
+    throw new Error(
+      "useStoreSettings must be used within a StoreSettingsProvider",
+    );
   }
+
   return context;
 }
 
 export function useSafeStoreSettings() {
   const context = useContext(StoreSettingsContext);
+
   return context ?? { settings: DEFAULT_DELIVERY_SETTINGS, loading: false };
 }
 
 export function getStoreInitials(shopName?: string, fallback = ""): string {
   const name = shopName?.trim();
+
   if (!name) return fallback;
   const parts = name.split(/\s+/).filter(Boolean);
+
   if (parts.length === 1) {
     return parts[0].substring(0, 2).toUpperCase();
   }
+
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
-

@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { Box, Typography, Paper, Grid, TextField, Button } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+
 import type { PageSettings, PageSettingsKey } from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import SavePageButton from "./SavePageButton";
@@ -25,8 +27,20 @@ export default function ContactTab({
   onSavePage,
 }: ContactTabProps) {
   return (
-    <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+    <Paper
+      sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+      elevation={0}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
         <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
           Contact Page Banner
         </Typography>
@@ -79,9 +93,21 @@ export default function ContactTab({
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
             Preview
           </Typography>
-          <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+          <Box
+            sx={{
+              height: 160,
+              borderRadius: 2,
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+            }}
+          >
             <BannerMediaRenderer
-              media={settings.contact.bannerMedia || { type: settings.contact.bannerType || "image", url: settings.contact.bannerImage || "" }}
+              media={
+                settings.contact.bannerMedia || {
+                  type: settings.contact.bannerType || "image",
+                  url: settings.contact.bannerImage || "",
+                }
+              }
               alt="Contact Banner"
               style={{ width: "100%", height: "100%" }}
             />

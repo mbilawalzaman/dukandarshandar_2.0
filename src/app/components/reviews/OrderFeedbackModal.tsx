@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
+
 import {
   Dialog,
   DialogTitle,
@@ -22,6 +24,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+
 import { BRAND } from "@/lib/uiBrand";
 import { authHeaders } from "@/lib/cart";
 import Loader from "@/app/components/loader/Loader";
@@ -71,14 +74,24 @@ export default function OrderFeedbackModal({
 
   // Local draft states per product ID
   const [draftRatings, setDraftRatings] = useState<Record<string, number>>({});
-  const [draftComments, setDraftComments] = useState<Record<string, string>>({});
+
+  const [draftComments, setDraftComments] = useState<Record<string, string>>(
+    {},
+  );
+
   const [submittingPid, setSubmittingPid] = useState<string | null>(null);
-  const [itemMessage, setItemMessage] = useState<{ pid: string; text: string; severity: "success" | "error" } | null>(null);
+
+  const [itemMessage, setItemMessage] = useState<{
+    pid: string;
+    text: string;
+    severity: "success" | "error";
+  } | null>(null);
 
   useEffect(() => {
     if (!open || !orderId) return;
 
     let active = true;
+
     setLoading(true);
     setError("");
     setItemMessage(null);
@@ -87,14 +100,18 @@ export default function OrderFeedbackModal({
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
+
         if (data.success) {
-          setOrderDisplayId(data.orderDisplayId || orderId.slice(-8).toUpperCase());
+          setOrderDisplayId(
+            data.orderDisplayId || orderId.slice(-8).toUpperCase(),
+          );
           setIsDelivered(data.isDelivered ?? true);
           setItems(data.items || []);
 
           // Initialize draft states from existing reviews
           const initialRatings: Record<string, number> = {};
           const initialComments: Record<string, string> = {};
+
           (data.items || []).forEach((item: OrderItemReviewState) => {
             if (item.review) {
               initialRatings[item._id] = item.review.rating;
@@ -124,8 +141,10 @@ export default function OrderFeedbackModal({
 
   const handleChipClick = (pid: string, tag: string) => {
     const current = draftComments[pid] || "";
+
     if (current.includes(tag)) return;
     const updated = current ? `${current}. ${tag}` : tag;
+
     setDraftComments((prev) => ({ ...prev, [pid]: updated.slice(0, 1000) }));
   };
 
@@ -153,17 +172,32 @@ export default function OrderFeedbackModal({
       });
 
       const data = await res.json();
+
       if (data.success) {
-        setItemMessage({ pid, text: data.message || "Review submitted successfully!", severity: "success" });
+        setItemMessage({
+          pid,
+          text: data.message || "Review submitted successfully!",
+          severity: "success",
+        });
+
         if (Array.isArray(data.items)) {
           setItems(data.items);
         }
+
         if (onReviewSubmitted) onReviewSubmitted();
       } else {
-        setItemMessage({ pid, text: data.message || "Failed to submit review.", severity: "error" });
+        setItemMessage({
+          pid,
+          text: data.message || "Failed to submit review.",
+          severity: "error",
+        });
       }
     } catch {
-      setItemMessage({ pid, text: "Network error submitting review.", severity: "error" });
+      setItemMessage({
+        pid,
+        text: "Network error submitting review.",
+        severity: "error",
+      });
     } finally {
       setSubmittingPid(null);
     }
@@ -200,10 +234,16 @@ export default function OrderFeedbackModal({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <StarOutlineIcon sx={{ color: BRAND.gold, fontSize: 28 }} />
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem", lineHeight: 1.2 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 800, fontSize: "1.1rem", lineHeight: 1.2 }}
+            >
               Rate & Review Products
             </Typography>
-            <Typography variant="caption" sx={{ color: BRAND.gold, fontWeight: 600 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: BRAND.gold, fontWeight: 600 }}
+            >
               Order #{orderDisplayId} • Daraz & Alibaba Style Feedback
             </Typography>
           </Box>
@@ -213,7 +253,13 @@ export default function OrderFeedbackModal({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
+      <DialogContent
+        dividers
+        sx={{
+          p: { xs: 2, sm: 3 },
+          backgroundColor: "var(--theme-bg-default, #f8fafc)",
+        }}
+      >
         {!!submittingPid && <Loader overlay message="Submitting feedback..." />}
         {loading ? (
           <Loader size={160} message="Loading your delivered products…" />
@@ -223,7 +269,8 @@ export default function OrderFeedbackModal({
           </Alert>
         ) : !isDelivered ? (
           <Alert severity="warning" sx={{ my: 2 }}>
-            This order has not been marked as delivered yet. You can rate products once your package arrives!
+            This order has not been marked as delivered yet. You can rate
+            products once your package arrives!
           </Alert>
         ) : items.length === 0 ? (
           <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
@@ -243,13 +290,20 @@ export default function OrderFeedbackModal({
                 gap: 1.5,
               }}
             >
-              <LocalShippingOutlinedIcon sx={{ color: "#059669", fontSize: 24 }} />
+              <LocalShippingOutlinedIcon
+                sx={{ color: "#059669", fontSize: 24 }}
+              />
               <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#065f46" }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 700, color: "#065f46" }}
+                >
                   Order Delivered Successfully
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#047857" }}>
-                  Please rate each product to help other buyers{storeName ? ` on ${storeName}` : ""}. ({reviewedCount}/{items.length} reviewed)
+                  Please rate each product to help other buyers
+                  {storeName ? ` on ${storeName}` : ""}. ({reviewedCount}/
+                  {items.length} reviewed)
                 </Typography>
               </Box>
             </Box>
@@ -275,7 +329,9 @@ export default function OrderFeedbackModal({
                     borderColor: hasReviewed ? "#cbd5e1" : BRAND.gold,
                   }}
                 >
-                  <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                  <Box
+                    sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}
+                  >
                     {/* Image */}
                     <Box
                       sx={{
@@ -301,7 +357,15 @@ export default function OrderFeedbackModal({
 
                     {/* Details */}
                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, flexWrap: "wrap" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <Typography
                           component={pid ? Link : "p"}
                           href={pid ? `/products/${pid}` : "#"}
@@ -310,28 +374,52 @@ export default function OrderFeedbackModal({
                             fontWeight: 700,
                             color: BRAND.navy,
                             textDecoration: "none",
-                            "&:hover": pid ? { color: "primary.main", textDecoration: "underline" } : {},
+                            "&:hover": pid
+                              ? {
+                                  color: "primary.main",
+                                  textDecoration: "underline",
+                                }
+                              : {},
                           }}
                         >
                           {item.name}
                         </Typography>
 
                         <Chip
-                          icon={hasReviewed ? <CheckCircleIcon sx={{ fontSize: 14 }} /> : undefined}
+                          icon={
+                            hasReviewed ? (
+                              <CheckCircleIcon sx={{ fontSize: 14 }} />
+                            ) : undefined
+                          }
                           label={hasReviewed ? "Reviewed" : "To Review"}
                           color={hasReviewed ? "success" : "warning"}
                           size="small"
-                          sx={{ fontWeight: 700, height: 24, fontSize: "0.75rem" }}
+                          sx={{
+                            fontWeight: 700,
+                            height: 24,
+                            fontSize: "0.75rem",
+                          }}
                         />
                       </Box>
 
                       <Typography variant="caption" color="text.secondary">
-                        Qty: {item.quantity} • PKR {Number(item.price).toLocaleString()}
+                        Qty: {item.quantity} • PKR{" "}
+                        {Number(item.price).toLocaleString()}
                       </Typography>
 
                       {/* Interactive Rating Picker */}
-                      <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
+                      <Box
+                        sx={{
+                          mt: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, color: BRAND.navy }}
+                        >
                           Rating:
                         </Typography>
                         <Rating
@@ -340,17 +428,30 @@ export default function OrderFeedbackModal({
                           max={5}
                           onChange={(_, val) => {
                             if (val !== null) {
-                              setDraftRatings((prev) => ({ ...prev, [pid]: val }));
+                              setDraftRatings((prev) => ({
+                                ...prev,
+                                [pid]: val,
+                              }));
                             }
                           }}
                         />
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, color: BRAND.navy }}
+                        >
                           {currentRating.toFixed(1)} / 5
                         </Typography>
                       </Box>
 
                       {/* Quick Tag Chips */}
-                      <Box sx={{ mt: 1.5, display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                      <Box
+                        sx={{
+                          mt: 1.5,
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.75,
+                        }}
+                      >
                         {QUICK_TAGS.map((tag) => (
                           <Chip
                             key={tag}
@@ -361,7 +462,9 @@ export default function OrderFeedbackModal({
                               fontSize: "0.72rem",
                               fontWeight: 600,
                               cursor: "pointer",
-                              backgroundColor: currentComment.includes(tag) ? "rgba(15, 23, 42, 0.1)" : "var(--theme-bg-default, #f1f5f9)",
+                              backgroundColor: currentComment.includes(tag)
+                                ? "rgba(15, 23, 42, 0.1)"
+                                : "var(--theme-bg-default, #f1f5f9)",
                               color: BRAND.navy,
                               "&:hover": { backgroundColor: "#e2e8f0" },
                             }}
@@ -374,7 +477,10 @@ export default function OrderFeedbackModal({
                         placeholder="Write your feedback about product quality, packaging, or delivery..."
                         value={currentComment}
                         onChange={(e) =>
-                          setDraftComments((prev) => ({ ...prev, [pid]: e.target.value.slice(0, 1000) }))
+                          setDraftComments((prev) => ({
+                            ...prev,
+                            [pid]: e.target.value.slice(0, 1000),
+                          }))
                         }
                         fullWidth
                         multiline
@@ -392,7 +498,13 @@ export default function OrderFeedbackModal({
                       )}
 
                       {/* Submit Action Button */}
-                      <Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{
+                          mt: 1.5,
+                          display: "flex",
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <Button
                           variant="contained"
                           size="small"
@@ -408,7 +520,11 @@ export default function OrderFeedbackModal({
                             "&:hover": { backgroundColor: "#1e293b" },
                           }}
                         >
-                          {isSubmitting ? "Submitting…" : hasReviewed ? "Update Review" : "Submit Review"}
+                          {isSubmitting
+                            ? "Submitting…"
+                            : hasReviewed
+                              ? "Update Review"
+                              : "Submit Review"}
                         </Button>
                       </Box>
                     </Box>
@@ -429,7 +545,9 @@ export default function OrderFeedbackModal({
             textTransform: "none",
             backgroundColor: allReviewed ? BRAND.goldHover : undefined,
             color: allReviewed ? "#ffffff" : BRAND.navy,
-            "&:hover": allReviewed ? { backgroundColor: BRAND.goldDark } : undefined,
+            "&:hover": allReviewed
+              ? { backgroundColor: BRAND.goldDark }
+              : undefined,
           }}
         >
           {allReviewed ? "Done & Close" : "Close"}

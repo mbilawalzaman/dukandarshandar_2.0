@@ -1,6 +1,14 @@
-import { ownsOrder, hasReservedStock, allowedOrderTransitions } from "@/lib/orderRules";
-import { withOrderTransaction, releaseOrderStock } from "@/lib/orderTransaction";
 import { ObjectId } from "mongodb";
+
+import {
+  ownsOrder,
+  hasReservedStock,
+  allowedOrderTransitions,
+} from "@/lib/orderRules";
+import {
+  withOrderTransaction,
+  releaseOrderStock,
+} from "@/lib/orderTransaction";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
 import { notifyAdmins } from "@/services/notificationService";
@@ -18,75 +26,193 @@ export type CancelOrderResult =
 /** A durable claim prevents duplicate refunds. Ambiguous provider failures are never blindly retried. */
 export async function cancelCustomerOrder(
   orderId: string,
-  user: { userId?: string; email?: string; role?: string }
+  user: { userId?: string; email?: string; role?: string },
 ): Promise<CancelOrderResult> {
-  if (!orderId || !ObjectId.isValid(orderId)) return { success: false, message: "Invalid order ID", status: 400 };
+  if (!orderId || !ObjectId.isValid(orderId))
+    return { success: false, message: "Invalid order ID", status: 400 };
   const db = await getDb();
   const _id = new ObjectId(orderId);
   const order = await db.collection("orders").findOne({ _id });
-  if (!order) return { success: false, message: "Order not found", status: 404 };
-  if (!ownsOrder(order, user)) return { success: false, message: "You can only cancel your own orders", status: 403 };
-  if (order.status === "cancelled") return { success: true, orderId, refunded: order.payment_status === "refunded" };
+
+  if (!order)
+    return { success: false, message: "Order not found", status: 404 };
+  if (!ownsOrder(order, user))
+    return {
+      success: false,
+      message: "You can only cancel your own orders",
+      status: 403,
+    };
+  if (order.status === "cancelled")
+    return {
+      success: true,
+      orderId,
+      refunded: order.payment_status === "refunded",
+    };
 
   const resuming = order.status === "cancelling";
-  if (resuming && order.refund_state !== "succeeded" && order.refund_state !== "not_required") {
-    return { success: false, message: "Cancellation is being processed. Contact support if it remains pending.", status: 409 };
+
+  if (
+    resuming &&
+    order.refund_state !== "succeeded" &&
+    order.refund_state !== "not_required"
+  ) {
+    return {
+      success: false,
+      message:
+        "Cancellation is being processed. Contact support if it remains pending.",
+      status: 409,
+    };
   }
-  if (!resuming && !(user.role === "admin" ? allowedOrderTransitions(order).includes("cancelled") : order.status === "pending")) {
-    return { success: false, message: "This order can no longer be cancelled. Contact support if you need help.", status: 409 };
+
+  if (
+    !resuming &&
+    !(user.role === "admin"
+      ? allowedOrderTransitions(order).includes("cancelled")
+      : order.status === "pending")
+  ) {
+    return {
+      success: false,
+      message:
+        "This order can no longer be cancelled. Contact support if you need help.",
+      status: 409,
+    };
   }
-  const needsRefund = order.payment_status === "paid" && order.payment_method !== "cod";
-  const tracker = typeof order.safepay_tracker === "string" ? order.safepay_tracker.trim() : "";
+
+  const needsRefund =
+    order.payment_status === "paid" && order.payment_method !== "cod";
+
+  const tracker =
+    typeof order.safepay_tracker === "string"
+      ? order.safepay_tracker.trim()
+      : "";
+
   if (!resuming && needsRefund && (!tracker || !isSafepayConfigured())) {
-    return { success: false, message: "Payment refund is unavailable. Please contact support.", status: 503 };
+    return {
+      success: false,
+      message: "Payment refund is unavailable. Please contact support.",
+      status: 503,
+    };
   }
 
   if (!resuming) {
     const claimed = await db.collection("orders").updateOne(
       { _id, status: order.status, payment_status: order.payment_status },
-      { $set: { status: "cancelling", cancellation_previous_status: order.status,
-        stock_reserved: hasReservedStock(order), refund_state: needsRefund ? "requested" : "not_required",
-        cancelled_by: user.userId, updated_at: new Date() } },
+      {
+        $set: {
+          status: "cancelling",
+          cancellation_previous_status: order.status,
+          stock_reserved: hasReservedStock(order),
+          refund_state: needsRefund ? "requested" : "not_required",
+          cancelled_by: user.userId,
+          updated_at: new Date(),
+        },
+      },
     );
-    if (claimed.modifiedCount !== 1) return { success: false, message: "Order changed. Refresh and try again.", status: 409 };
+
+    if (claimed.modifiedCount !== 1)
+      return {
+        success: false,
+        message: "Order changed. Refresh and try again.",
+        status: 409,
+      };
+
     if (needsRefund) {
       try {
-        await SafepayService.refundPayment(tracker, { amount: Number(order.total_amount), reason: "customer_cancel" });
-        await db.collection("orders").updateOne({ _id, status: "cancelling", refund_state: "requested" }, {
-          $set: { refund_state: "succeeded", payment_status: "refunded", refunded_at: new Date(), updated_at: new Date() },
+        await SafepayService.refundPayment(tracker, {
+          amount: Number(order.total_amount),
+          reason: "customer_cancel",
         });
+        await db.collection("orders").updateOne(
+          { _id, status: "cancelling", refund_state: "requested" },
+          {
+            $set: {
+              refund_state: "succeeded",
+              payment_status: "refunded",
+              refunded_at: new Date(),
+              updated_at: new Date(),
+            },
+          },
+        );
       } catch (error) {
         console.error("Safepay refund requires reconciliation:", error);
-        await db.collection("orders").updateOne({ _id, status: "cancelling", refund_state: "requested" }, { $set: { refund_state: "review_required", updated_at: new Date() } });
-        await safeNotify(() => notifyAdmins({ type: "order_status", title: "Refund requires review", body: `Check Safepay before retrying refund for order ${orderId}`,
-          entityType: "order", entityId: orderId, idempotencyKey: `refund_review:${orderId}`, sendPush: true, route: "/admin/orders" }));
-        return { success: false, message: "The refund needs verification. Please contact support; it will not be submitted twice.", status: 502 };
+        await db.collection("orders").updateOne(
+          { _id, status: "cancelling", refund_state: "requested" },
+          {
+            $set: { refund_state: "review_required", updated_at: new Date() },
+          },
+        );
+        await safeNotify(() =>
+          notifyAdmins({
+            type: "order_status",
+            title: "Refund requires review",
+            body: `Check Safepay before retrying refund for order ${orderId}`,
+            entityType: "order",
+            entityId: orderId,
+            idempotencyKey: `refund_review:${orderId}`,
+            sendPush: true,
+            route: "/admin/orders",
+          }),
+        );
+
+        return {
+          success: false,
+          message:
+            "The refund needs verification. Please contact support; it will not be submitted twice.",
+          status: 502,
+        };
       }
     }
   }
 
   const refunded = await withOrderTransaction(async (tx) => {
-    const current = await tx.db.collection("orders").findOne({ _id }, { session: tx.session });
+    const current = await tx.db
+      .collection("orders")
+      .findOne({ _id }, { session: tx.session });
+
     if (!current) throw new Error("Order not found");
-    if (current.status === "cancelled") return current.payment_status === "refunded";
-    if (current.status !== "cancelling" || !["succeeded", "not_required"].includes(current.refund_state)) throw new Error("Cancellation is not ready");
+    if (current.status === "cancelled")
+      return current.payment_status === "refunded";
+    if (
+      current.status !== "cancelling" ||
+      !["succeeded", "not_required"].includes(current.refund_state)
+    )
+      throw new Error("Cancellation is not ready");
     await releaseOrderStock(tx, current);
     if (current.promotions_recorded) await releaseRedemptions(orderId, tx);
-    await tx.db.collection("orders").updateOne({ _id }, { $set: {
-      status: "cancelled", stock_reserved: false, promotions_recorded: false, cancelled_at: new Date(), updated_at: new Date(),
-    } }, { session: tx.session });
+    await tx.db.collection("orders").updateOne(
+      { _id },
+      {
+        $set: {
+          status: "cancelled",
+          stock_reserved: false,
+          promotions_recorded: false,
+          cancelled_at: new Date(),
+          updated_at: new Date(),
+        },
+      },
+      { session: tx.session },
+    );
+
     return current.payment_status === "refunded";
   });
 
   // Also cancel booking on PostEx API if order was booked with PostEx courier
-  const trackingNumber = order.postexDetails?.trackingNumber || order.trackingNumber;
+  const trackingNumber =
+    order.postexDetails?.trackingNumber || order.trackingNumber;
+
   if (trackingNumber && user.userId !== "postex_webhook") {
     try {
-      const PostExService = (await import("@/services/postex.service.js")).default;
+      const PostExService = (await import("@/services/postex.service.js"))
+        .default;
+
       await PostExService.cancelOrder(trackingNumber);
     } catch (postexErr: unknown) {
       const err = postexErr as { message?: string };
-      console.warn(`[Order Cancel] PostEx API cancel notice for tracking ${trackingNumber}:`, err.message || err);
+
+      console.warn(
+        `[Order Cancel] PostEx API cancel notice for tracking ${trackingNumber}:`,
+        err.message || err,
+      );
     }
   }
 
@@ -103,7 +229,7 @@ export async function cancelCustomerOrder(
       idempotencyKey: `order_cancelled_customer:${orderId}`,
       sendPush: true,
       route: "/admin/orders",
-    })
+    }),
   );
 
   if (order.customer_email) {
@@ -123,6 +249,7 @@ export async function cancelCustomerOrder(
   }
 
   const inbox = getShopInbox();
+
   if (inbox) {
     await sendMail({
       to: inbox,

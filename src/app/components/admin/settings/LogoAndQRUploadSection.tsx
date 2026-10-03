@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import { Box, Button, Grid, Paper, Typography } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -24,15 +25,19 @@ export default function LogoAndQRUploadSection({
 }: LogoAndQRUploadSectionProps) {
   const handleStoreLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
       onError("Store Logo image must be under 5MB.");
+
       return;
     }
 
     const reader = new FileReader();
+
     reader.readAsDataURL(file);
+
     reader.onload = () => {
       onStoreLogoChange(String(reader.result || ""));
     };
@@ -40,15 +45,19 @@ export default function LogoAndQRUploadSection({
 
   const handleQRFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
       onError("QR Code image must be under 5MB.");
+
       return;
     }
 
     const reader = new FileReader();
+
     reader.readAsDataURL(file);
+
     reader.onload = () => {
       onQRImageChange(String(reader.result || ""));
     };
@@ -58,7 +67,17 @@ export default function LogoAndQRUploadSection({
     <Grid container spacing={3}>
       {/* Storefront Logo Image */}
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0", height: "100%", display: "flex", flexDirection: "column" }} elevation={0}>
+        <Paper
+          sx={{
+            p: 3.5,
+            borderRadius: 3,
+            border: "1px solid #e2e8f0",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+          elevation={0}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
             <StorefrontIcon color="primary" />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -67,7 +86,8 @@ export default function LogoAndQRUploadSection({
           </Box>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            Upload your Company/Store Logo. Displayed on the Storefront Header/Navbar and printed shipping documents.
+            Upload your Company/Store Logo. Displayed on the Storefront
+            Header/Navbar and printed shipping documents.
           </Typography>
 
           <Box
@@ -90,12 +110,23 @@ export default function LogoAndQRUploadSection({
                 component="img"
                 src={storeLogo}
                 alt="Store Logo"
-                sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  p: 1,
+                }}
               />
             ) : (
               <Box sx={{ textAlign: "center", p: 1 }}>
-                <StorefrontIcon sx={{ fontSize: 40, color: "#94a3b8", mb: 0.5 }} />
-                <Typography variant="caption" color="text.secondary" display="block">
+                <StorefrontIcon
+                  sx={{ fontSize: 40, color: "#94a3b8", mb: 0.5 }}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
                   No Logo uploaded
                 </Typography>
               </Box>
@@ -103,9 +134,19 @@ export default function LogoAndQRUploadSection({
           </Box>
 
           <Box sx={{ mt: "auto", display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-            <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none" }}>
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<CloudUploadIcon />}
+              sx={{ textTransform: "none" }}
+            >
               Upload store logo
-              <input type="file" hidden accept="image/*" onChange={handleStoreLogoSelect} />
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleStoreLogoSelect}
+              />
             </Button>
             {storeLogo && (
               <Button
@@ -124,7 +165,17 @@ export default function LogoAndQRUploadSection({
 
       {/* Store QR Code Image */}
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0", height: "100%", display: "flex", flexDirection: "column" }} elevation={0}>
+        <Paper
+          sx={{
+            p: 3.5,
+            borderRadius: 3,
+            border: "1px solid #e2e8f0",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+          elevation={0}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
             <QrCode2Icon color="primary" />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -133,7 +184,8 @@ export default function LogoAndQRUploadSection({
           </Box>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            Upload your Store QR Code image used on printed shipping labels and customer payment receipts.
+            Upload your Store QR Code image used on printed shipping labels and
+            customer payment receipts.
           </Typography>
 
           <Box
@@ -156,12 +208,21 @@ export default function LogoAndQRUploadSection({
                 component="img"
                 src={qrCodeImage}
                 alt="Store QR Code"
-                sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  p: 1,
+                }}
               />
             ) : (
               <Box sx={{ textAlign: "center", p: 1 }}>
                 <QrCode2Icon sx={{ fontSize: 40, color: "#94a3b8", mb: 0.5 }} />
-                <Typography variant="caption" color="text.secondary" display="block">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
                   No QR uploaded
                 </Typography>
               </Box>
@@ -169,9 +230,19 @@ export default function LogoAndQRUploadSection({
           </Box>
 
           <Box sx={{ mt: "auto", display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-            <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none" }}>
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<CloudUploadIcon />}
+              sx={{ textTransform: "none" }}
+            >
               Upload QR code
-              <input type="file" hidden accept="image/*" onChange={handleQRFileSelect} />
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleQRFileSelect}
+              />
             </Button>
             {qrCodeImage && (
               <Button

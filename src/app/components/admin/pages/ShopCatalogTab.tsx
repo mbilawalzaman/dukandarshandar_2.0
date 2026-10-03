@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { Box, Typography, Paper, Grid, TextField, Button } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+
 import type { PageSettings, PageSettingsKey } from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import SavePageButton from "./SavePageButton";
@@ -25,8 +27,20 @@ export default function ShopCatalogTab({
   onSavePage,
 }: ShopCatalogTabProps) {
   return (
-    <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+    <Paper
+      sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+      elevation={0}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
         <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
           Shop Catalog Page Banner
         </Typography>
@@ -83,7 +97,10 @@ export default function ShopCatalogTab({
             onChange={(e) =>
               setSettings((prev) => ({
                 ...prev,
-                shop: { ...prev.shop, productsPerPage: Number(e.target.value) || 9 },
+                shop: {
+                  ...prev.shop,
+                  productsPerPage: Number(e.target.value) || 9,
+                },
               }))
             }
             inputProps={{ min: 1, max: 48 }}
@@ -91,11 +108,29 @@ export default function ShopCatalogTab({
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-            Preview ({(settings.shop.bannerMedia?.type || settings.shop.bannerType || "image").toUpperCase()})
+            Preview (
+            {(
+              settings.shop.bannerMedia?.type ||
+              settings.shop.bannerType ||
+              "image"
+            ).toUpperCase()}
+            )
           </Typography>
-          <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+          <Box
+            sx={{
+              height: 160,
+              borderRadius: 2,
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+            }}
+          >
             <BannerMediaRenderer
-              media={settings.shop.bannerMedia || { type: settings.shop.bannerType || "image", url: settings.shop.bannerImage || "" }}
+              media={
+                settings.shop.bannerMedia || {
+                  type: settings.shop.bannerType || "image",
+                  url: settings.shop.bannerImage || "",
+                }
+              }
               alt="Shop Banner"
               style={{ width: "100%", height: "100%" }}
             />

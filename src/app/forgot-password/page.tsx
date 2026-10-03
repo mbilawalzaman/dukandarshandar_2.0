@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
+
 import {
   Container,
   Card,
@@ -16,6 +18,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockResetIcon from "@mui/icons-material/LockReset";
+
 import { BRAND } from "@/lib/uiBrand";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
@@ -34,15 +37,19 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     const trimmedEmail = email.trim();
+
     if (!trimmedEmail) {
       const errMsg = "Please enter your email address.";
+
       setError(errMsg);
       setToastOpen(true);
+
       return;
     }
 
     try {
       setLoading(true);
+
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,16 +57,22 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await res.json();
+
       if (res.ok && data.success) {
-        setMessage(data.message || `Password reset instructions have been sent to ${trimmedEmail}.`);
+        setMessage(
+          data.message ||
+            `Password reset instructions have been sent to ${trimmedEmail}.`,
+        );
         setToastOpen(true);
       } else {
         const errMsg = data.message || `Not a registered email on ${shopName}`;
+
         setError(errMsg);
         setToastOpen(true);
       }
     } catch {
       const errMsg = "Network error. Please try again.";
+
       setError(errMsg);
       setToastOpen(true);
     } finally {
@@ -69,7 +82,15 @@ export default function ForgotPasswordPage() {
 
   return (
     <Container maxWidth="xs" sx={{ mt: 10, mb: 10 }}>
-      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }} elevation={0}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+        }}
+        elevation={0}
+      >
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             <Box
@@ -77,7 +98,8 @@ export default function ForgotPasswordPage() {
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                backgroundColor: "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
+                backgroundColor:
+                  "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -87,11 +109,21 @@ export default function ForgotPasswordPage() {
             </Box>
           </Box>
 
-          <Typography variant="h5" align="center" sx={{ fontWeight: 700, mb: 1, color: BRAND.navy }}>
+          <Typography
+            variant="h5"
+            align="center"
+            sx={{ fontWeight: 700, mb: 1, color: BRAND.navy }}
+          >
             Forgot Password?
           </Typography>
-          <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-            Enter your registered email address below and we will send you instructions to reset your password.
+          <Typography
+            variant="body2"
+            align="center"
+            color="text.secondary"
+            sx={{ mb: 3 }}
+          >
+            Enter your registered email address below and we will send you
+            instructions to reset your password.
           </Typography>
 
           {error && (
@@ -136,7 +168,11 @@ export default function ForgotPasswordPage() {
                   "&:hover": { backgroundColor: BRAND.goldHover },
                 }}
               >
-                {loading ? <CircularProgress size={22} color="inherit" /> : "Send Reset Link"}
+                {loading ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  "Send Reset Link"
+                )}
               </Button>
             </Box>
           </form>

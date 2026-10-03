@@ -1,6 +1,15 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import Link from "next/link";
+
 import {
   Box,
   Typography,
@@ -23,14 +32,17 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
-import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
+
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import SupportChatPanel from "@/app/components/chat/SupportChatPanel";
 import { isChatEnabled } from "@/lib/firebaseConfig";
-import { useConversationList, type LiveConversation } from "@/hooks/useConversationList";
+import {
+  useConversationList,
+  type LiveConversation,
+} from "@/hooks/useConversationList";
 import {
   getSyncedSelectedConversation,
   setSyncedSelectedConversation,
@@ -49,31 +61,41 @@ interface MessagesWorkspaceProps {
 function conversationPreview(lastMessage?: LiveConversation["lastMessage"]) {
   if (!lastMessage) return "";
   if (typeof lastMessage === "string") return lastMessage;
+
   if (typeof lastMessage === "object" && "preview" in lastMessage) {
     return String((lastMessage as { preview?: string }).preview || "");
   }
+
   return "";
 }
 
 function customerDisplayName(c: LiveConversation) {
   const name = c.customerName?.trim();
+
   if (name) return name;
+
   return "Customer";
 }
 
 function conversationSubtitle(c: LiveConversation, isAdmin: boolean) {
   const preview = conversationPreview(c.lastMessage);
+
   if (!isAdmin) return preview || "Support team";
+
   return preview || "No messages yet";
 }
 
 function formatRelativeTime(value?: unknown) {
   if (!value) return "";
   let d: Date | null = null;
+
   if (typeof value === "string") {
     d = new Date(value);
   } else if (typeof value === "object" && value !== null) {
-    if ("toDate" in value && typeof (value as { toDate: () => Date }).toDate === "function") {
+    if (
+      "toDate" in value &&
+      typeof (value as { toDate: () => Date }).toDate === "function"
+    ) {
       d = (value as { toDate: () => Date }).toDate();
     } else if ("seconds" in value) {
       d = new Date((value as { seconds: number }).seconds * 1000);
@@ -81,14 +103,18 @@ function formatRelativeTime(value?: unknown) {
       d = new Date((value as { _seconds: number })._seconds * 1000);
     }
   }
+
   if (!d || Number.isNaN(d.getTime())) return "";
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);
+
   if (diffMin < 1) return "now";
   if (diffMin < 60) return `${diffMin}m`;
   const diffHr = Math.floor(diffMin / 60);
+
   if (diffHr < 24) return `${diffHr}h`;
+
   return d.toLocaleDateString();
 }
 
@@ -106,9 +132,11 @@ export default function MessagesWorkspace({
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
+
   const [selectedId, setSelectedId] = useState<string | null>(
-    initialSelectedId || getSyncedSelectedConversation()
+    initialSelectedId || getSyncedSelectedConversation(),
   );
+
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -117,27 +145,43 @@ export default function MessagesWorkspace({
   const isAdmin = isAdminProp ?? role === "admin";
   const isPopup = variant === "popup";
   const chatEnabled = isChatEnabled();
-  const { conversations, loading, error: listError, reload } = useConversationList(userId, isAdmin, ready);
+
+  const {
+    conversations,
+    loading,
+    error: listError,
+    reload,
+  } = useConversationList(userId, isAdmin, ready);
+
   const error = localError || listError;
 
   useEffect(() => {
     const syncIdentity = () => {
       try {
         const token = localStorage.getItem("token");
+
         if (!token) {
           userIdRef.current = null;
           setUserId(null);
           setRole(null);
           setSelectedId(null);
+
           return;
         }
+
         const decoded = jwtDecode<{ userId?: string; role?: string }>(token);
         const nextUserId = decoded.userId || null;
         const nextRole = decoded.role || null;
-        if (userIdRef.current && nextUserId && userIdRef.current !== nextUserId) {
+
+        if (
+          userIdRef.current &&
+          nextUserId &&
+          userIdRef.current !== nextUserId
+        ) {
           setSelectedId(null);
           setSyncedSelectedConversation(null);
         }
+
         userIdRef.current = nextUserId;
         setUserId(nextUserId);
         setRole(nextRole);
@@ -152,6 +196,7 @@ export default function MessagesWorkspace({
     syncIdentity();
     window.addEventListener("authChange", syncIdentity);
     window.addEventListener("storage", syncIdentity);
+
     return () => {
       window.removeEventListener("authChange", syncIdentity);
       window.removeEventListener("storage", syncIdentity);
@@ -170,6 +215,7 @@ export default function MessagesWorkspace({
   useEffect(() => {
     if (conversations.length === 1 && !isAdmin && !selectedId) {
       const id = conversations[0]!.id;
+
       setSelectedId(id);
       setSyncedSelectedConversation(id);
       setShowListOnMobile(false);
@@ -180,15 +226,20 @@ export default function MessagesWorkspace({
     if (isAdmin) return;
     setCreating(true);
     setLocalError(null);
+
     try {
       const res = await fetch("/api/conversations", {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
+
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Failed to start chat");
+
+      if (!res.ok || !data.success)
+        throw new Error(data.message || "Failed to start chat");
       await reload();
+
       if (data.conversationId) {
         setSelectedId(data.conversationId);
         setSyncedSelectedConversation(data.conversationId);
@@ -202,17 +253,37 @@ export default function MessagesWorkspace({
   }, [isAdmin, reload]);
 
   useEffect(() => {
-    if (!loading && !isAdmin && conversations.length === 0 && userId && chatEnabled && !creating && !error) {
+    if (
+      !loading &&
+      !isAdmin &&
+      conversations.length === 0 &&
+      userId &&
+      chatEnabled &&
+      !creating &&
+      !error
+    ) {
       ensureCustomerConversation();
     }
-  }, [loading, isAdmin, conversations.length, userId, chatEnabled, creating, error, ensureCustomerConversation]);
+  }, [
+    loading,
+    isAdmin,
+    conversations.length,
+    userId,
+    chatEnabled,
+    creating,
+    error,
+    ensureCustomerConversation,
+  ]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!q) return conversations;
+
     return conversations.filter((c) => {
       const name = (c.customerName || "").toLowerCase();
       const last = conversationPreview(c.lastMessage).toLowerCase();
+
       return name.includes(q) || last.includes(q);
     });
   }, [conversations, search]);
@@ -241,7 +312,14 @@ export default function MessagesWorkspace({
 
   if (!ready || (loading && conversations.length === 0)) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: isPopup ? 360 : 400 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: isPopup ? 360 : 400,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -250,14 +328,22 @@ export default function MessagesWorkspace({
   if (!userId || role === "guest") {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="text.secondary">Please log in to use chat.</Typography>
+        <Typography color="text.secondary">
+          Please log in to use chat.
+        </Typography>
       </Box>
     );
   }
 
   const sidebarWidth = isPopup ? (isAdmin ? 200 : 0) : 320;
-  const showSidebar = isPopup ? isAdmin && (!isMobile || showListOnMobile) : !isMobile || showListOnMobile;
-  const showChat = isPopup ? (!isAdmin || !isMobile || !showListOnMobile) : !isMobile || !showListOnMobile;
+
+  const showSidebar = isPopup
+    ? isAdmin && (!isMobile || showListOnMobile)
+    : !isMobile || showListOnMobile;
+
+  const showChat = isPopup
+    ? !isAdmin || !isMobile || !showListOnMobile
+    : !isMobile || !showListOnMobile;
 
   return (
     <Box
@@ -298,7 +384,12 @@ export default function MessagesWorkspace({
             <ChatBubbleOutlineIcon sx={{ fontSize: 20 }} />
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.25} sx={{ fontSize: "0.95rem" }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              lineHeight={1.25}
+              sx={{ fontSize: "0.95rem" }}
+            >
               {isAdmin ? "Messages" : "Support Assistant"}
             </Typography>
             <Typography
@@ -309,7 +400,11 @@ export default function MessagesWorkspace({
                 lineHeight: 1.3,
               }}
             >
-              {isAdmin ? "All customer chats · syncs across windows" : (storeName ? `${storeName} · we're here to help` : "Store Support · we're here to help")}
+              {isAdmin
+                ? "All customer chats · syncs across windows"
+                : storeName
+                  ? `${storeName} · we're here to help`
+                  : "Store Support · we're here to help"}
             </Typography>
           </Box>
           <IconButton
@@ -362,12 +457,25 @@ export default function MessagesWorkspace({
             }}
           >
             {!isPopup && (
-              <Box sx={{ px: 2, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box
+                sx={{
+                  px: 2,
+                  py: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Typography variant="h6" fontWeight={700}>
                   Messages
                 </Typography>
                 {!isAdmin && (
-                  <IconButton size="small" onClick={ensureCustomerConversation} disabled={creating} title="New chat">
+                  <IconButton
+                    size="small"
+                    onClick={ensureCustomerConversation}
+                    disabled={creating}
+                    title="New chat"
+                  >
                     <AddIcon />
                   </IconButton>
                 )}
@@ -428,6 +536,7 @@ export default function MessagesWorkspace({
                 const label = isAdmin ? customerDisplayName(c) : "Support";
                 const sub = conversationSubtitle(c, isAdmin);
                 const initial = (label[0] || "?").toUpperCase();
+
                 return (
                   <ListItemButton
                     key={c.id}
@@ -436,16 +545,25 @@ export default function MessagesWorkspace({
                     sx={{ py: 1.25 }}
                   >
                     <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: "#111", width: 40, height: 40 }}>{initial}</Avatar>
+                      <Avatar sx={{ bgcolor: "#111", width: 40, height: 40 }}>
+                        {initial}
+                      </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={label}
                       secondary={sub}
                       primaryTypographyProps={{ fontWeight: 600, noWrap: true }}
-                      secondaryTypographyProps={{ noWrap: true, fontSize: "0.8rem" }}
+                      secondaryTypographyProps={{
+                        noWrap: true,
+                        fontSize: "0.8rem",
+                      }}
                     />
                     {formatRelativeTime(c.updatedAt) ? (
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 1, flexShrink: 0 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 1, flexShrink: 0 }}
+                      >
                         {formatRelativeTime(c.updatedAt)}
                       </Typography>
                     ) : null}
@@ -457,7 +575,15 @@ export default function MessagesWorkspace({
         )}
 
         {showChat && (
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, bgcolor: "background.paper" }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minWidth: 0,
+              bgcolor: "background.paper",
+            }}
+          >
             {!isPopup && (
               <>
                 <Box
@@ -476,13 +602,22 @@ export default function MessagesWorkspace({
                       component="button"
                       variant="body2"
                       onClick={() => setShowListOnMobile(true)}
-                      sx={{ border: "none", bgcolor: "transparent", cursor: "pointer", mr: 1 }}
+                      sx={{
+                        border: "none",
+                        bgcolor: "transparent",
+                        cursor: "pointer",
+                        mr: 1,
+                      }}
                     >
                       ← Back
                     </Typography>
                   )}
                   <ChatBubbleOutlineIcon color="action" />
-                  <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    sx={{ flex: 1 }}
+                  >
                     {selected ? otherLabel : "Select a chat"}
                   </Typography>
                   {selectedId && (
@@ -500,7 +635,14 @@ export default function MessagesWorkspace({
             )}
 
             {selectedId && userId && firebaseUser ? (
-              <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
                 <SupportChatPanel
                   conversationId={selectedId}
                   currentUserId={userId}

@@ -1,7 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { Snackbar, Alert } from "@mui/material";
+
 import {
   addToCart as addItem,
   cartCount,
@@ -28,6 +37,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+
   const [toastState, setToastState] = useState<{
     open: boolean;
     message: string;
@@ -42,15 +52,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     refresh();
     window.addEventListener("cartChange", refresh);
     window.addEventListener("storage", refresh);
+
     return () => {
       window.removeEventListener("cartChange", refresh);
       window.removeEventListener("storage", refresh);
     };
   }, [refresh]);
 
-  const toast = useCallback((message: string, severity: "success" | "error" | "info" = "success") => {
-    setToastState({ open: true, message, severity });
-  }, []);
+  const toast = useCallback(
+    (message: string, severity: "success" | "error" | "info" = "success") => {
+      setToastState({ open: true, message, severity });
+    },
+    [],
+  );
 
   const value = useMemo<CartContextValue>(
     () => ({
@@ -75,7 +89,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       },
       toast,
     }),
-    [items, refresh, toast]
+    [items, refresh, toast],
   );
 
   return (
@@ -102,9 +116,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const ctx = useContext(CartContext);
+
   if (!ctx) {
     throw new Error("useCart must be used within CartProvider");
   }
+
   return ctx;
 }
 

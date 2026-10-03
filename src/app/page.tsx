@@ -18,9 +18,14 @@ export default async function Home() {
     getDeliverySettings(),
     getPublicPromotions().catch(() => []),
   ]);
+
   const showDeliveryPromo = isDeliveryPromoActive(deliverySettings);
+
   // Highest-priority live public promotion drives the banner when the store-wide delivery toggle is off.
-  const featured = promotions.filter((p) => p.status === "active").sort((a, b) => b.priority - a.priority)[0] || null;
+  const featured =
+    promotions
+      .filter((p) => p.status === "active")
+      .sort((a, b) => b.priority - a.priority)[0] || null;
 
   return (
     <main>
@@ -33,7 +38,10 @@ export default async function Home() {
       {showDeliveryPromo ? (
         <HomeFreeDeliveryBanner savedAmount={deliverySettings.fee} />
       ) : featured ? (
-        <PromotionBanner promotion={featured} deliveryFee={deliverySettings.fee} />
+        <PromotionBanner
+          promotion={featured}
+          deliveryFee={deliverySettings.fee}
+        />
       ) : null}
       <HeroSection config={settings.home.heroSection} />
       <TopRatedProducts count={settings.home.topRatedCount} />

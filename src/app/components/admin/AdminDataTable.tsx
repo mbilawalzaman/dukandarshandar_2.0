@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import {
   Table,
   TableBody,
@@ -13,8 +14,9 @@ import {
   TextField,
   Box,
   Typography,
-  Chip
+  Chip,
 } from "@mui/material";
+
 import Dropdown, { type TableRowAction } from "../ui/Dropdown";
 
 export type { TableRowAction };
@@ -75,19 +77,33 @@ export default function AdminDataTable<T extends { _id?: string }>({
   const [searchTerm, setSearchTerm] = useState("");
 
   const isServer = Boolean(serverPagination);
-  const activeSearch = isServer ? serverPagination!.searchTerm ?? "" : searchTerm;
+
+  const activeSearch = isServer
+    ? (serverPagination!.searchTerm ?? "")
+    : searchTerm;
+
   const activePage = isServer ? serverPagination!.page : page;
-  const activeRowsPerPage = isServer ? serverPagination!.rowsPerPage : rowsPerPage;
+
+  const activeRowsPerPage = isServer
+    ? serverPagination!.rowsPerPage
+    : rowsPerPage;
 
   const filteredData = isServer
     ? data
     : data.filter((row) => {
         if (!searchTerm) return true;
+
         if (searchField) {
           const val = row[searchField];
-          return String(val ?? "").toLowerCase().includes(searchTerm.toLowerCase());
+
+          return String(val ?? "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
         }
-        return JSON.stringify(row).toLowerCase().includes(searchTerm.toLowerCase());
+
+        return JSON.stringify(row)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
       });
 
   const handleChangePage = (_event: unknown, newPage: number) => {
@@ -95,8 +111,11 @@ export default function AdminDataTable<T extends { _id?: string }>({
     else setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const next = +event.target.value;
+
     if (isServer) serverPagination!.onRowsPerPageChange(next);
     else {
       setRowsPerPage(next);
@@ -106,27 +125,39 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
   const displayRows = isServer
     ? filteredData
-    : filteredData.slice(activePage * activeRowsPerPage, activePage * activeRowsPerPage + activeRowsPerPage);
+    : filteredData.slice(
+        activePage * activeRowsPerPage,
+        activePage * activeRowsPerPage + activeRowsPerPage,
+      );
 
   const totalCount = isServer ? serverPagination!.total : filteredData.length;
 
   const allDisplayIds = displayRows.map((r) => r._id!).filter(Boolean);
-  const isAllSelected = allDisplayIds.length > 0 && allDisplayIds.every((id) => selectedIds.includes(id));
-  const isSomeSelected = allDisplayIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
+
+  const isAllSelected =
+    allDisplayIds.length > 0 &&
+    allDisplayIds.every((id) => selectedIds.includes(id));
+
+  const isSomeSelected =
+    allDisplayIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!onSelectChange) return;
+
     if (event.target.checked) {
       const combined = Array.from(new Set([...selectedIds, ...allDisplayIds]));
+
       onSelectChange(combined);
     } else {
       const remaining = selectedIds.filter((id) => !allDisplayIds.includes(id));
+
       onSelectChange(remaining);
     }
   };
 
   const handleSelectRow = (id: string) => {
     if (!onSelectChange) return;
+
     if (selectedIds.includes(id)) {
       onSelectChange(selectedIds.filter((item) => item !== id));
     } else {
@@ -155,14 +186,30 @@ export default function AdminDataTable<T extends { _id?: string }>({
           gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            flexWrap: "wrap",
+          }}
+        >
           <Typography
             variant="h6"
-            sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+            sx={{
+              fontWeight: 700,
+              color: "#1e293b",
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
+            }}
           >
             {title}
           </Typography>
-          <Chip label={`${totalCount} entries`} size="small" color="primary" variant="outlined" />
+          <Chip
+            label={`${totalCount} entries`}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
           {selectable && selectedIds.length > 0 && (
             <Chip
               label={`${selectedIds.length} selected`}
@@ -173,7 +220,14 @@ export default function AdminDataTable<T extends { _id?: string }>({
           )}
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
           {selectable && selectedIds.length > 0 && batchActions}
           <TextField
             size="small"
@@ -181,6 +235,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
             value={activeSearch}
             onChange={(e) => {
               const value = e.target.value;
+
               if (isServer) serverPagination!.onSearchChange?.(value);
               else {
                 setSearchTerm(value);
@@ -194,8 +249,15 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
       <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
         <Table aria-label="admin data table" sx={{ minWidth: 600 }}>
-          <TableHead sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", display: "table-header-group" }}>
-            <TableRow sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}>
+          <TableHead
+            sx={{
+              backgroundColor: "var(--theme-bg-default, #f8fafc)",
+              display: "table-header-group",
+            }}
+          >
+            <TableRow
+              sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)" }}
+            >
               {selectable && (
                 <TableCell
                   padding="checkbox"
@@ -241,20 +303,33 @@ export default function AdminDataTable<T extends { _id?: string }>({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (selectable ? 1 : 0)} align="center" sx={{ py: 6 }}>
-                  <Typography color="text.secondary">Loading data...</Typography>
+                <TableCell
+                  colSpan={columns.length + (selectable ? 1 : 0)}
+                  align="center"
+                  sx={{ py: 6 }}
+                >
+                  <Typography color="text.secondary">
+                    Loading data...
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : displayRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (selectable ? 1 : 0)} align="center" sx={{ py: 6 }}>
-                  <Typography color="text.secondary">No records found.</Typography>
+                <TableCell
+                  colSpan={columns.length + (selectable ? 1 : 0)}
+                  align="center"
+                  sx={{ py: 6 }}
+                >
+                  <Typography color="text.secondary">
+                    No records found.
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               displayRows.map((row, index) => {
                 const rowId = row._id!;
                 const isSelected = selectedIds.includes(rowId);
+
                 return (
                   <TableRow
                     hover
@@ -264,7 +339,10 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     selected={isSelected}
                   >
                     {selectable && (
-                      <TableCell padding="checkbox" sx={{ py: 1.25, pl: 1.5, pr: 0.5 }}>
+                      <TableCell
+                        padding="checkbox"
+                        sx={{ py: 1.25, pl: 1.5, pr: 0.5 }}
+                      >
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -276,11 +354,20 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     {columns.map((column) => {
                       if (column.id === "actions") {
                         return (
-                          <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.25, px: 1 }}>
+                          <TableCell
+                            key="actions"
+                            align={column.align || "right"}
+                            sx={{ py: 1.25, px: 1 }}
+                          >
                             <Box
                               sx={{
                                 display: "flex",
-                                justifyContent: column.align === "left" ? "flex-start" : column.align === "center" ? "center" : "flex-end",
+                                justifyContent:
+                                  column.align === "left"
+                                    ? "flex-start"
+                                    : column.align === "center"
+                                      ? "center"
+                                      : "flex-end",
                                 gap: 0.5,
                               }}
                             >
@@ -297,9 +384,16 @@ export default function AdminDataTable<T extends { _id?: string }>({
                       }
 
                       const value = row[column.id as keyof T];
+
                       return (
-                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.25, px: 1.25 }}>
-                          {column.format ? column.format(value, row) : String(value ?? "")}
+                        <TableCell
+                          key={String(column.id)}
+                          align={column.align || "left"}
+                          sx={{ py: 1.25, px: 1.25 }}
+                        >
+                          {column.format
+                            ? column.format(value, row)
+                            : String(value ?? "")}
                         </TableCell>
                       );
                     })}

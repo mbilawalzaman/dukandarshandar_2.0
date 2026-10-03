@@ -1,6 +1,11 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
+
+import Link from "next/link";
+
+import { useRouter } from "next/navigation";
+
 import {
   Box,
   AppBar,
@@ -16,10 +21,10 @@ import {
   Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { jwtDecode } from "jwt-decode";
 import { signOut } from "firebase/auth";
+
 import AdminSidebar from "../components/admin/AdminSidebar";
 import NotificationBell from "../components/notifications/NotificationBell";
 import { isChatEnabled } from "@/lib/firebaseConfig";
@@ -31,7 +36,11 @@ import { ensureFreshAccessToken, logoutClientSession } from "@/lib/authFetch";
 import { getDisplayName } from "@/lib/userDisplay";
 import UserAvatar from "@/app/components/ui/UserAvatar";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -48,15 +57,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         await ensureFreshAccessToken();
         const token = localStorage.getItem("token");
+
         if (!token) {
           router.replace("/login?next=/admin");
+
           return;
         }
-        const decoded = jwtDecode<{ role?: string; userName?: string; email?: string }>(token);
+
+        const decoded = jwtDecode<{
+          role?: string;
+          userName?: string;
+          email?: string;
+        }>(token);
+
         if (decoded.role !== "admin") {
           router.replace("/");
+
           return;
         }
+
         setUserName(decoded.userName || null);
         setUserEmail(decoded.email || null);
         setUserImage(localStorage.getItem("userImage"));
@@ -69,6 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await unregisterWebPushToken().catch(() => undefined);
+
     if (isChatEnabled()) {
       try {
         await signOut(getFirebaseAuth());
@@ -76,6 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         /* ignore */
       }
     }
+
     clearChatSessionState();
     await logoutClientSession();
     setAnchorElUser(null);
@@ -84,7 +105,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!allowed) return null;
 
-  const avatarUser = { name: userName, email: userEmail, image: userImage, role: "admin" };
+  const avatarUser = {
+    name: userName,
+    email: userEmail,
+    image: userImage,
+    role: "admin",
+  };
 
   const toggleSidebar = () => {
     if (isMobile) {
@@ -95,7 +121,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--theme-bg-default, #f1f5f9)" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "var(--theme-bg-default, #f1f5f9)",
+      }}
+    >
       <Suspense fallback={null}>
         <AdminSidebar
           open={sidebarOpen}
@@ -105,7 +137,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       </Suspense>
 
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          width: "100%",
+        }}
+      >
         <AppBar
           position="sticky"
           elevation={0}
@@ -117,9 +157,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             zIndex: (t) => t.zIndex.drawer + 1,
           }}
         >
-          <Toolbar sx={{ justifyContent: "space-between", px: { xs: 1.5, sm: 3 }, gap: 1 }}>
+          <Toolbar
+            sx={{
+              justifyContent: "space-between",
+              px: { xs: 1.5, sm: 3 },
+              gap: 1,
+            }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton onClick={toggleSidebar} edge="start" color="inherit" aria-label="open drawer">
+              <IconButton
+                onClick={toggleSidebar}
+                edge="start"
+                color="inherit"
+                aria-label="open drawer"
+              >
                 <MenuIcon />
               </IconButton>
               <Typography
@@ -134,7 +185,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Control Center
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1.5 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 0.5, sm: 1.5 },
+              }}
+            >
               <Typography
                 variant="body2"
                 component={Link}
@@ -170,10 +227,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <MenuItem disabled sx={{ opacity: "1 !important" }}>
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: BRAND.navy }}
+                    >
                       {getDisplayName(avatarUser)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "var(--theme-primary-main, #0284c7)", fontWeight: 600 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "var(--theme-primary-main, #0284c7)",
+                        fontWeight: 600,
+                      }}
+                    >
                       Administrator
                     </Typography>
                   </Box>
@@ -219,7 +285,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Toolbar>
         </AppBar>
 
-        <Container maxWidth="xl" sx={{ mt: { xs: 2.5, sm: 4 }, mb: 6, flexGrow: 1, px: { xs: 1.5, sm: 3 } }}>
+        <Container
+          maxWidth="xl"
+          sx={{
+            mt: { xs: 2.5, sm: 4 },
+            mb: 6,
+            flexGrow: 1,
+            px: { xs: 1.5, sm: 3 },
+          }}
+        >
           {children}
         </Container>
       </Box>

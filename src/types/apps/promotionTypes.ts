@@ -5,16 +5,19 @@
  * where the storefront shows it. Vouchers are the only kind that needs a code.
  */
 
-export type PromotionKind = "product_discount" | "flash_sale" | "voucher" | "free_shipping" | "bundle";
+export type PromotionKind =
+  "product_discount" | "flash_sale" | "voucher" | "free_shipping" | "bundle";
 
 export type PromotionVisibility = "public" | "private";
 
 /** Derived at read time from dates + flags. Only `draft` and `paused` are stored. */
-export type PromotionStatus = "draft" | "scheduled" | "active" | "paused" | "expired";
+export type PromotionStatus =
+  "draft" | "scheduled" | "active" | "paused" | "expired";
 
 export type PromotionScopeType = "all" | "categories" | "products";
 
-export type PromotionRewardType = "percentage" | "fixed" | "free_shipping" | "bundle";
+export type PromotionRewardType =
+  "percentage" | "fixed" | "free_shipping" | "bundle";
 
 export interface PromotionScope {
   type: PromotionScopeType;
@@ -103,7 +106,16 @@ export interface Promotion {
 }
 
 export type PromotionInput = Partial<
-  Omit<Promotion, "_id" | "stats" | "status" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy">
+  Omit<
+    Promotion,
+    | "_id"
+    | "stats"
+    | "status"
+    | "createdAt"
+    | "updatedAt"
+    | "createdBy"
+    | "updatedBy"
+  >
 >;
 
 /** Reusable preset ("promotion type") the admin picks when creating a promotion. */
@@ -172,7 +184,8 @@ export interface SendPromoEmailInput {
   promotionId: string;
   userIds?: string[];
   manualEmails?: string[];
-  segment?: "none" | "all_users" | "with_orders" | "inactive_30d" | "subscribers";
+  segment?:
+    "none" | "all_users" | "with_orders" | "inactive_30d" | "subscribers";
   customMessage?: string;
 }
 
@@ -185,7 +198,13 @@ export interface OrderDiscountLine {
   amount: number;
 }
 
-export const PROMOTION_KINDS: PromotionKind[] = ["product_discount", "flash_sale", "voucher", "free_shipping", "bundle"];
+export const PROMOTION_KINDS: PromotionKind[] = [
+  "product_discount",
+  "flash_sale",
+  "voucher",
+  "free_shipping",
+  "bundle",
+];
 
 export const PROMOTION_KIND_LABELS: Record<PromotionKind, string> = {
   product_discount: "Product Discount",

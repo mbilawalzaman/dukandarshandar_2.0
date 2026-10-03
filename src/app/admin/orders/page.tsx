@@ -1,8 +1,7 @@
 "use client";
 
-import { allowedOrderTransitions } from "@/lib/orderRules";
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+
 import {
   Box,
   Typography,
@@ -20,6 +19,8 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import PrintIcon from "@mui/icons-material/Print";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+
+import { allowedOrderTransitions } from "@/lib/orderRules";
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
@@ -60,7 +61,8 @@ interface OrderSummary {
   statusCounts: Record<string, number>;
 }
 
-type PaymentFilter = "all" | "cod" | "card" | "paid" | "unpaid" | "awaiting" | "failed";
+type PaymentFilter =
+  "all" | "cod" | "card" | "paid" | "unpaid" | "awaiting" | "failed";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cod: "Cash on Delivery",
@@ -71,6 +73,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 function paymentMethodLabel(method?: string) {
   if (!method) return "COD";
+
   return PAYMENT_METHOD_LABELS[method] || method.toUpperCase();
 }
 
@@ -78,30 +81,54 @@ function paymentStatusChip(order: Order) {
   const status = order.status?.toLowerCase();
   const paymentStatus = order.payment_status?.toLowerCase();
 
-  if (paymentStatus === "refunded") return <Chip label="Refund initiated" color="info" size="small" />;
+  if (paymentStatus === "refunded")
+    return <Chip label="Refund initiated" color="info" size="small" />;
+
   if (status === "pending_payment") {
-    return <Chip label="Awaiting payment" color="warning" size="small" variant="outlined" />;
+    return (
+      <Chip
+        label="Awaiting payment"
+        color="warning"
+        size="small"
+        variant="outlined"
+      />
+    );
   }
+
   if (status === "payment_failed" || paymentStatus === "failed") {
     return <Chip label="Failed" color="error" size="small" />;
   }
+
   if (paymentStatus === "paid") {
     return <Chip label="Paid" color="success" size="small" />;
   }
+
   if (order.payment_method === "cod") {
-    return <Chip label="COD (unpaid)" color="default" size="small" variant="outlined" />;
+    return (
+      <Chip
+        label="COD (unpaid)"
+        color="default"
+        size="small"
+        variant="outlined"
+      />
+    );
   }
-  return <Chip label="Unpaid" color="warning" size="small" variant="outlined" />;
+
+  return (
+    <Chip label="Unpaid" color="warning" size="small" variant="outlined" />
+  );
 }
 
 function fulfillmentLabel(status: string, order: Order) {
   const key = (status || "").toLowerCase().replace(/\s+/g, "_");
+
   if (key === "pending_payment") return "Awaiting payment";
   if (key === "payment_failed") return "Payment failed";
   if (key === "payment_review") return "Payment needs review";
   if (key === "cancelling") return "Cancellation pending";
   if (key === "ready_to_ship") return "Ready to Ship";
   if (key === "pending" && order.payment_status === "paid") return "Confirmed";
+
   return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
 }
 
@@ -113,12 +140,23 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState<OrderSummary>({ totalOrders: 0, statusCounts: {} });
+
+  const [summary, setSummary] = useState<OrderSummary>({
+    totalOrders: 0,
+    statusCounts: {},
+  });
+
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
-  const [selectedOrderForLabel, setSelectedOrderForLabel] = useState<Order | null>(null);
+
+  const [selectedOrderForLabel, setSelectedOrderForLabel] =
+    useState<Order | null>(null);
+
   const [labelModalOpen, setLabelModalOpen] = useState(false);
-  const [selectedOrderForPostex, setSelectedOrderForPostex] = useState<Order | null>(null);
+
+  const [selectedOrderForPostex, setSelectedOrderForPostex] =
+    useState<Order | null>(null);
+
   const [postexModalOpen, setPostexModalOpen] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [bulkPostexModalOpen, setBulkPostexModalOpen] = useState(false);
@@ -135,23 +173,30 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const params = new URLSearchParams({
         page: String(page + 1),
         limit: String(rowsPerPage),
       });
+
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
 
       const res = await fetch(`/api/orders?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
       const data = await res.json();
+
       if (data.success) {
         setOrders(data.orders || []);
         setTotal(data.pagination?.total ?? 0);
@@ -168,9 +213,15 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const handleStatusChange = async (orderId: string, newStatus: string, targetOrder?: Order) => {
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: string,
+    targetOrder?: Order,
+  ) => {
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const res = await fetch("/api/orders", {
         method: "PUT",
         headers: {
@@ -179,9 +230,12 @@ export default function AdminOrdersPage() {
         },
         body: JSON.stringify({ _id: orderId, status: newStatus }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         fetchOrders();
+
         if (newStatus === "shipped" && targetOrder) {
           handleOpenLabelModal(targetOrder);
         }
@@ -216,7 +270,11 @@ export default function AdminOrdersPage() {
         case "paid":
           return paymentStatus === "paid";
         case "unpaid":
-          return paymentStatus !== "paid" && method !== "cod" && status !== "cancelled";
+          return (
+            paymentStatus !== "paid" &&
+            method !== "cod" &&
+            status !== "cancelled"
+          );
         case "awaiting":
           return status === "pending_payment";
         case "failed":
@@ -228,10 +286,24 @@ export default function AdminOrdersPage() {
   }, [orders, paymentFilter]);
 
   const pageStats = useMemo(() => {
-    const awaitingPayment = orders.filter((o) => o.status === "pending_payment").length;
-    const paidOnline = orders.filter((o) => o.payment_status === "paid" && o.payment_method === "card");
-    const onlineRevenue = paidOnline.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-    return { awaitingPayment, paidOnlineCount: paidOnline.length, onlineRevenue };
+    const awaitingPayment = orders.filter(
+      (o) => o.status === "pending_payment",
+    ).length;
+
+    const paidOnline = orders.filter(
+      (o) => o.payment_status === "paid" && o.payment_method === "card",
+    );
+
+    const onlineRevenue = paidOnline.reduce(
+      (sum, o) => sum + Number(o.total_amount || 0),
+      0,
+    );
+
+    return {
+      awaitingPayment,
+      paidOnlineCount: paidOnline.length,
+      onlineRevenue,
+    };
   }, [orders]);
 
   const columns: ColumnDef<Order>[] = [
@@ -247,7 +319,10 @@ export default function AdminOrdersPage() {
       label: "Shipping Address",
       minWidth: 160,
       format: (_val, row) => {
-        const parts = [row.address, row.area, row.city, row.province].filter(Boolean);
+        const parts = [row.address, row.area, row.city, row.province].filter(
+          Boolean,
+        );
+
         return parts.join(", ") || "—";
       },
     },
@@ -286,21 +361,42 @@ export default function AdminOrdersPage() {
           <FormControl size="small" variant="outlined" sx={{ minWidth: 115 }}>
             <Select
               value={val || "pending"}
-              onChange={(e) => handleStatusChange(row._id as string, e.target.value as string, row)}
+              onChange={(e) =>
+                handleStatusChange(
+                  row._id as string,
+                  e.target.value as string,
+                  row,
+                )
+              }
               sx={{ fontSize: "0.8rem", height: 30, px: 0.5 }}
-              renderValue={(selected) => fulfillmentLabel(String(selected), row)}
+              renderValue={(selected) =>
+                fulfillmentLabel(String(selected), row)
+              }
             >
-              <MenuItem value={row.status}>{fulfillmentLabel(row.status, row)}</MenuItem>
+              <MenuItem value={row.status}>
+                {fulfillmentLabel(row.status, row)}
+              </MenuItem>
               {allowedOrderTransitions(row).map((next) => (
-                <MenuItem key={next} value={next}>{fulfillmentLabel(next, row)}</MenuItem>
+                <MenuItem key={next} value={next}>
+                  {fulfillmentLabel(next, row)}
+                </MenuItem>
               ))}
-              {row.status === "cancelling" && <MenuItem value="cancelled">Retry cancellation</MenuItem>}
+              {row.status === "cancelling" && (
+                <MenuItem value="cancelled">Retry cancellation</MenuItem>
+              )}
             </Select>
           </FormControl>
           {(() => {
             const isShipped = row.status === "shipped";
+
             return (
-              <Tooltip title={isShipped ? "Print Shipping Label (DS)" : "Available when order is Shipped"}>
+              <Tooltip
+                title={
+                  isShipped
+                    ? "Print Shipping Label (DS)"
+                    : "Available when order is Shipped"
+                }
+              >
                 <span>
                   <IconButton
                     size="small"
@@ -328,18 +424,30 @@ export default function AdminOrdersPage() {
               </Tooltip>
             );
           })()}
-          <Tooltip title={row.postexDetails?.trackingNumber ? `PostEx: ${row.postexDetails.trackingNumber}` : "Book with PostEx Courier"}>
+          <Tooltip
+            title={
+              row.postexDetails?.trackingNumber
+                ? `PostEx: ${row.postexDetails.trackingNumber}`
+                : "Book with PostEx Courier"
+            }
+          >
             <IconButton
               size="small"
               onClick={() => handleOpenPostexModal(row)}
               sx={{
                 border: `1px solid ${row.postexDetails?.trackingNumber ? "#10b981" : "#3b82f6"}`,
-                backgroundColor: row.postexDetails?.trackingNumber ? "#ecfdf5" : "#eff6ff",
-                color: row.postexDetails?.trackingNumber ? "#059669" : "#2563eb",
+                backgroundColor: row.postexDetails?.trackingNumber
+                  ? "#ecfdf5"
+                  : "#eff6ff",
+                color: row.postexDetails?.trackingNumber
+                  ? "#059669"
+                  : "#2563eb",
                 borderRadius: "50%",
                 p: 0.4,
                 "&:hover": {
-                  backgroundColor: row.postexDetails?.trackingNumber ? "#d1fae5" : "#dbeafe",
+                  backgroundColor: row.postexDetails?.trackingNumber
+                    ? "#d1fae5"
+                    : "#dbeafe",
                 },
               }}
             >
@@ -355,14 +463,28 @@ export default function AdminOrdersPage() {
       minWidth: 100,
       format: (val) => {
         const tracker = val ? String(val) : "";
-        if (!tracker) return <Typography variant="body2" color="text.secondary">—</Typography>;
+
+        if (!tracker)
+          return (
+            <Typography variant="body2" color="text.secondary">
+              —
+            </Typography>
+          );
+
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+            <Typography
+              variant="body2"
+              sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+            >
               {tracker.slice(0, 10)}…
             </Typography>
             <Tooltip title="Copy tracker ID">
-              <IconButton size="small" onClick={() => copyTracker(tracker)} sx={{ p: 0.2 }}>
+              <IconButton
+                size="small"
+                onClick={() => copyTracker(tracker)}
+                sx={{ p: 0.2 }}
+              >
                 <ContentCopyIcon sx={{ fontSize: 13 }} />
               </IconButton>
             </Tooltip>
@@ -380,17 +502,29 @@ export default function AdminOrdersPage() {
       id: "created_at",
       label: "Order Date",
       minWidth: 85,
-      format: (val) => (val ? new Date(String(val)).toLocaleDateString() : "N/A"),
+      format: (val) =>
+        val ? new Date(String(val)).toLocaleDateString() : "N/A",
     },
   ];
 
   const pendingCount = summary.statusCounts?.pending ?? 0;
   const deliveredCount = summary.statusCounts?.delivered ?? 0;
-  const awaitingCount = summary.statusCounts?.pending_payment ?? pageStats.awaitingPayment;
+
+  const awaitingCount =
+    summary.statusCounts?.pending_payment ?? pageStats.awaitingPayment;
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 4, flexWrap: "wrap", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 4,
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
             Order Fulfillment & Revenues
@@ -399,20 +533,55 @@ export default function AdminOrdersPage() {
             Track purchases, payment status, Safepay trackers, and fulfillment.
           </Typography>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Chip label={`Total Orders: ${summary.totalOrders}`} color="primary" variant="outlined" size="small" />
-            <Chip label={`Pending: ${pendingCount}`} color="warning" size="small" />
-            <Chip label={`Awaiting payment: ${awaitingCount}`} color="warning" variant="outlined" size="small" />
-            <Chip label={`Paid online (page): ${pageStats.paidOnlineCount}`} color="success" size="small" />
-            <Chip label={`Delivered: ${deliveredCount}`} color="success" size="small" />
+            <Chip
+              label={`Total Orders: ${summary.totalOrders}`}
+              color="primary"
+              variant="outlined"
+              size="small"
+            />
+            <Chip
+              label={`Pending: ${pendingCount}`}
+              color="warning"
+              size="small"
+            />
+            <Chip
+              label={`Awaiting payment: ${awaitingCount}`}
+              color="warning"
+              variant="outlined"
+              size="small"
+            />
+            <Chip
+              label={`Paid online (page): ${pageStats.paidOnlineCount}`}
+              color="success"
+              size="small"
+            />
+            <Chip
+              label={`Delivered: ${deliveredCount}`}
+              color="success"
+              size="small"
+            />
           </Box>
         </Box>
 
-        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchOrders} sx={{ borderRadius: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={fetchOrders}
+          sx={{ borderRadius: 2 }}
+        >
           Refresh Orders
         </Button>
       </Box>
 
-      <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 2,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel id="payment-filter-label">Payment filter</InputLabel>
           <Select
@@ -471,7 +640,10 @@ export default function AdminOrdersPage() {
                 handleOpenLabelModal(row);
               }
             },
-            color: row.status === "shipped" ? "var(--theme-primary-main, #0284c7)" : "#94a3b8",
+            color:
+              row.status === "shipped"
+                ? "var(--theme-primary-main, #0284c7)"
+                : "#94a3b8",
           },
         ]}
         serverPagination={{

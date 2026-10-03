@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+
 import { getDb } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { UserRole } from "@/models/User";
@@ -14,7 +15,13 @@ export interface User {
 
 export const getUsers = async (): Promise<User[]> => {
   const db = await getDb();
-  const users = await db.collection("users").find().project({ password: 0 }).toArray();
+
+  const users = await db
+    .collection("users")
+    .find()
+    .project({ password: 0 })
+    .toArray();
+
   return users.map((user) => ({
     _id: user._id,
     name: user.name,
@@ -26,13 +33,21 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (userId: string): Promise<User | null> => {
   const db = await getDb();
-  const user = await db.collection<User>("users").findOne({ _id: new ObjectId(userId) }, { projection: { name: 1, email: 1, role: 1, created_at: 1 } });
+
+  const user = await db
+    .collection<User>("users")
+    .findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { name: 1, email: 1, role: 1, created_at: 1 } },
+    );
+
   return user || null;
 };
 
 export const createUser = async (user: User): Promise<User> => {
   const db = await getDb();
   const hashed = user.password ? await hashPassword(user.password) : undefined;
+
   const userData = {
     ...user,
     password: hashed,
@@ -40,6 +55,8 @@ export const createUser = async (user: User): Promise<User> => {
     created_at: new Date(),
     createdAt: new Date(),
   };
+
   const result = await db.collection("users").insertOne(userData);
+
   return { ...userData, _id: result.insertedId };
 };

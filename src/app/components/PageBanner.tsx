@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+
 import { Box, Typography } from "@mui/material";
+
 import type { MediaAsset } from "@/lib/pageSettings";
 import BannerMediaRenderer from "./ui/BannerMediaRenderer";
 
@@ -12,22 +14,29 @@ export interface PageBannerProps {
   bgMedia?: MediaAsset;
 }
 
-export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBannerProps) {
-  const mediaToRender: MediaAsset | null =
-    bgMedia?.url
-      ? bgMedia
-      : bgImage
-        ? {
-            type:
-              bgImage.toLowerCase().includes("/video/upload/") || /\.(mp4|webm|mov)(\?|$)/i.test(bgImage)
-                ? "video"
-                : "image",
-            url: bgImage,
-          }
-        : null;
+export default function PageBanner({
+  title,
+  subtitle,
+  bgImage,
+  bgMedia,
+}: PageBannerProps) {
+  const mediaToRender: MediaAsset | null = bgMedia?.url
+    ? bgMedia
+    : bgImage
+      ? {
+          type:
+            bgImage.toLowerCase().includes("/video/upload/") ||
+            /\.(mp4|webm|mov)(\?|$)/i.test(bgImage)
+              ? "video"
+              : "image",
+          url: bgImage,
+        }
+      : null;
 
   const isVideo = mediaToRender?.type === "video";
-  const isPlainImage = mediaToRender?.type === "image" && Boolean(mediaToRender.url);
+
+  const isPlainImage =
+    mediaToRender?.type === "image" && Boolean(mediaToRender.url);
 
   return (
     <Box
@@ -38,11 +47,12 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: mediaToRender?.url ? "transparent" : "var(--theme-bg-footer, #1e293b)",
-        backgroundImage:
-          isPlainImage
-            ? `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${mediaToRender.url})`
-            : "none",
+        backgroundColor: mediaToRender?.url
+          ? "transparent"
+          : "var(--theme-bg-footer, #1e293b)",
+        backgroundImage: isPlainImage
+          ? `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${mediaToRender.url})`
+          : "none",
         backgroundSize: "cover",
         backgroundPosition: "center",
         color: "#ffffff",
@@ -62,7 +72,10 @@ export default function PageBanner({ title, subtitle, bgImage, bgMedia }: PageBa
             zIndex: 0,
           }}
         >
-          <BannerMediaRenderer media={mediaToRender} style={{ width: "100%", height: "100%" }} />
+          <BannerMediaRenderer
+            media={mediaToRender}
+            style={{ width: "100%", height: "100%" }}
+          />
           <Box
             sx={{
               position: "absolute",

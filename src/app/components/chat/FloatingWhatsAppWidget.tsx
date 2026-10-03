@@ -1,9 +1,12 @@
 "use client";
 
 import React from "react";
+
+import { usePathname } from "next/navigation";
+
 import { Fab, Tooltip, Zoom } from "@mui/material";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import { usePathname } from "next/navigation";
+
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
 const FAB_SIZE = 54;
@@ -23,6 +26,7 @@ export default function FloatingWhatsAppWidget() {
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
     if (whatsAppUrl) {
       window.open(whatsAppUrl, "_blank", "noopener,noreferrer");
     }

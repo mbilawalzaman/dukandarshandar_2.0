@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+
 import {
   Grid,
   Typography,
@@ -20,6 +21,7 @@ import {
 } from "@mui/material";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
+
 import ProductCard, { type ProductCardData } from "./ProductCard";
 import FilterSidebar, { type FilterState } from "./catalog/FilterSidebar";
 import { BRAND } from "@/lib/uiBrand";
@@ -55,22 +57,32 @@ export default function ProductList({
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({ all: 0 });
+
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
+    all: 0,
+  });
+
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const perPage = productsPerPage > 0 ? productsPerPage : 9;
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(filters.searchInput), 300);
+    const timer = setTimeout(
+      () => setDebouncedSearch(filters.searchInput),
+      300,
+    );
+
     return () => clearTimeout(timer);
   }, [filters.searchInput]);
 
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
+
       const params = new URLSearchParams({
         page: String(page),
         limit: String(perPage),
       });
+
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
       if (filters.category !== "all") params.set("category", filters.category);
       if (filters.minPrice !== "") params.set("minPrice", filters.minPrice);
@@ -80,6 +92,7 @@ export default function ProductList({
 
       const res = await fetch(`/api/products?${params.toString()}`);
       const data = await res.json();
+
       if (data.success) {
         setProducts(
           (data.products || []).map((product: ProductCardData) => ({
@@ -88,7 +101,7 @@ export default function ProductList({
             quantity: Number(product.quantity) || 0,
             rating: Number(product.rating) || 0,
             description: product.description || "",
-          }))
+          })),
         );
         setTotal(data.pagination?.total ?? 0);
         setTotalPages(data.pagination?.totalPages ?? 1);
@@ -105,7 +118,10 @@ export default function ProductList({
     fetchProducts();
   }, [fetchProducts, refreshTrigger]);
 
-  const handleFilterChange = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+  const handleFilterChange = <K extends keyof FilterState>(
+    key: K,
+    value: FilterState[K],
+  ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };
@@ -158,7 +174,11 @@ export default function ProductList({
           variant="outlined"
           startIcon={<TuneIcon />}
           onClick={() => setMobileDrawerOpen(true)}
-          sx={{ textTransform: "none", fontWeight: 600, borderColor: "#cbd5e1" }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "#cbd5e1",
+          }}
         >
           Filters {hasActiveFilters && "• Active"}
         </Button>
@@ -196,7 +216,13 @@ export default function ProductList({
       </Drawer>
 
       <Grid container spacing={4}>
-        <Grid item xs={12} md={3.5} lg={3} sx={{ display: { xs: "none", md: "block" } }}>
+        <Grid
+          item
+          xs={12}
+          md={3.5}
+          lg={3}
+          sx={{ display: { xs: "none", md: "block" } }}
+        >
           <Paper
             elevation={0}
             sx={{
@@ -233,7 +259,10 @@ export default function ProductList({
             }}
           >
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: BRAND.navy }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 800, color: BRAND.navy }}
+              >
                 {filters.category === "all" ? "All Products" : filters.category}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -241,7 +270,10 @@ export default function ProductList({
               </Typography>
             </Box>
 
-            <FormControl size="small" sx={{ minWidth: 180, width: { xs: "100%", sm: "auto" } }}>
+            <FormControl
+              size="small"
+              sx={{ minWidth: 180, width: { xs: "100%", sm: "auto" } }}
+            >
               <InputLabel>Sort By</InputLabel>
               <Select
                 value={filters.sortBy}
@@ -314,7 +346,11 @@ export default function ProductList({
             {loading ? (
               [...Array(6)].map((_, index) => (
                 <Grid item xs={12} sm={6} md={6} lg={4} key={index}>
-                  <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 3 }} />
+                  <Skeleton
+                    variant="rectangular"
+                    height={320}
+                    sx={{ borderRadius: 3 }}
+                  />
                 </Grid>
               ))
             ) : products.length === 0 ? (
@@ -328,13 +364,26 @@ export default function ProductList({
                     backgroundColor: "#fafafa",
                   }}
                 >
-                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontWeight: 600 }}>
+                  <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    gutterBottom
+                    sx={{ fontWeight: 600 }}
+                  >
                     No products matched your criteria
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
                     Try removing some filters or search for another keyword.
                   </Typography>
-                  <Button variant="contained" onClick={handleResetFilters} size="small">
+                  <Button
+                    variant="contained"
+                    onClick={handleResetFilters}
+                    size="small"
+                  >
                     Reset Filters
                   </Button>
                 </Paper>

@@ -1,8 +1,11 @@
 "use client";
 
 import React from "react";
+
 import Image from "next/image";
+
 import { Box, Typography } from "@mui/material";
+
 import type { MediaAsset } from "@/lib/pageSettings";
 import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
 
@@ -18,6 +21,7 @@ function isVideoUrl(url: string, type?: string): boolean {
   if (type === "video") return true;
   if (!url) return false;
   const cleanUrl = url.toLowerCase().split("?")[0];
+
   return (
     cleanUrl.includes("/video/upload/") ||
     cleanUrl.endsWith(".mp4") ||
@@ -30,6 +34,7 @@ function isLegacyLottieUrl(url: string, type?: string): boolean {
   if (type === "lottie") return true;
   if (!url) return false;
   const cleanUrl = url.toLowerCase().split("?")[0];
+
   return (
     cleanUrl.endsWith(".json") ||
     cleanUrl.includes("/raw/upload/") ||
@@ -51,7 +56,10 @@ export default function BannerMediaRenderer({
   }
 
   // Filter out deleted local static image fallbacks
-  if (mediaUrl.startsWith("/images/") && !["/images/store-qr-code.png"].includes(mediaUrl)) {
+  if (
+    mediaUrl.startsWith("/images/") &&
+    !["/images/store-qr-code.png"].includes(mediaUrl)
+  ) {
     return null;
   }
 
@@ -70,8 +78,12 @@ export default function BannerMediaRenderer({
           ...style,
         }}
       >
-        <Typography variant="body2" sx={{ color: "#94a3b8", textAlign: "center" }}>
-          Legacy Lottie banner removed. Re-upload an MP4 or image in Admin → Manage Pages.
+        <Typography
+          variant="body2"
+          sx={{ color: "#94a3b8", textAlign: "center" }}
+        >
+          Legacy Lottie banner removed. Re-upload an MP4 or image in Admin →
+          Manage Pages.
         </Typography>
       </Box>
     );
@@ -79,6 +91,7 @@ export default function BannerMediaRenderer({
 
   if (isVideoUrl(mediaUrl, mediaType)) {
     const playableUrl = toPlayableVideoUrl(mediaUrl);
+
     return (
       <Box
         sx={{

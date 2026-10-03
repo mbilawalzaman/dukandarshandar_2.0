@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
+
 import { Box, Typography } from "@mui/material";
+
 import { BRAND } from "@/lib/uiBrand";
-import { useSafeStoreSettings, getStoreInitials } from "@/app/providers/StoreSettingsProvider";
+import {
+  useSafeStoreSettings,
+  getStoreInitials,
+} from "@/app/providers/StoreSettingsProvider";
 
 interface GlobalLoaderProps {
   fullScreen?: boolean;
@@ -19,7 +24,9 @@ export default function GlobalLoader({
   initials: customInitials,
 }: GlobalLoaderProps) {
   const { settings } = useSafeStoreSettings();
-  const displayInitials = customInitials || getStoreInitials(settings.shopName, "");
+
+  const displayInitials =
+    customInitials || getStoreInitials(settings.shopName, "");
 
   return (
     <Box
@@ -54,7 +61,8 @@ export default function GlobalLoader({
             border: `3px solid transparent`,
             borderTopColor: BRAND.gold,
             borderRightColor: "#042549",
-            animation: "spinSlow 1.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite",
+            animation:
+              "spinSlow 1.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite",
             "@keyframes spinSlow": {
               "0%": { transform: "rotate(0deg)" },
               "100%": { transform: "rotate(360deg)" },
@@ -91,12 +99,25 @@ export default function GlobalLoader({
             boxShadow: `0 0 20px ${BRAND.gold}66`,
             animation: "pulseGlow 1.8s ease-in-out infinite alternate",
             "@keyframes pulseGlow": {
-              "0%": { transform: "scale(0.88)", boxShadow: `0 0 10px ${BRAND.gold}33` },
-              "100%": { transform: "scale(1.08)", boxShadow: `0 0 25px ${BRAND.gold}aa` },
+              "0%": {
+                transform: "scale(0.88)",
+                boxShadow: `0 0 10px ${BRAND.gold}33`,
+              },
+              "100%": {
+                transform: "scale(1.08)",
+                boxShadow: `0 0 25px ${BRAND.gold}aa`,
+              },
             },
           }}
         >
-          <Typography sx={{ fontWeight: 800, color: BRAND.gold, fontSize: "1rem", letterSpacing: "-0.5px" }}>
+          <Typography
+            sx={{
+              fontWeight: 800,
+              color: BRAND.gold,
+              fontSize: "1rem",
+              letterSpacing: "-0.5px",
+            }}
+          >
             {displayInitials}
           </Typography>
         </Box>

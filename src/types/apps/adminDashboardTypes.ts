@@ -93,7 +93,15 @@ export type AdminPaymentStatsType = {
   onlineAttempts: number;
 };
 
-export const CATEGORY_COLORS = ["#0284c7", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
+export const CATEGORY_COLORS = [
+  "#0284c7",
+  "#f59e0b",
+  "#10b981",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#f97316",
+];
 
 export const STATUS_COLORS: Record<string, string> = {
   delivered: "#10b981",

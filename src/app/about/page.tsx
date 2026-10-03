@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   Box,
   Container,
@@ -12,7 +14,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ColorLensIcon from "@mui/icons-material/ColorLens";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SecurityIcon from "@mui/icons-material/Security";
-import Link from "next/link";
+
 import PageBanner from "../components/PageBanner";
 import AboutQuotesCarousel from "../components/about/AboutQuotesCarousel";
 import { BRAND } from "@/lib/uiBrand";
@@ -38,11 +40,20 @@ export default async function AboutPage() {
   const storeName = deliverySettings.shopName || "";
 
   const rawHighlights = settings.about.highlights || [];
+
   const highlights = rawHighlights
     .filter((item) => (item.title || "").trim() || (item.text || "").trim())
     .map((item: AboutHighlightItem) => {
-      const displayTitle = (item.title || "").replace(/\{storeName\}/g, storeName || "Our Store");
-      const displayText = (item.text || "").replace(/\{storeName\}/g, storeName || "our store");
+      const displayTitle = (item.title || "").replace(
+        /\{storeName\}/g,
+        storeName || "Our Store",
+      );
+
+      const displayText = (item.text || "").replace(
+        /\{storeName\}/g,
+        storeName || "our store",
+      );
+
       return {
         ...item,
         icon: ICON_MAP[item.icon] || ICON_MAP.time,
@@ -59,12 +70,19 @@ export default async function AboutPage() {
     buttonLink: "/shop",
   };
 
-  const storyTitle = (story.title || "").replace(/\{storeName\}/g, storeName || "Our Store");
-  const storyText = (story.text || "").replace(/\{storeName\}/g, storeName || "our store");
-
-  const quotes = (settings.about.quotes || []).filter((q) => q.trim()).map((q) =>
-    q.replace(/\{storeName\}/g, storeName || "our store")
+  const storyTitle = (story.title || "").replace(
+    /\{storeName\}/g,
+    storeName || "Our Store",
   );
+
+  const storyText = (story.text || "").replace(
+    /\{storeName\}/g,
+    storeName || "our store",
+  );
+
+  const quotes = (settings.about.quotes || [])
+    .filter((q) => q.trim())
+    .map((q) => q.replace(/\{storeName\}/g, storeName || "our store"));
 
   return (
     <Box>
@@ -82,8 +100,19 @@ export default async function AboutPage() {
               <Grid item xs={12} sm={6} md={3} key={item.id || idx}>
                 <Card sx={{ height: "100%", borderRadius: 3, p: 1 }}>
                   <CardContent>
-                    <Avatar sx={{ bgcolor: `${BRAND.gold}33`, color: BRAND.goldDark, mb: 2 }}>{item.icon}</Avatar>
-                    <Typography variant="h6" sx={{ mb: 1, fontSize: "1.05rem" }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${BRAND.gold}33`,
+                        color: BRAND.goldDark,
+                        mb: 2,
+                      }}
+                    >
+                      {item.icon}
+                    </Avatar>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 1, fontSize: "1.05rem" }}
+                    >
                       {item.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -104,7 +133,12 @@ export default async function AboutPage() {
                   component="img"
                   src={story.image}
                   alt={`About ${storeName}`}
-                  sx={{ width: "100%", borderRadius: 4, maxHeight: 420, objectFit: "cover" }}
+                  sx={{
+                    width: "100%",
+                    borderRadius: 4,
+                    maxHeight: 420,
+                    objectFit: "cover",
+                  }}
                 />
               </Grid>
             ) : null}
@@ -115,12 +149,20 @@ export default async function AboutPage() {
                 </Typography>
               )}
               {storyText && (
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3, lineHeight: 1.8 }}>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ mb: 3, lineHeight: 1.8 }}
+                >
                   {storyText}
                 </Typography>
               )}
               {story.buttonText && (
-                <Button component={Link} href={story.buttonLink || "/shop"} variant="contained">
+                <Button
+                  component={Link}
+                  href={story.buttonLink || "/shop"}
+                  variant="contained"
+                >
                   {story.buttonText}
                 </Button>
               )}

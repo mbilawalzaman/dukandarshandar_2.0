@@ -1,4 +1,7 @@
-import type { SafepayWebhookHeaders, SafepayWebhookPayload } from "@/types/apps/paymentTypes";
+import type {
+  SafepayWebhookHeaders,
+  SafepayWebhookPayload,
+} from "@/types/apps/paymentTypes";
 
 function normalizeEventToken(value: string): string {
   return value.toLowerCase().replace(/:/g, ".");
@@ -8,15 +11,28 @@ function resolveLegacyPaymentState(payload: SafepayWebhookPayload): string {
   return (payload.notification?.state || "").toUpperCase();
 }
 
-export function resolveSafepayEventType(payload: SafepayWebhookPayload, headers: SafepayWebhookHeaders): string {
-  const headerType = headers.eventType ? normalizeEventToken(headers.eventType) : "";
+export function resolveSafepayEventType(
+  payload: SafepayWebhookPayload,
+  headers: SafepayWebhookHeaders,
+): string {
+  const headerType = headers.eventType
+    ? normalizeEventToken(headers.eventType)
+    : "";
+
   const payloadType = payload.type ? normalizeEventToken(payload.type) : "";
   const payloadEvent = payload.event ? normalizeEventToken(payload.event) : "";
 
-  return headerType || payloadType || payloadEvent || (payload.data?.status || payload.status || "").toLowerCase();
+  return (
+    headerType ||
+    payloadType ||
+    payloadEvent ||
+    (payload.data?.status || payload.status || "").toLowerCase()
+  );
 }
 
-export function resolveSafepayOrderId(payload: SafepayWebhookPayload): string | null {
+export function resolveSafepayOrderId(
+  payload: SafepayWebhookPayload,
+): string | null {
   return (
     payload.metadata?.order_id ||
     payload.data?.metadata?.order_id ||
@@ -28,7 +44,9 @@ export function resolveSafepayOrderId(payload: SafepayWebhookPayload): string | 
   );
 }
 
-export function resolveSafepayTracker(payload: SafepayWebhookPayload): string | null {
+export function resolveSafepayTracker(
+  payload: SafepayWebhookPayload,
+): string | null {
   return (
     payload.tracker ||
     payload.notification?.tracker ||
@@ -38,10 +56,17 @@ export function resolveSafepayTracker(payload: SafepayWebhookPayload): string | 
   );
 }
 
-export function isSafepaySuccessEvent(eventType: string, payload: SafepayWebhookPayload): boolean {
+export function isSafepaySuccessEvent(
+  eventType: string,
+  payload: SafepayWebhookPayload,
+): boolean {
   const legacyState = resolveLegacyPaymentState(payload);
 
-  if (legacyState === "PAID" || legacyState === "COMPLETED" || legacyState === "SUCCEEDED") {
+  if (
+    legacyState === "PAID" ||
+    legacyState === "COMPLETED" ||
+    legacyState === "SUCCEEDED"
+  ) {
     return true;
   }
 
@@ -56,10 +81,18 @@ export function isSafepaySuccessEvent(eventType: string, payload: SafepayWebhook
   );
 }
 
-export function isSafepayFailureEvent(eventType: string, payload: SafepayWebhookPayload): boolean {
+export function isSafepayFailureEvent(
+  eventType: string,
+  payload: SafepayWebhookPayload,
+): boolean {
   const legacyState = resolveLegacyPaymentState(payload);
 
-  if (legacyState === "FAILED" || legacyState === "CANCELLED" || legacyState === "CANCELED" || legacyState === "REJECTED") {
+  if (
+    legacyState === "FAILED" ||
+    legacyState === "CANCELLED" ||
+    legacyState === "CANCELED" ||
+    legacyState === "REJECTED"
+  ) {
     return true;
   }
 

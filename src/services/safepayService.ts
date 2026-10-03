@@ -1,4 +1,5 @@
 import Safepay from "@sfpy/node-core";
+
 import {
   getSafepayApiBaseUrl,
   getSafepayApiKey,
@@ -24,24 +25,35 @@ function createClient() {
 
 function extractTracker(response: SafepaySessionSetupResponse): string {
   const trackerToken = response.data?.tracker?.token;
-  if (!trackerToken) throw new Error("Safepay session response missing tracker");
+
+  if (!trackerToken)
+    throw new Error("Safepay session response missing tracker");
+
   return trackerToken;
 }
 
 function extractClientToken(response: SafepayPassportTokenResponse): string {
   const data = response.data;
+
   if (typeof data === "string" && data) return data;
+
   if (data && typeof data === "object") {
     if (typeof data.token === "string") return data.token;
     if (typeof data.access_token === "string") return data.access_token;
   }
+
   throw new Error("Safepay client token response missing token");
 }
 
-function splitCustomerName(fullName: string): { firstName: string; lastName: string } {
+function splitCustomerName(fullName: string): {
+  firstName: string;
+  lastName: string;
+} {
   const parts = fullName.trim().split(/\s+/);
+
   if (parts.length === 0) return { firstName: "Customer", lastName: "Guest" };
   if (parts.length === 1) return { firstName: parts[0], lastName: "Customer" };
+
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
 }
 
@@ -67,14 +79,19 @@ export class SafepayService {
     })) as SafepayCustomerCreateResponse;
 
     const token = response?.data?.token;
+
     if (typeof token !== "string" || !token) {
       throw new Error("Safepay customer creation failed");
     }
+
     return token;
   }
 
-  static async createPaymentSession(params: SafepaySessionParams): Promise<{ tracker: string }> {
+  static async createPaymentSession(
+    params: SafepaySessionParams,
+  ): Promise<{ tracker: string }> {
     const client = createClient();
+
     const customerToken = await SafepayService.createGuestCustomer({
       email: params.customerEmail,
       name: params.customerName,
@@ -99,7 +116,10 @@ export class SafepayService {
 
   static async createClientToken(): Promise<string> {
     const client = createClient();
-    const response = (await client.client.passport.create()) as SafepayPassportTokenResponse;
+
+    const response =
+      (await client.client.passport.create()) as SafepayPassportTokenResponse;
+
     return extractClientToken(response);
   }
 
@@ -126,7 +146,7 @@ export class SafepayService {
 
   static async createCheckoutSession(
     params: SafepaySessionParams,
-    options?: { hostedRedirectUrl?: string; hostedCancelUrl?: string }
+    options?: { hostedRedirectUrl?: string; hostedCancelUrl?: string },
   ): Promise<SafepaySessionResult> {
     const [{ tracker }, clientToken] = await Promise.all([
       SafepayService.createPaymentSession(params),
@@ -153,14 +173,18 @@ export class SafepayService {
     return result;
   }
 
-  static verifyWebhookSignature(rawBody: string, signature: string | null, timestamp: string | null): boolean {
+  static verifyWebhookSignature(
+    rawBody: string,
+    signature: string | null,
+    timestamp: string | null,
+  ): boolean {
     return verifySafepayWebhookSignature(rawBody, signature, timestamp).valid;
   }
 
   static verifyWebhookSignatureDetailed(
     rawBody: string,
     signature: string | null,
-    timestamp: string | null
+    timestamp: string | null,
   ) {
     return verifySafepayWebhookSignature(rawBody, signature, timestamp);
   }
@@ -171,18 +195,22 @@ export class SafepayService {
    */
   static async refundPayment(
     tracker: string,
-    params?: { amount?: number; reason?: string }
+    params?: { amount?: number; reason?: string },
   ): Promise<unknown> {
     if (!tracker?.trim()) {
       throw new Error("Safepay tracker is required for refund");
     }
+
     const client = createClient();
+
     const body: Record<string, unknown> = {
       reason: params?.reason || "requested_by_customer",
     };
+
     if (typeof params?.amount === "number" && params.amount > 0) {
       body.amount = toSafepayAmount(params.amount);
     }
+
     return client.order.cancel.refund(tracker.trim(), body);
   }
 }

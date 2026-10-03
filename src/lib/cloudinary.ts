@@ -14,14 +14,16 @@ export type CloudinaryUpload = {
 export function isConfigured(): boolean {
   return Boolean(
     process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
   );
 }
 
 export function configure() {
   if (!isConfigured()) {
-    throw new Error("Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
+    throw new Error(
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
+    );
   }
 
   cloudinary.config({
@@ -41,7 +43,7 @@ export function isCloudinaryUrl(value: string): boolean {
  */
 export async function uploadImage(
   image: string,
-  folder = "products"
+  folder = "products",
 ): Promise<CloudinaryUpload> {
   if (!image) {
     throw new Error("No image provided");
@@ -73,11 +75,17 @@ export async function uploadImage(
 /**
  * Deletes an asset from Cloudinary storage
  */
-export async function deleteAsset(publicId?: string | null, resourceType: "image" | "video" | "raw" = "image") {
+export async function deleteAsset(
+  publicId?: string | null,
+  resourceType: "image" | "video" | "raw" = "image",
+) {
   if (!publicId) return;
+
   try {
     configure();
-    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
   } catch (error) {
     console.error("Cloudinary delete failed:", error);
   }
@@ -95,7 +103,11 @@ export function getSignedUploadParams(options?: {
   const folder = options?.folder || "banners/videos";
   const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = { timestamp, folder };
-  const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
+
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    process.env.CLOUDINARY_API_SECRET!,
+  );
 
   return {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -111,8 +123,11 @@ export function getSignedUploadParams(options?: {
 export const deleteImage = deleteAsset;
 
 /** @deprecated use uploadImage */
-export async function persistImage(image: string | undefined | null): Promise<string> {
+export async function persistImage(
+  image: string | undefined | null,
+): Promise<string> {
   if (!image) return "";
   const uploaded = await uploadImage(image);
+
   return uploaded.url;
 }

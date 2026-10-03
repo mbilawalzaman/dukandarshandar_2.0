@@ -1,6 +1,7 @@
-import { getAuthUser } from "@/lib/auth";
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
+import { getAuthUser } from "@/lib/auth";
 import { fetchProductsPaginated } from "@/controllers/productController";
 
 export async function GET(req: NextRequest) {
@@ -16,15 +17,20 @@ export async function GET(req: NextRequest) {
     limit,
     search: searchParams.get("search") || undefined,
     category: searchParams.get("category") || undefined,
-    minPrice: minPrice !== null && minPrice !== "" ? Number(minPrice) : undefined,
-    maxPrice: maxPrice !== null && maxPrice !== "" ? Number(maxPrice) : undefined,
+    minPrice:
+      minPrice !== null && minPrice !== "" ? Number(minPrice) : undefined,
+    maxPrice:
+      maxPrice !== null && maxPrice !== "" ? Number(maxPrice) : undefined,
     inStockOnly: searchParams.get("inStockOnly") === "true",
     sortBy: searchParams.get("sortBy") || undefined,
     stock: searchParams.get("stock") || undefined,
   });
 
   if (!result.success) {
-    return NextResponse.json({ success: false, message: result.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: result.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({

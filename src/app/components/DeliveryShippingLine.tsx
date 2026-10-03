@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
+
 import { BRAND } from "@/lib/uiBrand";
 
 type DeliveryShippingLineProps = {
@@ -24,12 +25,18 @@ export default function DeliveryShippingLine({
           {standardFee > 0 && (
             <Typography
               variant="body2"
-              sx={{ color: "text.disabled", textDecoration: "line-through", fontWeight: 500 }}
+              sx={{
+                color: "text.disabled",
+                textDecoration: "line-through",
+                fontWeight: 500,
+              }}
             >
               PKR {standardFee.toLocaleString()}
             </Typography>
           )}
-          <Typography sx={{ fontWeight: 800, color: BRAND.goldDark }}>FREE</Typography>
+          <Typography sx={{ fontWeight: 800, color: BRAND.goldDark }}>
+            FREE
+          </Typography>
         </Box>
       ) : (
         <Typography sx={{ fontWeight: 600 }}>

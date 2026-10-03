@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+
 import {
   Drawer,
   List,
@@ -32,7 +34,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
-import LocalOfferIcon from '@mui/icons-material/LocalOffer'
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 const drawerWidth = 240;
 
@@ -63,15 +65,31 @@ const navItems: NavItem[] = [
     label: "Promotions",
     icon: <LocalOfferIcon />,
     subItems: [
-      { label: "All Promotions", path: "/admin/promotions", icon: <CampaignIcon /> },
-      { label: "Promotion Types", path: "/admin/promotions/types", icon: <CategoryIcon /> },
+      {
+        label: "All Promotions",
+        path: "/admin/promotions",
+        icon: <CampaignIcon />,
+      },
+      {
+        label: "Promotion Types",
+        path: "/admin/promotions/types",
+        icon: <CategoryIcon />,
+      },
     ],
   },
-  { label: "Manage Pages", path: "/admin/pages", icon: <AutoAwesomeMosaicIcon /> },
+  {
+    label: "Manage Pages",
+    path: "/admin/pages",
+    icon: <AutoAwesomeMosaicIcon />,
+  },
   { label: "Users", path: "/admin/users", icon: <PeopleIcon /> },
   { label: "Orders", path: "/admin/orders", icon: <ShoppingCartIcon /> },
   { label: "Messages", path: "/admin/messages", icon: <ChatIcon /> },
-  { label: "Notifications", path: "/admin/notifications", icon: <NotificationsIcon /> },
+  {
+    label: "Notifications",
+    path: "/admin/notifications",
+    icon: <NotificationsIcon />,
+  },
   { label: "Support", path: "/admin/support", icon: <SupportAgentIcon /> },
   { label: "Payments", path: "/admin/payments", icon: <PaymentsIcon /> },
   { label: "Profile", path: "/admin/profile", icon: <PersonIcon /> },
@@ -88,10 +106,18 @@ export default function AdminSidebar({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const searchParams = useSearchParams();
-  const currentHref = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Promotions: false });
+
+  const currentHref = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    Promotions: false,
+  });
+
   const isHrefActive = (href: string) => {
     if (href.includes("?")) return currentHref === href;
+
     return pathname === href && !searchParams.get("kind");
   };
 
@@ -107,17 +133,30 @@ export default function AdminSidebar({
       >
         {(isMobileView || open) && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, color: "var(--theme-footer-text, #fff)" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                color: "var(--theme-footer-text, #fff)",
+              }}
+            >
               Admin Portal
             </Typography>
           </Box>
         )}
         {isMobileView ? (
-          <IconButton onClick={onMobileClose} sx={{ color: "var(--theme-footer-text, #fff)" }}>
+          <IconButton
+            onClick={onMobileClose}
+            sx={{ color: "var(--theme-footer-text, #fff)" }}
+          >
             <CloseIcon />
           </IconButton>
         ) : (
-          <IconButton onClick={onToggle} sx={{ color: "var(--theme-footer-text, #fff)" }}>
+          <IconButton
+            onClick={onToggle}
+            sx={{ color: "var(--theme-footer-text, #fff)" }}
+          >
             {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
         )}
@@ -126,21 +165,38 @@ export default function AdminSidebar({
       <List sx={{ mt: 1 }}>
         {navItems.map((item) => {
           if (item.subItems) {
-            const isChildActive = item.subItems.some((sub) => isHrefActive(sub.path));
+            const isChildActive = item.subItems.some((sub) =>
+              isHrefActive(sub.path),
+            );
+
             const groupOpen = openGroups[item.label] ?? false;
+
             return (
               <React.Fragment key={item.label}>
                 <ListItem disablePadding sx={{ display: "block" }}>
                   <ListItemButton
-                    onClick={() => setOpenGroups((prev) => ({ ...prev, [item.label]: !groupOpen }))}
+                    onClick={() =>
+                      setOpenGroups((prev) => ({
+                        ...prev,
+                        [item.label]: !groupOpen,
+                      }))
+                    }
                     sx={{
                       minHeight: 48,
-                      justifyContent: !isMobileView && !open ? "center" : "initial",
+                      justifyContent:
+                        !isMobileView && !open ? "center" : "initial",
                       px: 2.5,
-                      backgroundColor: isChildActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
-                      borderLeft: isChildActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
+                      backgroundColor: isChildActive
+                        ? "var(--theme-sidebar-selected-bg)"
+                        : "transparent",
+                      borderLeft: isChildActive
+                        ? "4px solid var(--theme-footer-text, #fff)"
+                        : "4px solid transparent",
                       "&:hover": {
-                        backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
+                        backgroundColor: "var(--theme-sidebar-selected-bg)",
+                        color: "var(--theme-sidebar-selected-text)",
+                        "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root":
+                          { color: "inherit" },
                       },
                     }}
                   >
@@ -149,7 +205,9 @@ export default function AdminSidebar({
                         minWidth: 0,
                         mr: !isMobileView && !open ? "auto" : 2,
                         justifyContent: "center",
-                        color: isChildActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
+                        color: isChildActive
+                          ? "var(--theme-sidebar-selected-text)"
+                          : "var(--theme-footer-text, #fff)",
                       }}
                     >
                       {item.icon}
@@ -158,30 +216,58 @@ export default function AdminSidebar({
                       primary={item.label}
                       sx={{
                         opacity: !isMobileView && !open ? 0 : 1,
-                        color: isChildActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
+                        color: isChildActive
+                          ? "var(--theme-sidebar-selected-text)"
+                          : "var(--theme-footer-text, #fff)",
                         fontWeight: isChildActive ? 600 : 400,
                       }}
                     />
-                    {(isMobileView || open) && (groupOpen ? <ExpandLess sx={{ color: "var(--theme-footer-text, #fff)" }} /> : <ExpandMore sx={{ color: "var(--theme-footer-text, #fff)" }} />)}
+                    {(isMobileView || open) &&
+                      (groupOpen ? (
+                        <ExpandLess
+                          sx={{ color: "var(--theme-footer-text, #fff)" }}
+                        />
+                      ) : (
+                        <ExpandMore
+                          sx={{ color: "var(--theme-footer-text, #fff)" }}
+                        />
+                      ))}
                   </ListItemButton>
                 </ListItem>
-                <Collapse in={groupOpen && (isMobileView || open)} timeout="auto" unmountOnExit>
+                <Collapse
+                  in={groupOpen && (isMobileView || open)}
+                  timeout="auto"
+                  unmountOnExit
+                >
                   <List component="div" disablePadding>
                     {item.subItems.map((sub) => {
                       const isSubActive = isHrefActive(sub.path);
+
                       return (
                         <ListItemButton
                           key={sub.path}
                           component={Link}
                           href={sub.path}
-                          onClick={isMobileView && onMobileClose ? onMobileClose : undefined}
+                          onClick={
+                            isMobileView && onMobileClose
+                              ? onMobileClose
+                              : undefined
+                          }
                           sx={{
                             minHeight: 40,
                             pl: 4.5,
-                            backgroundColor: isSubActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
-                            borderLeft: isSubActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
+                            backgroundColor: isSubActive
+                              ? "var(--theme-sidebar-selected-bg)"
+                              : "transparent",
+                            borderLeft: isSubActive
+                              ? "4px solid var(--theme-footer-text, #fff)"
+                              : "4px solid transparent",
                             "&:hover": {
-                              backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
+                              backgroundColor:
+                                "var(--theme-sidebar-selected-bg)",
+                              color: "var(--theme-sidebar-selected-text)",
+                              "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root":
+                                { color: "inherit" },
                             },
                           }}
                         >
@@ -190,7 +276,9 @@ export default function AdminSidebar({
                               minWidth: 0,
                               mr: 1.5,
                               justifyContent: "center",
-                              color: isSubActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
+                              color: isSubActive
+                                ? "var(--theme-sidebar-selected-text)"
+                                : "var(--theme-footer-text, #fff)",
                               fontSize: "1.1rem",
                             }}
                           >
@@ -198,8 +286,15 @@ export default function AdminSidebar({
                           </ListItemIcon>
                           <ListItemText
                             primary={sub.label}
-                            primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: isSubActive ? 700 : 400 }}
-                            sx={{ color: isSubActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)" }}
+                            primaryTypographyProps={{
+                              fontSize: "0.85rem",
+                              fontWeight: isSubActive ? 700 : 400,
+                            }}
+                            sx={{
+                              color: isSubActive
+                                ? "var(--theme-sidebar-selected-text)"
+                                : "var(--theme-footer-text, #fff)",
+                            }}
                           />
                         </ListItemButton>
                       );
@@ -211,20 +306,34 @@ export default function AdminSidebar({
           }
 
           const isActive = pathname === item.path;
+
           return (
-            <ListItem key={item.path || item.label} disablePadding sx={{ display: "block" }}>
+            <ListItem
+              key={item.path || item.label}
+              disablePadding
+              sx={{ display: "block" }}
+            >
               <ListItemButton
                 component={item.path ? Link : "div"}
                 href={item.path || "#"}
-                onClick={isMobileView && onMobileClose ? onMobileClose : undefined}
+                onClick={
+                  isMobileView && onMobileClose ? onMobileClose : undefined
+                }
                 sx={{
                   minHeight: 48,
                   justifyContent: !isMobileView && !open ? "center" : "initial",
                   px: 2.5,
-                  backgroundColor: isActive ? "var(--theme-sidebar-selected-bg)" : "transparent",
-                  borderLeft: isActive ? "4px solid var(--theme-footer-text, #fff)" : "4px solid transparent",
+                  backgroundColor: isActive
+                    ? "var(--theme-sidebar-selected-bg)"
+                    : "transparent",
+                  borderLeft: isActive
+                    ? "4px solid var(--theme-footer-text, #fff)"
+                    : "4px solid transparent",
                   "&:hover": {
-                    backgroundColor: "var(--theme-sidebar-selected-bg)", color: "var(--theme-sidebar-selected-text)", "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root": { color: "inherit" },
+                    backgroundColor: "var(--theme-sidebar-selected-bg)",
+                    color: "var(--theme-sidebar-selected-text)",
+                    "& .MuiListItemIcon-root, & .MuiListItemText-root, & .MuiSvgIcon-root":
+                      { color: "inherit" },
                   },
                 }}
               >
@@ -233,7 +342,9 @@ export default function AdminSidebar({
                     minWidth: 0,
                     mr: !isMobileView && !open ? "auto" : 2,
                     justifyContent: "center",
-                    color: isActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
+                    color: isActive
+                      ? "var(--theme-sidebar-selected-text)"
+                      : "var(--theme-footer-text, #fff)",
                   }}
                 >
                   {item.icon}
@@ -242,7 +353,9 @@ export default function AdminSidebar({
                   primary={item.label}
                   sx={{
                     opacity: !isMobileView && !open ? 0 : 1,
-                    color: isActive ? "var(--theme-sidebar-selected-text)" : "var(--theme-footer-text, #fff)",
+                    color: isActive
+                      ? "var(--theme-sidebar-selected-text)"
+                      : "var(--theme-footer-text, #fff)",
                     fontWeight: isActive ? 600 : 400,
                   }}
                 />

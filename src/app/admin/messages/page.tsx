@@ -1,8 +1,11 @@
 "use client";
 
 import React, { Suspense } from "react";
+
 import { useSearchParams } from "next/navigation";
+
 import { Typography, Box, CircularProgress } from "@mui/material";
+
 import MessagesWorkspace from "@/app/components/chat/MessagesWorkspace";
 
 function AdminMessagesContent() {
@@ -15,10 +18,15 @@ function AdminMessagesContent() {
         Messages
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Conversations sync live across tabs and windows, select a chat in one window and it updates everywhere.
+        Conversations sync live across tabs and windows, select a chat in one
+        window and it updates everywhere.
       </Typography>
       <Box sx={{ mt: 2 }}>
-        <MessagesWorkspace variant="page" isAdmin initialSelectedId={selectedId} />
+        <MessagesWorkspace
+          variant="page"
+          isAdmin
+          initialSelectedId={selectedId}
+        />
       </Box>
     </Box>
   );

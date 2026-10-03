@@ -1,7 +1,9 @@
 import type { SafepayEnvironment } from "@/types/apps/paymentTypes";
 
 export function getSafepayEnvironment(): SafepayEnvironment {
-  const env = process.env.SAFEPAY_ENV || process.env.NEXT_PUBLIC_SAFEPAY_ENV || "sandbox";
+  const env =
+    process.env.SAFEPAY_ENV || process.env.NEXT_PUBLIC_SAFEPAY_ENV || "sandbox";
+
   return env === "production" ? "production" : "sandbox";
 }
 
@@ -12,7 +14,9 @@ export function getSafepayApiBaseUrl(): string {
 }
 
 export function getSafepayPublicEnvironment(): SafepayEnvironment {
-  const env = process.env.NEXT_PUBLIC_SAFEPAY_ENV || process.env.SAFEPAY_ENV || "sandbox";
+  const env =
+    process.env.NEXT_PUBLIC_SAFEPAY_ENV || process.env.SAFEPAY_ENV || "sandbox";
+
   return env === "production" ? "production" : "sandbox";
 }
 
@@ -26,19 +30,25 @@ export function isSafepayWebhookConfigured(): boolean {
 
 export function getSafepayApiKey(): string {
   const key = process.env.SAFEPAY_API_KEY;
+
   if (!key) throw new Error("SAFEPAY_API_KEY is not configured");
+
   return key;
 }
 
 export function getSafepaySecretKey(): string {
   const key = process.env.SAFEPAY_SECRET_KEY;
+
   if (!key) throw new Error("SAFEPAY_SECRET_KEY is not configured");
+
   return key;
 }
 
 export function getSafepayWebhookSecret(): string {
   const secret = process.env.SAFEPAY_WEBHOOK_SECRET;
+
   if (!secret) throw new Error("SAFEPAY_WEBHOOK_SECRET is not configured");
+
   return secret;
 }
 

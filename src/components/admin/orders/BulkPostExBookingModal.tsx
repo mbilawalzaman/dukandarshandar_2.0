@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -62,7 +63,10 @@ export default function BulkPostExBookingModal({
   const [airwayBillLoading, setAirwayBillLoading] = useState<boolean>(false);
 
   const unbookedOrders = orders.filter((o) => !o.postexDetails?.trackingNumber);
-  const bookedOrders = orders.filter((o) => Boolean(o.postexDetails?.trackingNumber));
+
+  const bookedOrders = orders.filter((o) =>
+    Boolean(o.postexDetails?.trackingNumber),
+  );
 
   const handleStartBulkBooking = async () => {
     if (unbookedOrders.length === 0) return;
@@ -75,6 +79,7 @@ export default function BulkPostExBookingModal({
 
     for (let i = 0; i < unbookedOrders.length; i++) {
       const order = unbookedOrders[i];
+
       try {
         const res = await fetch("/api/admin/postex/orders/create", {
           method: "POST",
@@ -107,6 +112,7 @@ export default function BulkPostExBookingModal({
         }
       } catch (err: unknown) {
         const errorObj = err as Error;
+
         newResults.push({
           orderId: order._id,
           success: false,
@@ -126,6 +132,7 @@ export default function BulkPostExBookingModal({
     const bookedNumbers = bookedOrders
       .map((o) => o.postexDetails?.trackingNumber)
       .filter((tn): tn is string => Boolean(tn));
+
     const resultNumbers = results
       .map((r) => r.trackingNumber)
       .filter((tn): tn is string => Boolean(tn));
@@ -137,7 +144,10 @@ export default function BulkPostExBookingModal({
     const trackingNumbers = getAvailableTrackingNumbers();
 
     if (trackingNumbers.length === 0) {
-      setErrorMsg("No active PostEx tracking numbers available to generate a Load Sheet.");
+      setErrorMsg(
+        "No active PostEx tracking numbers available to generate a Load Sheet.",
+      );
+
       return;
     }
 
@@ -154,15 +164,22 @@ export default function BulkPostExBookingModal({
       });
 
       if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error || "Failed to generate PostEx Load Sheet PDF");
+        const errData = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        throw new Error(
+          errData.error || "Failed to generate PostEx Load Sheet PDF",
+        );
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
+
       window.open(url, "_blank");
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setErrorMsg(errorObj.message || "Failed to generate Load Sheet");
     } finally {
       setLoadSheetLoading(false);
@@ -173,7 +190,10 @@ export default function BulkPostExBookingModal({
     const trackingNumbers = getAvailableTrackingNumbers();
 
     if (trackingNumbers.length === 0) {
-      setErrorMsg("No active PostEx tracking numbers available to print Airway Bills.");
+      setErrorMsg(
+        "No active PostEx tracking numbers available to print Airway Bills.",
+      );
+
       return;
     }
 
@@ -190,15 +210,22 @@ export default function BulkPostExBookingModal({
       });
 
       if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error || "Failed to print PostEx Airway Bills PDF");
+        const errData = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        throw new Error(
+          errData.error || "Failed to print PostEx Airway Bills PDF",
+        );
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
+
       window.open(url, "_blank");
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setErrorMsg(errorObj.message || "Failed to print Airway Bills");
     } finally {
       setAirwayBillLoading(false);
@@ -277,9 +304,11 @@ export default function BulkPostExBookingModal({
         )}
 
         <Typography variant="body2" color="text.secondary">
-          Click <strong>Book Unbooked Orders</strong> to automatically assign PostEx tracking numbers to all unbooked orders.
+          Click <strong>Book Unbooked Orders</strong> to automatically assign
+          PostEx tracking numbers to all unbooked orders.
           <br />
-          Click <strong>Generate Load Sheet PDF</strong> to download the official combined dispatch load sheet for PostEx pickup.
+          Click <strong>Generate Load Sheet PDF</strong> to download the
+          official combined dispatch load sheet for PostEx pickup.
         </Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2, justifyContent: "space-between" }}>
@@ -292,7 +321,11 @@ export default function BulkPostExBookingModal({
             color="secondary"
             startIcon={<PictureAsPdfIcon />}
             onClick={handleGenerateLoadSheet}
-            disabled={loadSheetLoading || (bookedOrders.length === 0 && results.filter((r) => r.success).length === 0)}
+            disabled={
+              loadSheetLoading ||
+              (bookedOrders.length === 0 &&
+                results.filter((r) => r.success).length === 0)
+            }
           >
             {loadSheetLoading ? "Generating..." : "Generate Load Sheet PDF"}
           </Button>
@@ -301,7 +334,11 @@ export default function BulkPostExBookingModal({
             color="secondary"
             startIcon={<PictureAsPdfIcon />}
             onClick={handlePrintAirwayBills}
-            disabled={airwayBillLoading || (bookedOrders.length === 0 && results.filter((r) => r.success).length === 0)}
+            disabled={
+              airwayBillLoading ||
+              (bookedOrders.length === 0 &&
+                results.filter((r) => r.success).length === 0)
+            }
           >
             {airwayBillLoading ? "Printing..." : "Print Airway Bills PDF"}
           </Button>

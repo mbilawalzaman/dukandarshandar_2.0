@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+
 import { Box, Typography, Chip } from "@mui/material";
+
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 
@@ -20,11 +22,16 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const res = await fetch("/api/users", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
       const data = await res.json();
+
       if (data.success) {
         setUsers(data.users || []);
       }
@@ -50,7 +57,9 @@ export default function AdminUsersPage() {
         <Chip
           label={String(val || "Customer")}
           size="small"
-          color={String(val).toLowerCase() === "admin" ? "secondary" : "default"}
+          color={
+            String(val).toLowerCase() === "admin" ? "secondary" : "default"
+          }
         />
       ),
     },
@@ -58,7 +67,8 @@ export default function AdminUsersPage() {
       id: "created_at",
       label: "Joined Date",
       minWidth: 160,
-      format: (val) => (val ? new Date(String(val)).toLocaleDateString() : "N/A"),
+      format: (val) =>
+        val ? new Date(String(val)).toLocaleDateString() : "N/A",
     },
   ];
 
@@ -67,11 +77,19 @@ export default function AdminUsersPage() {
       <Box sx={{ mb: { xs: 2.5, sm: 4 } }}>
         <Typography
           variant="h4"
-          sx={{ fontWeight: 800, color: "#0f172a", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+          sx={{
+            fontWeight: 800,
+            color: "#0f172a",
+            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+          }}
         >
           Registered Accounts Directory
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+        >
           Monitor user registrations, account emails, and assigned permissions.
         </Typography>
       </Box>

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import type { ObjectId } from "mongodb";
+
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 import { safeNotify } from "@/lib/safeNotify";
@@ -8,11 +9,18 @@ import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { issueGuestAccessToken, issueSessionForUser } from "@/lib/session";
 import { SYNTHETIC_EMAIL_SUFFIX, isSyntheticEmail } from "@/lib/userDisplay";
 
-export async function signupController(name: string, email: string, password: string) {
+export async function signupController(
+  name: string,
+  email: string,
+  password: string,
+) {
   const db = await getDb();
   const usersCollection = db.collection("users");
 
-  const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
+  const existingUser = await usersCollection.findOne({
+    email: email.toLowerCase(),
+  });
+
   if (existingUser) {
     return { success: false, error: "User already exists" };
   }
@@ -31,9 +39,11 @@ export async function signupController(name: string, email: string, password: st
   });
 
   const created = await usersCollection.findOne({ email: email.toLowerCase() });
+
   if (created) {
     await safeNotify(async () => {
       const { notifyAdmins } = await import("@/services/notificationService");
+
       return notifyAdmins({
         type: "new_user",
         title: "New customer signup",
@@ -53,10 +63,14 @@ export async function signupController(name: string, email: string, password: st
 export async function loginController(
   email: string,
   password: string,
-  options?: { userAgent?: string }
+  options?: { userAgent?: string },
 ) {
   const db = await getDb();
-  const user = await db.collection("users").findOne({ email: email.toLowerCase() });
+
+  const user = await db
+    .collection("users")
+    .findOne({ email: email.toLowerCase() });
+
   if (!user) {
     return { success: false, error: "Invalid credentials" };
   }
@@ -69,6 +83,7 @@ export async function loginController(
   }
 
   const isValid = await bcrypt.compare(password, user.password);
+
   if (!isValid) {
     return { success: false, error: "Invalid credentials" };
   }
@@ -80,7 +95,7 @@ export async function loginController(
       email: user.email,
       role: user.role,
     },
-    options
+    options,
   );
 
   return {
@@ -93,6 +108,7 @@ export async function loginController(
 
 export async function guestLoginController() {
   const session = issueGuestAccessToken();
+
   return {
     success: true,
     token: session.accessToken,
@@ -100,27 +116,42 @@ export async function guestLoginController() {
   };
 }
 
-function mapFirebaseProvider(signInProvider?: string): "google" | "facebook" | "firebase" {
+function mapFirebaseProvider(
+  signInProvider?: string,
+): "google" | "facebook" | "firebase" {
   if (signInProvider === "google.com") return "google";
   if (signInProvider === "facebook.com") return "facebook";
+
   return "firebase";
 }
 
-function syntheticSocialEmail(firebaseUid: string, provider: "google" | "facebook" | "firebase") {
-  const prefix = provider === "facebook" ? "fb" : provider === "google" ? "google" : "social";
+function syntheticSocialEmail(
+  firebaseUid: string,
+  provider: "google" | "facebook" | "firebase",
+) {
+  const prefix =
+    provider === "facebook"
+      ? "fb"
+      : provider === "google"
+        ? "google"
+        : "social";
+
   return `${prefix}_${firebaseUid}${SYNTHETIC_EMAIL_SUFFIX}`.toLowerCase();
 }
 
 export async function socialLoginController(
   idToken: string,
-  options?: { userAgent?: string }
+  options?: { userAgent?: string },
 ) {
   if (!idToken || typeof idToken !== "string") {
     return { success: false, error: "Missing Firebase ID token" };
   }
 
   if (!isFirebaseClientConfigured()) {
-    return { success: false, error: "Firebase is not configured on the server" };
+    return {
+      success: false,
+      error: "Firebase is not configured on the server",
+    };
   }
 
   let decoded: {
@@ -132,11 +163,18 @@ export async function socialLoginController(
   };
 
   try {
-    const { verifyFirebaseIdToken } = await import("@/lib/firebaseTokenVerifier");
+    const { verifyFirebaseIdToken } =
+      await import("@/lib/firebaseTokenVerifier");
+
     decoded = await verifyFirebaseIdToken(idToken);
   } catch (error) {
     console.error("Firebase ID token verification failed:", error);
-    const detail = error instanceof Error ? error.message : "Invalid or expired social login token";
+
+    const detail =
+      error instanceof Error
+        ? error.message
+        : "Invalid or expired social login token";
+
     return { success: false, error: detail };
   }
 
@@ -152,6 +190,7 @@ export async function socialLoginController(
   // Do not call firebase-admin/auth (pulls jwks-rsa → jose ESM on Vercel).
   // Missing Facebook email → synthetic placeholder; user can add email in profile/checkout.
   const usedSyntheticEmail = !email;
+
   if (!email) {
     email = syntheticSocialEmail(firebaseUid, authProvider);
   }
@@ -161,21 +200,29 @@ export async function socialLoginController(
       (emailFromProvider ? email.split("@")[0] : undefined) ||
       (authProvider === "facebook" ? "Facebook User" : "User");
   }
+
   const db = await getDb();
   const users = db.collection("users");
 
   let user = await users.findOne({ firebaseUid });
+
   if (!user && emailFromProvider) {
     const existingEmail = await users.findOne({ email });
+
     if (existingEmail) {
-      return { success: false, error: "An account already uses this email. Sign in with its existing login method." };
+      return {
+        success: false,
+        error:
+          "An account already uses this email. Sign in with its existing login method.",
+      };
     }
   }
 
   if (user) {
     const setFields: Record<string, unknown> = {
       firebaseUid,
-      authProvider: user.authProvider === "password" ? user.authProvider : authProvider,
+      authProvider:
+        user.authProvider === "password" ? user.authProvider : authProvider,
       updated_at: new Date(),
       ...(image ? { image } : {}),
       ...(!user.name ? { name } : {}),
@@ -211,12 +258,15 @@ export async function socialLoginController(
       createdAt: new Date(),
       created_at: new Date(),
     };
+
     const result = await users.insertOne(insert);
+
     user = await users.findOne({ _id: result.insertedId });
 
     if (user) {
       await safeNotify(async () => {
         const { notifyAdmins } = await import("@/services/notificationService");
+
         return notifyAdmins({
           type: "new_user",
           title: "New customer signup",
@@ -242,7 +292,7 @@ export async function socialLoginController(
       email: user.email,
       role: user.role,
     },
-    options
+    options,
   );
 
   return {

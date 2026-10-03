@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+
 import { Box, Paper, Typography } from "@mui/material";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
+
 // import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 // import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import { BRAND } from "@/lib/uiBrand";
@@ -52,15 +54,29 @@ interface PaymentMethodSelectorProps {
   disabled?: boolean;
 }
 
-export default function PaymentMethodSelector({ value, onChange, disabled }: PaymentMethodSelectorProps) {
+export default function PaymentMethodSelector({
+  value,
+  onChange,
+  disabled,
+}: PaymentMethodSelectorProps) {
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: BRAND.navy }}>
+      <Typography
+        variant="h6"
+        sx={{ mb: 2, fontWeight: 700, color: BRAND.navy }}
+      >
         Payment method
       </Typography>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
+        }}
+      >
         {PAYMENT_METHODS.map((method) => {
           const selected = value === method.id;
+
           return (
             <Paper
               key={method.id}
@@ -77,7 +93,8 @@ export default function PaymentMethodSelector({ value, onChange, disabled }: Pay
                 backgroundColor: selected ? "#fffbeb" : "#ffffff",
                 borderRadius: 2.5,
                 opacity: disabled ? 0.6 : 1,
-                transition: "border-color 0.2s ease, background-color 0.2s ease",
+                transition:
+                  "border-color 0.2s ease, background-color 0.2s ease",
                 "&:hover": disabled
                   ? {}
                   : {
@@ -97,7 +114,10 @@ export default function PaymentMethodSelector({ value, onChange, disabled }: Pay
                   {method.icon}
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: BRAND.navy }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 700, color: BRAND.navy }}
+                  >
                     {method.label}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">

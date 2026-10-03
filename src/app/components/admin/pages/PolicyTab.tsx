@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Box,
   Typography,
@@ -18,7 +19,12 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import type { PageSettings, PageSettingsKey, PolicySectionItem } from "@/lib/pageSettings";
+
+import type {
+  PageSettings,
+  PageSettingsKey,
+  PolicySectionItem,
+} from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import SavePageButton from "./SavePageButton";
 
@@ -51,6 +57,7 @@ export default function PolicyTab({
       title: "New Section",
       content: "",
     };
+
     setSettings((prev) => ({
       ...prev,
       [pageKey]: {
@@ -65,18 +72,24 @@ export default function PolicyTab({
       ...prev,
       [pageKey]: {
         ...prev[pageKey],
-        sections: (prev[pageKey].sections || []).filter((s) => s.id !== sectionId),
+        sections: (prev[pageKey].sections || []).filter(
+          (s) => s.id !== sectionId,
+        ),
       },
     }));
   };
 
-  const handleUpdateSection = (sectionId: string, field: "title" | "content", value: string) => {
+  const handleUpdateSection = (
+    sectionId: string,
+    field: "title" | "content",
+    value: string,
+  ) => {
     setSettings((prev) => ({
       ...prev,
       [pageKey]: {
         ...prev[pageKey],
         sections: (prev[pageKey].sections || []).map((s) =>
-          s.id === sectionId ? { ...s, [field]: value } : s
+          s.id === sectionId ? { ...s, [field]: value } : s,
         ),
       },
     }));
@@ -85,9 +98,11 @@ export default function PolicyTab({
   const handleMoveSection = (index: number, direction: "up" | "down") => {
     const currentSections = [...(config.sections || [])];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
+
     if (targetIndex < 0 || targetIndex >= currentSections.length) return;
 
     const [moved] = currentSections.splice(index, 1);
+
     if (moved) {
       currentSections.splice(targetIndex, 0, moved);
       setSettings((prev) => ({
@@ -103,8 +118,20 @@ export default function PolicyTab({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Banner Configuration Card */}
-      <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+      <Paper
+        sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+        elevation={0}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
           <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
             {pageTitle} Banner
           </Typography>
@@ -148,7 +175,10 @@ export default function PolicyTab({
               onChange={(e) =>
                 setSettings((prev) => ({
                   ...prev,
-                  [pageKey]: { ...prev[pageKey], bannerSubtitle: e.target.value },
+                  [pageKey]: {
+                    ...prev[pageKey],
+                    bannerSubtitle: e.target.value,
+                  },
                 }))
               }
               sx={{ mb: 2 }}
@@ -170,9 +200,21 @@ export default function PolicyTab({
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
               Banner Preview
             </Typography>
-            <Box sx={{ height: 180, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+            <Box
+              sx={{
+                height: 180,
+                borderRadius: 2,
+                overflow: "hidden",
+                border: "1px solid #e2e8f0",
+              }}
+            >
               <BannerMediaRenderer
-                media={config.bannerMedia || { type: config.bannerType || "image", url: config.bannerImage || "" }}
+                media={
+                  config.bannerMedia || {
+                    type: config.bannerType || "image",
+                    url: config.bannerImage || "",
+                  }
+                }
                 alt={`${pageTitle} Banner`}
                 style={{ width: "100%", height: "100%" }}
               />
@@ -182,14 +224,27 @@ export default function PolicyTab({
       </Paper>
 
       {/* Policy Content Sections Card */}
-      <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+      <Paper
+        sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+        elevation={0}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
               Policy Content Sections ({config.sections?.length || 0})
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Add, edit, reorder, or delete sections for this policy page. Changes are updated dynamically on the storefront.
+              Add, edit, reorder, or delete sections for this policy page.
+              Changes are updated dynamically on the storefront.
             </Typography>
           </Box>
           <Button
@@ -206,10 +261,24 @@ export default function PolicyTab({
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           {(config.sections || []).map((sec, idx) => (
-            <Card key={sec.id || idx} variant="outlined" sx={{ borderRadius: 2.5, p: 1 }}>
+            <Card
+              key={sec.id || idx}
+              variant="outlined"
+              sx={{ borderRadius: 2.5, p: 1 }}
+            >
               <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 700, color: "#1e293b" }}
+                  >
                     Section {idx + 1}
                   </Typography>
                   <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -246,7 +315,9 @@ export default function PolicyTab({
                       fullWidth
                       size="small"
                       value={sec.title || ""}
-                      onChange={(e) => handleUpdateSection(sec.id, "title", e.target.value)}
+                      onChange={(e) =>
+                        handleUpdateSection(sec.id, "title", e.target.value)
+                      }
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -257,7 +328,9 @@ export default function PolicyTab({
                       rows={3}
                       size="small"
                       value={sec.content || ""}
-                      onChange={(e) => handleUpdateSection(sec.id, "content", e.target.value)}
+                      onChange={(e) =>
+                        handleUpdateSection(sec.id, "content", e.target.value)
+                      }
                     />
                   </Grid>
                 </Grid>
@@ -266,8 +339,13 @@ export default function PolicyTab({
           ))}
 
           {(!config.sections || config.sections.length === 0) && (
-            <Box sx={{ textAlignment: "center", py: 4, color: "text.secondary" }}>
-              <Typography variant="body2">No policy sections added yet. Click &quot;Add Section&quot; to create one.</Typography>
+            <Box
+              sx={{ textAlignment: "center", py: 4, color: "text.secondary" }}
+            >
+              <Typography variant="body2">
+                No policy sections added yet. Click &quot;Add Section&quot; to
+                create one.
+              </Typography>
             </Box>
           )}
         </Box>

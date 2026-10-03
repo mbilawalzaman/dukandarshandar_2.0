@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+
 import {
   Box,
   Typography,
@@ -20,7 +21,12 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ContactMailIcon from "@mui/icons-material/ContactMail";
 
-import type { BannerItem, MediaAsset, PageSettings, PageSettingsKey } from "@/lib/pageSettings";
+import type {
+  BannerItem,
+  MediaAsset,
+  PageSettings,
+  PageSettingsKey,
+} from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 import { uploadVideoToCloudinary } from "@/lib/cloudinaryClientUpload";
 import HomeTab from "@/app/components/admin/pages/HomeTab";
@@ -46,7 +52,12 @@ export default function AdminManagePages() {
   const [settings, setSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [savingPage, setSavingPage] = useState<PageSettingsKey | null>(null);
-  const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({
+
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info";
+  }>({
     open: false,
     message: "",
     severity: "success",
@@ -54,7 +65,10 @@ export default function AdminManagePages() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"image" | "video">("image");
-  const [modalTargetPage, setModalTargetPage] = useState<PageSettingsKey>("home");
+
+  const [modalTargetPage, setModalTargetPage] =
+    useState<PageSettingsKey>("home");
+
   const [modalMediaPayload, setModalMediaPayload] = useState("");
   const [modalMediaPreview, setModalMediaPreview] = useState("");
   const [modalVideoFile, setModalVideoFile] = useState<File | null>(null);
@@ -62,25 +76,41 @@ export default function AdminManagePages() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalSubtitle, setModalSubtitle] = useState("");
   const [modalGoToLink, setModalGoToLink] = useState("");
-  const [slideImageUploads, setSlideImageUploads] = useState<Record<string, string>>({});
+
+  const [slideImageUploads, setSlideImageUploads] = useState<
+    Record<string, string>
+  >({});
 
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const res = await fetch(`/api/admin/page-settings?t=${Date.now()}`, {
         cache: "no-store",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
       const data = await res.json();
+
       if (data.success && data.settings) {
         setSettings(data.settings);
       } else {
-        setToast({ open: true, message: "Failed to load page settings", severity: "error" });
+        setToast({
+          open: true,
+          message: "Failed to load page settings",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching page settings:", err);
-      setToast({ open: true, message: "Failed to load page settings", severity: "error" });
+      setToast({
+        open: true,
+        message: "Failed to load page settings",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -90,27 +120,38 @@ export default function AdminManagePages() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const savePage = async (page: PageSettingsKey, overrideSettings?: PageSettings): Promise<boolean> => {
+  const savePage = async (
+    page: PageSettingsKey,
+    overrideSettings?: PageSettings,
+  ): Promise<boolean> => {
     try {
       setSavingPage(page);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const current = overrideSettings || settings;
 
       let dataPayload: Record<string, unknown>;
+
       if (page === "home") {
         const single = current.home.singleBanner;
         const singleUrl = single?.activeMedia?.url || "";
+
         const singleIsVideo =
           single?.activeMedia?.type === "video" ||
           singleUrl.includes("/video/upload/") ||
           /\.(mp4|webm|mov)(\?|$)/i.test(singleUrl);
+
         dataPayload = {
           ...current.home,
           banners: current.home.banners.map((b) => {
             const pendingImg = slideImageUploads[b.id];
+
             if (pendingImg) {
               return { ...b, mediaUpload: pendingImg };
             }
+
             return b;
           }),
           singleBanner: single
@@ -128,6 +169,7 @@ export default function AdminManagePages() {
         };
       } else {
         const pageSettings = current[page];
+
         dataPayload = {
           ...pageSettings,
           ...(pageSettings.bannerMedia?.type === "video"
@@ -150,7 +192,12 @@ export default function AdminManagePages() {
       });
 
       const raw = await res.text();
-      let data: { success?: boolean; message?: string; settings?: PageSettings } = {};
+      let data: {
+        success?: boolean;
+        message?: string;
+        settings?: PageSettings;
+      } = {};
+
       try {
         data = raw ? JSON.parse(raw) : {};
       } catch {
@@ -162,6 +209,7 @@ export default function AdminManagePages() {
               : `Failed to save ${PAGE_LABELS[page]} (HTTP ${res.status})`,
           severity: "error",
         });
+
         return false;
       }
 
@@ -173,14 +221,25 @@ export default function AdminManagePages() {
           message: data.message || `${PAGE_LABELS[page]} settings saved`,
           severity: "success",
         });
+
         return true;
       }
 
-      setToast({ open: true, message: data.message || "Failed to save settings", severity: "error" });
+      setToast({
+        open: true,
+        message: data.message || "Failed to save settings",
+        severity: "error",
+      });
+
       return false;
     } catch (err) {
       console.error("Error saving page settings:", err);
-      setToast({ open: true, message: "Network error while saving settings", severity: "error" });
+      setToast({
+        open: true,
+        message: "Network error while saving settings",
+        severity: "error",
+      });
+
       return false;
     } finally {
       setSavingPage(null);
@@ -188,7 +247,8 @@ export default function AdminManagePages() {
   };
 
   const clearModalMedia = () => {
-    if (modalMediaPreview.startsWith("blob:")) URL.revokeObjectURL(modalMediaPreview);
+    if (modalMediaPreview.startsWith("blob:"))
+      URL.revokeObjectURL(modalMediaPreview);
     setModalMediaPayload("");
     setModalMediaPreview("");
     setModalVideoFile(null);
@@ -206,30 +266,47 @@ export default function AdminManagePages() {
 
   const handleModalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     if (modalType === "video") {
       if (file.size > 25 * 1024 * 1024) {
-        setToast({ open: true, message: "Video must be under 25MB", severity: "error" });
+        setToast({
+          open: true,
+          message: "Video must be under 25MB",
+          severity: "error",
+        });
+
         return;
       }
-      if (modalMediaPreview.startsWith("blob:")) URL.revokeObjectURL(modalMediaPreview);
+
+      if (modalMediaPreview.startsWith("blob:"))
+        URL.revokeObjectURL(modalMediaPreview);
       setModalVideoFile(file);
       setModalMediaPayload("");
       setModalMediaPreview(URL.createObjectURL(file));
+
       return;
     }
 
     if (file.size > 6 * 1024 * 1024) {
-      setToast({ open: true, message: "Image must be under 6MB", severity: "error" });
+      setToast({
+        open: true,
+        message: "Image must be under 6MB",
+        severity: "error",
+      });
+
       return;
     }
 
     setModalVideoFile(null);
     const reader = new FileReader();
+
     reader.readAsDataURL(file);
+
     reader.onload = () => {
       const result = reader.result as string;
+
       setModalMediaPayload(result);
       setModalMediaPreview(result);
     };
@@ -239,9 +316,15 @@ export default function AdminManagePages() {
     try {
       setModalUploading(true);
       let videoAsset: MediaAsset | null = null;
+
       if (modalType === "video" && modalVideoFile) {
-        setToast({ open: true, message: "Uploading video directly to Cloudinary...", severity: "info" });
+        setToast({
+          open: true,
+          message: "Uploading video directly to Cloudinary...",
+          severity: "info",
+        });
         const uploaded = await uploadVideoToCloudinary(modalVideoFile);
+
         videoAsset = {
           type: "video",
           url: uploaded.url,
@@ -257,7 +340,8 @@ export default function AdminManagePages() {
         if (modalType === "image") {
           const newSlide: BannerItem = {
             id: `banner-${Date.now()}`,
-            title: modalTitle.trim() || `Slide #${settings.home.banners.length + 1}`,
+            title:
+              modalTitle.trim() || `Slide #${settings.home.banners.length + 1}`,
             subtitle: modalSubtitle.trim(),
             goToLink: modalGoToLink.trim() || undefined,
             order: settings.home.banners.length + 1,
@@ -270,6 +354,7 @@ export default function AdminManagePages() {
             pendingMedia: null,
             processingStatus: "idle",
           };
+
           const nextSettings: PageSettings = {
             ...settings,
             home: {
@@ -278,8 +363,13 @@ export default function AdminManagePages() {
               banners: [...settings.home.banners, newSlide],
             },
           };
-          setSlideImageUploads((prev) => ({ ...prev, [newSlide.id]: modalMediaPayload }));
+
+          setSlideImageUploads((prev) => ({
+            ...prev,
+            [newSlide.id]: modalMediaPayload,
+          }));
           const ok = await savePage("home", nextSettings);
+
           if (ok) setModalOpen(false);
         } else if (videoAsset) {
           const homePayloadSettings: PageSettings = {
@@ -289,8 +379,12 @@ export default function AdminManagePages() {
               bannerMode: "single_video",
               singleBanner: {
                 id: settings.home.singleBanner?.id || "single-banner-1",
-                title: modalTitle.trim() || settings.home.singleBanner?.title || "",
-                subtitle: modalSubtitle.trim() || settings.home.singleBanner?.subtitle || "",
+                title:
+                  modalTitle.trim() || settings.home.singleBanner?.title || "",
+                subtitle:
+                  modalSubtitle.trim() ||
+                  settings.home.singleBanner?.subtitle ||
+                  "",
                 order: 1,
                 isActive: true,
                 activeMedia: videoAsset,
@@ -299,13 +393,28 @@ export default function AdminManagePages() {
               },
             },
           };
-          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoUrl = videoAsset.url;
-          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoPublicId =
-            videoAsset.publicId;
-          (homePayloadSettings.home.singleBanner as unknown as Record<string, unknown>).videoFormat =
-            videoAsset.format;
+
+          (
+            homePayloadSettings.home.singleBanner as unknown as Record<
+              string,
+              unknown
+            >
+          ).videoUrl = videoAsset.url;
+          (
+            homePayloadSettings.home.singleBanner as unknown as Record<
+              string,
+              unknown
+            >
+          ).videoPublicId = videoAsset.publicId;
+          (
+            homePayloadSettings.home.singleBanner as unknown as Record<
+              string,
+              unknown
+            >
+          ).videoFormat = videoAsset.format;
 
           const ok = await savePage("home", homePayloadSettings);
+
           if (ok) setModalOpen(false);
         }
       } else if (modalType === "video" && videoAsset) {
@@ -321,7 +430,9 @@ export default function AdminManagePages() {
             videoFormat: videoAsset.format,
           },
         } as PageSettings;
+
         const ok = await savePage(modalTargetPage, nextSettings);
+
         if (ok) setModalOpen(false);
       } else {
         const nextSettings: PageSettings = {
@@ -333,7 +444,9 @@ export default function AdminManagePages() {
             bannerMedia: { type: "image", url: modalMediaPayload },
           },
         };
+
         const ok = await savePage(modalTargetPage, nextSettings);
+
         if (ok) setModalOpen(false);
       }
     } catch (err) {
@@ -350,9 +463,15 @@ export default function AdminManagePages() {
 
   const handleRemoveSlide = (slideId: string) => {
     if (settings.home.banners.length <= 1) {
-      setToast({ open: true, message: "At least one slide is required", severity: "error" });
+      setToast({
+        open: true,
+        message: "At least one slide is required",
+        severity: "error",
+      });
+
       return;
     }
+
     setSettings((prev) => ({
       ...prev,
       home: {
@@ -362,28 +481,53 @@ export default function AdminManagePages() {
     }));
     setSlideImageUploads((prev) => {
       const next = { ...prev };
+
       delete next[slideId];
+
       return next;
     });
   };
 
-  const handleReplaceSlideImage = (e: React.ChangeEvent<HTMLInputElement>, slideId: string) => {
+  const handleReplaceSlideImage = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slideId: string,
+  ) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
+
     if (file.size > 6 * 1024 * 1024) {
-      setToast({ open: true, message: "Image must be under 6MB", severity: "error" });
+      setToast({
+        open: true,
+        message: "Image must be under 6MB",
+        severity: "error",
+      });
+
       return;
     }
+
     const reader = new FileReader();
+
     reader.readAsDataURL(file);
+
     reader.onload = () => {
-      setSlideImageUploads((prev) => ({ ...prev, [slideId]: reader.result as string }));
+      setSlideImageUploads((prev) => ({
+        ...prev,
+        [slideId]: reader.result as string,
+      }));
     };
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 350 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 350,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -396,7 +540,8 @@ export default function AdminManagePages() {
           Page & Banner Management
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Edit each page separately. Image carousels or MP4 video banners upload directly to Cloudinary.
+          Edit each page separately. Image carousels or MP4 video banners upload
+          directly to Cloudinary.
         </Typography>
       </Box>
 
@@ -410,17 +555,53 @@ export default function AdminManagePages() {
             px: 2,
             borderBottom: 1,
             borderColor: "divider",
-            "& .MuiTab-root": { textTransform: "none", fontWeight: 700, minHeight: 52 },
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 700,
+              minHeight: 52,
+            },
           }}
         >
-          <Tab icon={<ViewCarouselIcon />} iconPosition="start" label="Home Page Banner" />
-          <Tab icon={<StorefrontIcon />} iconPosition="start" label="Shop Catalog Page" />
-          <Tab icon={<InfoOutlinedIcon />} iconPosition="start" label="About Us Page" />
-          <Tab icon={<ContactMailIcon />} iconPosition="start" label="Contact Page" />
-          <Tab icon={<SecurityIcon />} iconPosition="start" label="Privacy Policy" />
-          <Tab icon={<GavelIcon />} iconPosition="start" label="Terms & Conditions" />
-          <Tab icon={<LocalShippingIcon />} iconPosition="start" label="Shipping Policy" />
-          <Tab icon={<AssignmentReturnIcon />} iconPosition="start" label="Returns & Refunds" />
+          <Tab
+            icon={<ViewCarouselIcon />}
+            iconPosition="start"
+            label="Home Page Banner"
+          />
+          <Tab
+            icon={<StorefrontIcon />}
+            iconPosition="start"
+            label="Shop Catalog Page"
+          />
+          <Tab
+            icon={<InfoOutlinedIcon />}
+            iconPosition="start"
+            label="About Us Page"
+          />
+          <Tab
+            icon={<ContactMailIcon />}
+            iconPosition="start"
+            label="Contact Page"
+          />
+          <Tab
+            icon={<SecurityIcon />}
+            iconPosition="start"
+            label="Privacy Policy"
+          />
+          <Tab
+            icon={<GavelIcon />}
+            iconPosition="start"
+            label="Terms & Conditions"
+          />
+          <Tab
+            icon={<LocalShippingIcon />}
+            iconPosition="start"
+            label="Shipping Policy"
+          />
+          <Tab
+            icon={<AssignmentReturnIcon />}
+            iconPosition="start"
+            label="Returns & Refunds"
+          />
         </Tabs>
       </Paper>
 
@@ -551,7 +732,11 @@ export default function AdminManagePages() {
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity={toast.severity} onClose={() => setToast((prev) => ({ ...prev, open: false }))} sx={{ width: "100%" }}>
+        <Alert
+          severity={toast.severity}
+          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          sx={{ width: "100%" }}
+        >
           {toast.message}
         </Alert>
       </Snackbar>

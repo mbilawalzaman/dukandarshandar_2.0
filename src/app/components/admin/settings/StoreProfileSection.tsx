@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { Box, Grid, Paper, TextField, Typography } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
+
 import PakistanLocationFields from "@/app/components/checkout/PakistanLocationFields";
 
 interface StoreProfileSectionProps {
@@ -14,7 +16,12 @@ interface StoreProfileSectionProps {
   area: string;
   address: string;
   onFieldChange: (field: string, value: string) => void;
-  onLocationChange: (fields: { province?: string; city?: string; area?: string; address?: string }) => void;
+  onLocationChange: (fields: {
+    province?: string;
+    city?: string;
+    area?: string;
+    address?: string;
+  }) => void;
 }
 
 export default function StoreProfileSection({
@@ -29,7 +36,10 @@ export default function StoreProfileSection({
   onLocationChange,
 }: StoreProfileSectionProps) {
   return (
-    <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
+    <Paper
+      sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0" }}
+      elevation={0}
+    >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
         <BusinessIcon color="primary" />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -37,7 +47,8 @@ export default function StoreProfileSection({
         </Typography>
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Configure your store name, contact phone, and sender location used on customer receipts and printed shipping labels.
+        Configure your store name, contact phone, and sender location used on
+        customer receipts and printed shipping labels.
       </Typography>
 
       <Grid container spacing={2.5}>

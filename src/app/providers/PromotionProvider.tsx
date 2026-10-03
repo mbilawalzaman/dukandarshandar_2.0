@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import type { PublicPromotion } from "@/types/apps/promotionTypes";
 import {
   applyPromotions,
@@ -21,7 +29,10 @@ type PromotionContextValue = {
   /** vouchers / bundles / free-shipping promos relevant to a product */
   offersFor: (product: ProductLike) => PublicPromotion[];
   /** instant client-side quote for display; the server re-quotes at checkout */
-  quoteLocal: (items: EngineCartItem[], options: { shippingFee: number; voucherCode?: string | null }) => EngineResult;
+  quoteLocal: (
+    items: EngineCartItem[],
+    options: { shippingFee: number; voucherCode?: string | null },
+  ) => EngineResult;
 };
 
 const PromotionContext = createContext<PromotionContextValue | null>(null);
@@ -35,7 +46,12 @@ export function PromotionProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(() => {
     fetch("/api/promotions/active")
       .then((r) => r.json())
-      .then((d) => d.success && Array.isArray(d.promotions) && setPromotions(d.promotions))
+      .then(
+        (d) =>
+          d.success &&
+          Array.isArray(d.promotions) &&
+          setPromotions(d.promotions),
+      )
       .catch(() => undefined)
       .finally(() => setLoading(false));
   }, []);
@@ -43,6 +59,7 @@ export function PromotionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refresh();
     const t = setInterval(refresh, REFRESH_MS);
+
     return () => clearInterval(t);
   }, [refresh]);
 
@@ -52,17 +69,26 @@ export function PromotionProvider({ children }: { children: React.ReactNode }) {
       loading,
       refresh,
       dealFor: (product) => bestDealForProduct(product, promotions),
-      offersFor: (product) => promotionsForProduct(product, promotions) as PublicPromotion[],
-      quoteLocal: (items, { shippingFee, voucherCode }) => applyPromotions({ items, promotions, shippingFee, voucherCode }),
+      offersFor: (product) =>
+        promotionsForProduct(product, promotions) as PublicPromotion[],
+      quoteLocal: (items, { shippingFee, voucherCode }) =>
+        applyPromotions({ items, promotions, shippingFee, voucherCode }),
     }),
-    [promotions, loading, refresh]
+    [promotions, loading, refresh],
   );
 
-  return <PromotionContext.Provider value={value}>{children}</PromotionContext.Provider>;
+  return (
+    <PromotionContext.Provider value={value}>
+      {children}
+    </PromotionContext.Provider>
+  );
 }
 
 export function usePromotions() {
   const ctx = useContext(PromotionContext);
-  if (!ctx) throw new Error("usePromotions must be used within PromotionProvider");
+
+  if (!ctx)
+    throw new Error("usePromotions must be used within PromotionProvider");
+
   return ctx;
 }

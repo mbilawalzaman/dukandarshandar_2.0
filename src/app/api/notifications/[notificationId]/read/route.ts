@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { requireAuth } from "@/lib/auth";
 import {
   markNotificationRead,
@@ -9,12 +10,17 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: Request, ctx: { params: Promise<{ notificationId: string }> }) {
+export async function PATCH(
+  req: Request,
+  ctx: { params: Promise<{ notificationId: string }> },
+) {
   const auth = requireAuth(req);
+
   if (!auth.ok) return auth.response;
 
   const { notificationId } = await ctx.params;
-  const body = await req.json().catch(() => ({})) as {
+
+  const body = (await req.json().catch(() => ({}))) as {
     deviceId?: string;
     token?: string;
     userAgent?: string;
@@ -41,16 +47,26 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ notificationI
 
     if (notificationId === "all") {
       const result = await markAllNotificationsRead(auth.user.userId);
+
       return NextResponse.json({ success: true, updated: result.updated });
     }
 
     const result = await markNotificationRead(notificationId, auth.user.userId);
+
     if (!result.success) {
-      return NextResponse.json({ success: false, message: result.message }, { status: result.status });
+      return NextResponse.json(
+        { success: false, message: result.message },
+        { status: result.status },
+      );
     }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Mark notification read error:", error);
-    return NextResponse.json({ success: false, message: "Failed to update notification" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to update notification" },
+      { status: 500 },
+    );
   }
 }

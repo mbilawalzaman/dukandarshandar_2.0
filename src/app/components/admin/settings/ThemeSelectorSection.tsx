@@ -1,11 +1,17 @@
 "use client";
 
 import React from "react";
+
 import { Box, Chip, Grid, Paper, Typography } from "@mui/material";
 import PaletteIcon from "@mui/icons-material/Palette";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
 import type { ThemeKey } from "@/lib/themePresets";
-import { THEME_KEYS, THEME_PRESETS, getThemePresetName } from "@/lib/themePresets";
+import {
+  THEME_KEYS,
+  THEME_PRESETS,
+  getThemePresetName,
+} from "@/lib/themePresets";
 import { useSafeStoreSettings } from "@/app/providers/StoreSettingsProvider";
 
 interface ThemeSelectorSectionProps {
@@ -25,8 +31,20 @@ export default function ThemeSelectorSection({
   const shopName = settings.shopName;
 
   return (
-    <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, flexWrap: "wrap", gap: 1 }}>
+    <Paper
+      sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0" }}
+      elevation={0}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1,
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <PaletteIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -43,7 +61,9 @@ export default function ThemeSelectorSection({
         )}
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Click any marketplace theme preset below to live-preview on your screen. Click <strong>Save settings</strong> to apply it store-wide for all visitors.
+        Click any marketplace theme preset below to live-preview on your screen.
+        Click <strong>Save settings</strong> to apply it store-wide for all
+        visitors.
       </Typography>
 
       <Grid container spacing={2}>
@@ -51,6 +71,7 @@ export default function ThemeSelectorSection({
           const preset = THEME_PRESETS[key];
           const displayName = getThemePresetName(key, shopName);
           const isSelected = selectedThemeKey === key;
+
           return (
             <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
               <Paper
@@ -60,8 +81,12 @@ export default function ThemeSelectorSection({
                   borderRadius: 3,
                   cursor: "pointer",
                   border: isSelected ? "2px solid" : "1px solid #e2e8f0",
-                  borderColor: isSelected ? preset.palette.primary.main : "#e2e8f0",
-                  backgroundColor: isSelected ? `${preset.palette.primary.main}08` : "#ffffff",
+                  borderColor: isSelected
+                    ? preset.palette.primary.main
+                    : "#e2e8f0",
+                  backgroundColor: isSelected
+                    ? `${preset.palette.primary.main}08`
+                    : "#ffffff",
                   transition: "all 0.2s ease",
                   position: "relative",
                   "&:hover": {
@@ -93,10 +118,22 @@ export default function ThemeSelectorSection({
                     color: preset.palette.primary.dark,
                   }}
                 />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, pr: 3 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 700, mb: 0.5, pr: 3 }}
+                >
                   {displayName}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.82rem", mb: 2, height: 38, overflow: "hidden" }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: "0.82rem",
+                    mb: 2,
+                    height: 38,
+                    overflow: "hidden",
+                  }}
+                >
                   {preset.subtitle}
                 </Typography>
 

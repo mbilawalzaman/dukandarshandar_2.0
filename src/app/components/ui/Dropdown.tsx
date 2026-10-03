@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import type { PopoverOrigin } from "@mui/material";
 import {
   Button,
@@ -94,7 +95,7 @@ export default function Dropdown<T = unknown>({
   const allCustomItems = [...(items || []), ...extraItems];
 
   const hasContent = Boolean(
-    (row && (onView || onEdit || onDelete)) || allCustomItems.length > 0
+    (row && (onView || onEdit || onDelete)) || allCustomItems.length > 0,
   );
 
   if (!hasContent) return null;
@@ -103,7 +104,10 @@ export default function Dropdown<T = unknown>({
     <IconButton
       size="small"
       onClick={handleOpen}
-      sx={{ color: "text.secondary", "&:hover": { backgroundColor: "background.default" } }}
+      sx={{
+        color: "text.secondary",
+        "&:hover": { backgroundColor: "background.default" },
+      }}
     >
       <MoreVertIcon fontSize="small" />
     </IconButton>
@@ -111,7 +115,11 @@ export default function Dropdown<T = unknown>({
     <Button
       size="small"
       onClick={handleOpen}
-      endIcon={<KeyboardArrowDownIcon sx={{ fontSize: "1.1rem !important", color: "text.secondary" }} />}
+      endIcon={
+        <KeyboardArrowDownIcon
+          sx={{ fontSize: "1.1rem !important", color: "text.secondary" }}
+        />
+      }
       sx={{
         textTransform: "none",
         fontWeight: 600,
@@ -138,7 +146,10 @@ export default function Dropdown<T = unknown>({
   );
 
   const triggerElement = trigger ? (
-    <span onClick={handleOpen} style={{ cursor: "pointer", display: "inline-flex" }}>
+    <span
+      onClick={handleOpen}
+      style={{ cursor: "pointer", display: "inline-flex" }}
+    >
       {trigger}
     </span>
   ) : tooltipTitle ? (
@@ -176,7 +187,12 @@ export default function Dropdown<T = unknown>({
             }}
             sx={{ gap: 1.5, fontSize: "0.85rem" }}
           >
-            <ListItemIcon sx={{ minWidth: "auto", color: "var(--theme-primary-main, #0284c7)" }}>
+            <ListItemIcon
+              sx={{
+                minWidth: "auto",
+                color: "var(--theme-primary-main, #0284c7)",
+              }}
+            >
               <VisibilityIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="View Details" />
@@ -205,10 +221,19 @@ export default function Dropdown<T = unknown>({
                 handleClose(e);
                 act.onClick(row as T);
               }}
-              sx={{ gap: 1.5, fontSize: "0.85rem", color: act.color || "inherit" }}
+              sx={{
+                gap: 1.5,
+                fontSize: "0.85rem",
+                color: act.color || "inherit",
+              }}
             >
               {act.icon && (
-                <ListItemIcon sx={{ minWidth: "auto", color: act.color || "text.secondary" }}>
+                <ListItemIcon
+                  sx={{
+                    minWidth: "auto",
+                    color: act.color || "text.secondary",
+                  }}
+                >
                   {act.icon}
                 </ListItemIcon>
               )}

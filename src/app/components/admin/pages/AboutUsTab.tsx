@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Box,
   Typography,
@@ -19,7 +20,11 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
-import type { PageSettings, PageSettingsKey, AboutHighlightItem } from "@/lib/pageSettings";
+import type {
+  PageSettings,
+  PageSettingsKey,
+  AboutHighlightItem,
+} from "@/lib/pageSettings";
 import { DEFAULT_PAGE_SETTINGS } from "@/lib/pageSettings";
 import BannerMediaRenderer from "@/app/components/ui/BannerMediaRenderer";
 import SavePageButton from "./SavePageButton";
@@ -43,8 +48,20 @@ export default function AboutUsTab({
 }: AboutUsTabProps) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+      <Paper
+        sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+        elevation={0}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
           <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
             About Us Page Banner
           </Typography>
@@ -97,9 +114,21 @@ export default function AboutUsTab({
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
               Preview
             </Typography>
-            <Box sx={{ height: 160, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+            <Box
+              sx={{
+                height: 160,
+                borderRadius: 2,
+                overflow: "hidden",
+                border: "1px solid #e2e8f0",
+              }}
+            >
               <BannerMediaRenderer
-                media={settings.about.bannerMedia || { type: settings.about.bannerType || "image", url: settings.about.bannerImage || "" }}
+                media={
+                  settings.about.bannerMedia || {
+                    type: settings.about.bannerType || "image",
+                    url: settings.about.bannerImage || "",
+                  }
+                }
                 alt="About Banner"
                 style={{ width: "100%", height: "100%" }}
               />
@@ -111,6 +140,7 @@ export default function AboutUsTab({
       {/* Highlights Features */}
       {(() => {
         const rawHighlights = settings.about.highlights;
+
         const currentHighlights: AboutHighlightItem[] =
           Array.isArray(rawHighlights) && rawHighlights.length > 0
             ? rawHighlights
@@ -121,10 +151,15 @@ export default function AboutUsTab({
                 { id: "hl-4", icon: "security", title: "", text: "" },
               ];
 
-        const updateHighlight = (idx: number, patch: Partial<AboutHighlightItem>) => {
+        const updateHighlight = (
+          idx: number,
+          patch: Partial<AboutHighlightItem>,
+        ) => {
           setSettings((prev) => {
             const list = [...currentHighlights];
+
             list[idx] = { ...list[idx], ...patch };
+
             return { ...prev, about: { ...prev.about, highlights: list } };
           });
         };
@@ -133,9 +168,18 @@ export default function AboutUsTab({
           setSettings((prev) => {
             const list = [...currentHighlights];
             const newId = `hl-${Date.now()}`;
-            const icons: ("time" | "craft" | "shipping" | "security")[] = ["time", "craft", "shipping", "security"];
+
+            const icons: ("time" | "craft" | "shipping" | "security")[] = [
+              "time",
+              "craft",
+              "shipping",
+              "security",
+            ];
+
             const nextIcon = icons[list.length % 4];
+
             list.push({ id: newId, icon: nextIcon, title: "", text: "" });
+
             return { ...prev, about: { ...prev.about, highlights: list } };
           });
         };
@@ -143,20 +187,38 @@ export default function AboutUsTab({
         const removeHighlightCard = (idx: number) => {
           setSettings((prev) => {
             const list = [...currentHighlights];
+
             list.splice(idx, 1);
+
             return { ...prev, about: { ...prev.about, highlights: list } };
           });
         };
 
         return (
-          <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+          <Paper
+            sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+            elevation={0}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#0f172a" }}
+                >
                   Feature Highlights
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Key feature cards displayed on the About Us page. Use {"{storeName}"} for dynamic store name.
+                  Key feature cards displayed on the About Us page. Use{" "}
+                  {"{storeName}"} for dynamic store name.
                 </Typography>
               </Box>
               <Button
@@ -172,30 +234,66 @@ export default function AboutUsTab({
             <Grid container spacing={2}>
               {currentHighlights.map((hl, idx) => (
                 <Grid item xs={12} sm={6} md={3} key={hl.id || idx}>
-                  <Card sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0", position: "relative" }} elevation={0}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#d97706" }}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: "1px solid #e2e8f0",
+                      position: "relative",
+                    }}
+                    elevation={0}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 1.5,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 700, color: "#d97706" }}
+                      >
                         Card #{idx + 1}
                       </Typography>
                       {currentHighlights.length > 1 && (
-                        <IconButton size="small" color="error" onClick={() => removeHighlightCard(idx)}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => removeHighlightCard(idx)}
+                        >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       )}
                     </Box>
 
                     <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
-                      <InputLabel id={`icon-select-label-${idx}`}>Icon Type</InputLabel>
+                      <InputLabel id={`icon-select-label-${idx}`}>
+                        Icon Type
+                      </InputLabel>
                       <Select
                         labelId={`icon-select-label-${idx}`}
                         value={hl.icon || "time"}
                         label="Icon Type"
-                        onChange={(e) => updateHighlight(idx, { icon: e.target.value as AboutHighlightItem["icon"] })}
+                        onChange={(e) =>
+                          updateHighlight(idx, {
+                            icon: e.target.value as AboutHighlightItem["icon"],
+                          })
+                        }
                       >
-                        <MenuItem value="time">⏱️ Time / History (Clock)</MenuItem>
-                        <MenuItem value="craft">🎨 Craft / Handcrafted (Palette)</MenuItem>
-                        <MenuItem value="shipping">🚚 Shipping / Fast Delivery (Truck)</MenuItem>
-                        <MenuItem value="security">🛡️ Security / Trust (Shield)</MenuItem>
+                        <MenuItem value="time">
+                          ⏱️ Time / History (Clock)
+                        </MenuItem>
+                        <MenuItem value="craft">
+                          🎨 Craft / Handcrafted (Palette)
+                        </MenuItem>
+                        <MenuItem value="shipping">
+                          🚚 Shipping / Fast Delivery (Truck)
+                        </MenuItem>
+                        <MenuItem value="security">
+                          🛡️ Security / Trust (Shield)
+                        </MenuItem>
                       </Select>
                     </FormControl>
 
@@ -204,7 +302,9 @@ export default function AboutUsTab({
                       size="small"
                       fullWidth
                       value={hl.title || ""}
-                      onChange={(e) => updateHighlight(idx, { title: e.target.value })}
+                      onChange={(e) =>
+                        updateHighlight(idx, { title: e.target.value })
+                      }
                       sx={{ mb: 1.5 }}
                     />
 
@@ -215,7 +315,9 @@ export default function AboutUsTab({
                       multiline
                       rows={3}
                       value={hl.text || ""}
-                      onChange={(e) => updateHighlight(idx, { text: e.target.value })}
+                      onChange={(e) =>
+                        updateHighlight(idx, { text: e.target.value })
+                      }
                     />
                   </Card>
                 </Grid>
@@ -226,8 +328,14 @@ export default function AboutUsTab({
       })()}
 
       {/* Our Story Section */}
-      <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", mb: 2 }}>
+      <Paper
+        sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+        elevation={0}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, color: "#0f172a", mb: 2 }}
+        >
           Our Story Section
         </Typography>
         <Grid container spacing={3}>
@@ -238,11 +346,21 @@ export default function AboutUsTab({
               value={settings.about.story?.title || ""}
               onChange={(e) => {
                 const val = e.target.value;
+
                 setSettings((prev) => ({
                   ...prev,
                   about: {
                     ...prev.about,
-                    story: { ...(prev.about.story || { title: "", text: "", image: "", buttonText: "View products", buttonLink: "/shop" }), title: val },
+                    story: {
+                      ...(prev.about.story || {
+                        title: "",
+                        text: "",
+                        image: "",
+                        buttonText: "View products",
+                        buttonLink: "/shop",
+                      }),
+                      title: val,
+                    },
                   },
                 }));
               }}
@@ -256,11 +374,21 @@ export default function AboutUsTab({
               value={settings.about.story?.text || ""}
               onChange={(e) => {
                 const val = e.target.value;
+
                 setSettings((prev) => ({
                   ...prev,
                   about: {
                     ...prev.about,
-                    story: { ...(prev.about.story || { title: "", text: "", image: "", buttonText: "View products", buttonLink: "/shop" }), text: val },
+                    story: {
+                      ...(prev.about.story || {
+                        title: "",
+                        text: "",
+                        image: "",
+                        buttonText: "View products",
+                        buttonLink: "/shop",
+                      }),
+                      text: val,
+                    },
                   },
                 }));
               }}
@@ -275,11 +403,21 @@ export default function AboutUsTab({
                   value={settings.about.story?.buttonText || "View products"}
                   onChange={(e) => {
                     const val = e.target.value;
+
                     setSettings((prev) => ({
                       ...prev,
                       about: {
                         ...prev.about,
-                        story: { ...(prev.about.story || { title: "", text: "", image: "", buttonText: "View products", buttonLink: "/shop" }), buttonText: val },
+                        story: {
+                          ...(prev.about.story || {
+                            title: "",
+                            text: "",
+                            image: "",
+                            buttonText: "View products",
+                            buttonLink: "/shop",
+                          }),
+                          buttonText: val,
+                        },
                       },
                     }));
                   }}
@@ -293,11 +431,21 @@ export default function AboutUsTab({
                   value={settings.about.story?.buttonLink || "/shop"}
                   onChange={(e) => {
                     const val = e.target.value;
+
                     setSettings((prev) => ({
                       ...prev,
                       about: {
                         ...prev.about,
-                        story: { ...(prev.about.story || { title: "", text: "", image: "", buttonText: "View products", buttonLink: "/shop" }), buttonLink: val },
+                        story: {
+                          ...(prev.about.story || {
+                            title: "",
+                            text: "",
+                            image: "",
+                            buttonText: "View products",
+                            buttonLink: "/shop",
+                          }),
+                          buttonLink: val,
+                        },
                       },
                     }));
                   }}
@@ -313,11 +461,21 @@ export default function AboutUsTab({
               value={settings.about.story?.image || ""}
               onChange={(e) => {
                 const val = e.target.value;
+
                 setSettings((prev) => ({
                   ...prev,
                   about: {
                     ...prev.about,
-                    story: { ...(prev.about.story || { title: "", text: "", image: "", buttonText: "View products", buttonLink: "/shop" }), image: val },
+                    story: {
+                      ...(prev.about.story || {
+                        title: "",
+                        text: "",
+                        image: "",
+                        buttonText: "View products",
+                        buttonLink: "/shop",
+                      }),
+                      image: val,
+                    },
                   },
                 }));
               }}
@@ -328,10 +486,26 @@ export default function AboutUsTab({
                 component="img"
                 src={settings.about.story.image}
                 alt="Story Preview"
-                sx={{ width: "100%", height: 180, borderRadius: 2, objectFit: "cover", border: "1px solid #e2e8f0" }}
+                sx={{
+                  width: "100%",
+                  height: 180,
+                  borderRadius: 2,
+                  objectFit: "cover",
+                  border: "1px solid #e2e8f0",
+                }}
               />
             ) : (
-              <Box sx={{ height: 180, borderRadius: 2, border: "2px dashed #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
+              <Box
+                sx={{
+                  height: 180,
+                  borderRadius: 2,
+                  border: "2px dashed #cbd5e1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "text.secondary",
+                }}
+              >
                 No Story Image Configured
               </Box>
             )}
@@ -340,8 +514,18 @@ export default function AboutUsTab({
       </Paper>
 
       {/* Testimonial Quotes Carousel */}
-      <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Paper
+        sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+        elevation={0}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
           <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
             Testimonial Quotes / Highlight Statements
           </Typography>
@@ -374,10 +558,16 @@ export default function AboutUsTab({
                   value={quote}
                   onChange={(e) => {
                     const val = e.target.value;
+
                     setSettings((prev) => {
                       const updated = [...(prev.about.quotes || [])];
+
                       updated[idx] = val;
-                      return { ...prev, about: { ...prev.about, quotes: updated } };
+
+                      return {
+                        ...prev,
+                        about: { ...prev.about, quotes: updated },
+                      };
                     });
                   }}
                 />
@@ -386,8 +576,13 @@ export default function AboutUsTab({
                   onClick={() => {
                     setSettings((prev) => {
                       const updated = [...(prev.about.quotes || [])];
+
                       updated.splice(idx, 1);
-                      return { ...prev, about: { ...prev.about, quotes: updated } };
+
+                      return {
+                        ...prev,
+                        about: { ...prev.about, quotes: updated },
+                      };
                     });
                   }}
                 >
@@ -399,7 +594,8 @@ export default function AboutUsTab({
           {(!settings.about.quotes || settings.about.quotes.length === 0) && (
             <Grid item xs={12}>
               <Typography variant="body2" color="text.secondary">
-                No quote statements added yet. Click &quot;Add Quote&quot; to add slides.
+                No quote statements added yet. Click &quot;Add Quote&quot; to
+                add slides.
               </Typography>
             </Grid>
           )}

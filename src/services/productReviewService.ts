@@ -1,4 +1,5 @@
 import { ObjectId, type WithId, type Document } from "mongodb";
+
 import { getDb } from "@/lib/db";
 
 const COLLECTION = "product_reviews";
@@ -16,6 +17,7 @@ export type ReviewDoc = {
 
 function serialize(doc: WithId<Document> | (ReviewDoc & { _id: ObjectId })) {
   const d = doc as WithId<Document>;
+
   return {
     _id: String(d._id),
     productId: String(d.productId),
@@ -23,14 +25,29 @@ function serialize(doc: WithId<Document> | (ReviewDoc & { _id: ObjectId })) {
     userName: String(d.userName || "Customer"),
     rating: Number(d.rating) || 0,
     comment: String(d.comment || ""),
-    createdAt: d.createdAt instanceof Date ? d.createdAt.toISOString() : String(d.createdAt || ""),
-    updatedAt: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : String(d.updatedAt || ""),
+    createdAt:
+      d.createdAt instanceof Date
+        ? d.createdAt.toISOString()
+        : String(d.createdAt || ""),
+    updatedAt:
+      d.updatedAt instanceof Date
+        ? d.updatedAt.toISOString()
+        : String(d.updatedAt || ""),
   };
 }
 
 /** True when the user has at least one delivered order that includes this product. */
-export async function userHasDeliveredProduct(userId: string, productId: string): Promise<boolean> {
-  if (!userId || userId === "guest" || userId.startsWith("guest_") || !ObjectId.isValid(productId)) return false;
+export async function userHasDeliveredProduct(
+  userId: string,
+  productId: string,
+): Promise<boolean> {
+  if (
+    !userId ||
+    userId === "guest" ||
+    userId.startsWith("guest_") ||
+    !ObjectId.isValid(productId)
+  )
+    return false;
 
   const db = await getDb();
   const oid = new ObjectId(productId);
@@ -41,7 +58,7 @@ export async function userHasDeliveredProduct(userId: string, productId: string)
       customer_id: userId,
       $or: [{ "items._id": productId }, { "items._id": oid }],
     },
-    { projection: { _id: 1 } }
+    { projection: { _id: 1 } },
   );
 
   return Boolean(order);
@@ -49,6 +66,7 @@ export async function userHasDeliveredProduct(userId: string, productId: string)
 
 async function recalculateProductRating(productId: ObjectId) {
   const db = await getDb();
+
   const reviews = await db
     .collection(COLLECTION)
     .find({ productId })
@@ -62,7 +80,9 @@ async function recalculateProductRating(productId: ObjectId) {
   const average =
     ratings.length === 0
       ? 0
-      : Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 2) / 2;
+      : Math.round(
+          (ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 2,
+        ) / 2;
 
   await db.collection("products").updateOne(
     { _id: productId },
@@ -73,7 +93,7 @@ async function recalculateProductRating(productId: ObjectId) {
         reviewCount: ratings.length,
         updated_at: new Date(),
       },
-    }
+    },
   );
 
   return { average, count: ratings.length, ratings };
@@ -81,14 +101,26 @@ async function recalculateProductRating(productId: ObjectId) {
 
 export async function listProductReviews(productId: string, userId?: string) {
   if (!ObjectId.isValid(productId)) {
-    return { success: false as const, message: "Invalid product ID", status: 400 };
+    return {
+      success: false as const,
+      message: "Invalid product ID",
+      status: 400,
+    };
   }
 
   const db = await getDb();
   const oid = new ObjectId(productId);
-  const product = await db.collection("products").findOne({ _id: oid }, { projection: { _id: 1, rating: 1 } });
+
+  const product = await db
+    .collection("products")
+    .findOne({ _id: oid }, { projection: { _id: 1, rating: 1 } });
+
   if (!product) {
-    return { success: false as const, message: "Product not found", status: 404 };
+    return {
+      success: false as const,
+      message: "Product not found",
+      status: 404,
+    };
   }
 
   const docs = await db
@@ -99,8 +131,14 @@ export async function listProductReviews(productId: string, userId?: string) {
     .toArray();
 
   const reviews = docs.map(serialize);
-  const myReview = userId ? reviews.find((r) => r.userId === userId) || null : null;
-  const canReview = userId ? await userHasDeliveredProduct(userId, productId) : false;
+
+  const myReview = userId
+    ? reviews.find((r) => r.userId === userId) || null
+    : null;
+
+  const canReview = userId
+    ? await userHasDeliveredProduct(userId, productId)
+    : false;
 
   return {
     success: true as const,
@@ -123,38 +161,71 @@ export async function upsertProductReview(input: {
   const { productId, userId, userName } = input;
 
   if (!ObjectId.isValid(productId)) {
-    return { success: false as const, message: "Invalid product ID", status: 400 };
+    return {
+      success: false as const,
+      message: "Invalid product ID",
+      status: 400,
+    };
   }
 
   if (userId === "guest" || userId.startsWith("guest_")) {
-    return { success: false as const, message: "Guests cannot leave reviews. Please log in.", status: 403 };
+    return {
+      success: false as const,
+      message: "Guests cannot leave reviews. Please log in.",
+      status: 403,
+    };
   }
 
-  if (typeof input.rating !== "number" || Number.isNaN(input.rating) || input.rating < 0.5 || input.rating > 5) {
-    return { success: false as const, message: "Rating must be between 0.5 and 5", status: 400 };
+  if (
+    typeof input.rating !== "number" ||
+    Number.isNaN(input.rating) ||
+    input.rating < 0.5 ||
+    input.rating > 5
+  ) {
+    return {
+      success: false as const,
+      message: "Rating must be between 0.5 and 5",
+      status: 400,
+    };
   }
 
   const eligible = await userHasDeliveredProduct(userId, productId);
+
   if (!eligible) {
     return {
       success: false as const,
-      message: "You can only review products from orders that have been delivered.",
+      message:
+        "You can only review products from orders that have been delivered.",
       status: 403,
     };
   }
 
   const rating = Math.round(input.rating * 2) / 2;
-  const comment = String(input.comment || "").trim().slice(0, MAX_COMMENT);
+
+  const comment = String(input.comment || "")
+    .trim()
+    .slice(0, MAX_COMMENT);
 
   const db = await getDb();
   const oid = new ObjectId(productId);
-  const product = await db.collection("products").findOne({ _id: oid }, { projection: { _id: 1 } });
+
+  const product = await db
+    .collection("products")
+    .findOne({ _id: oid }, { projection: { _id: 1 } });
+
   if (!product) {
-    return { success: false as const, message: "Product not found", status: 404 };
+    return {
+      success: false as const,
+      message: "Product not found",
+      status: 404,
+    };
   }
 
   const now = new Date();
-  const existing = await db.collection(COLLECTION).findOne({ productId: oid, userId });
+
+  const existing = await db
+    .collection(COLLECTION)
+    .findOne({ productId: oid, userId });
 
   if (existing) {
     await db.collection(COLLECTION).updateOne(
@@ -166,7 +237,7 @@ export async function upsertProductReview(input: {
           userName: userName || existing.userName || "Customer",
           updatedAt: now,
         },
-      }
+      },
     );
   } else {
     await db.collection(COLLECTION).insertOne({
@@ -197,13 +268,19 @@ export async function upsertProductReview(input: {
 
 export async function getOrderReviews(userId: string, orderId: string) {
   if (!userId || !ObjectId.isValid(orderId)) {
-    return { success: false as const, message: "Invalid user or order ID", status: 400 };
+    return {
+      success: false as const,
+      message: "Invalid user or order ID",
+      status: 400,
+    };
   }
 
   const db = await getDb();
   const orderOid = new ObjectId(orderId);
 
-  const order = await db.collection("orders").findOne({ _id: orderOid, customer_id: userId });
+  const order = await db
+    .collection("orders")
+    .findOne({ _id: orderOid, customer_id: userId });
 
   if (!order) {
     return { success: false as const, message: "Order not found", status: 404 };
@@ -214,6 +291,7 @@ export async function getOrderReviews(userId: string, orderId: string) {
 
   for (const item of items) {
     const pidStr = String(item._id || "");
+
     if (pidStr && ObjectId.isValid(pidStr)) {
       productObjectIds.push(new ObjectId(pidStr));
     }
@@ -228,6 +306,7 @@ export async function getOrderReviews(userId: string, orderId: string) {
     .toArray();
 
   const reviewMapByProduct = new Map<string, ReturnType<typeof serialize>>();
+
   userReviews.forEach((r) => {
     reviewMapByProduct.set(String(r.productId), serialize(r));
   });
@@ -235,6 +314,7 @@ export async function getOrderReviews(userId: string, orderId: string) {
   const itemsMap = items.map((item) => {
     const pidStr = String(item._id || "");
     const rev = reviewMapByProduct.get(pidStr) || null;
+
     return {
       _id: pidStr,
       name: String(item.name || "Product"),
@@ -261,4 +341,3 @@ export async function getOrderReviews(userId: string, orderId: string) {
     items: itemsMap,
   };
 }
-

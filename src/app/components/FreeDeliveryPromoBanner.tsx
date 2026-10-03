@@ -2,6 +2,7 @@
 
 import { Alert, Box, Typography } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+
 import { BRAND } from "@/lib/uiBrand";
 
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
@@ -11,7 +12,10 @@ type FreeDeliveryPromoBannerProps = {
   compact?: boolean;
 };
 
-export default function FreeDeliveryPromoBanner({ savedAmount, compact = false }: FreeDeliveryPromoBannerProps) {
+export default function FreeDeliveryPromoBanner({
+  savedAmount,
+  compact = false,
+}: FreeDeliveryPromoBannerProps) {
   const { settings } = useDeliverySettings();
   const storeName = settings.shopName || "";
 
@@ -30,7 +34,10 @@ export default function FreeDeliveryPromoBanner({ savedAmount, compact = false }
       }}
     >
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: BRAND.navy }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 800, color: BRAND.navy }}
+        >
           Free delivery on us
         </Typography>
         <Typography variant="body2" sx={{ color: BRAND.muted, mt: 0.25 }}>

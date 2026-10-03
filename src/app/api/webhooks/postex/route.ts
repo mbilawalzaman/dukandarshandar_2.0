@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { getDb } from "@/lib/db";
 import { POSTEX_STATUS_CODES } from "@/config/postex.config.js";
 import { sendMail } from "@/lib/mail";
@@ -15,10 +16,16 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Optional Secret Signature Verification
     const webhookSecret = process.env.POSTEX_WEBHOOK_SECRET;
+
     if (webhookSecret) {
-      const authHeader = req.headers.get("authorization") || req.headers.get("x-postex-secret");
+      const authHeader =
+        req.headers.get("authorization") || req.headers.get("x-postex-secret");
+
       if (authHeader !== webhookSecret) {
-        return NextResponse.json({ success: false, error: "Unauthorized webhook signature" }, { status: 401 });
+        return NextResponse.json(
+          { success: false, error: "Unauthorized webhook signature" },
+          { status: 401 },
+        );
       }
     }
 
@@ -26,7 +33,10 @@ export async function POST(req: NextRequest) {
     const payloadArray = Array.isArray(body) ? body : [body];
 
     if (payloadArray.length === 0) {
-      return NextResponse.json({ success: true, message: "Empty payload received" });
+      return NextResponse.json({
+        success: true,
+        message: "Empty payload received",
+      });
     }
 
     const db = await getDb();
@@ -42,10 +52,10 @@ export async function POST(req: NextRequest) {
 
       const statusCode = String(
         event.transactionStatusMessageCode ||
-        event.orderStatusCode ||
-        event.statusCode ||
-        event.statusId ||
-        ""
+          event.orderStatusCode ||
+          event.statusCode ||
+          event.statusId ||
+          "",
       );
 
       const rawStatus =
@@ -55,7 +65,8 @@ export async function POST(req: NextRequest) {
         POSTEX_STATUS_CODES[statusCode as keyof typeof POSTEX_STATUS_CODES] ||
         "Updated";
 
-      const remarks = event.message || event.remarks || event.transactionNotes || "";
+      const remarks =
+        event.message || event.remarks || event.transactionNotes || "";
 
       // Find Order by PostEx Tracking Number (top-level or inside postexDetails)
       const order = await db.collection("orders").findOne({
@@ -66,11 +77,15 @@ export async function POST(req: NextRequest) {
       });
 
       if (!order) {
-        console.warn(`[PostEx Webhook] No order found for trackingNumber: ${trackingNumber}`);
+        console.warn(
+          `[PostEx Webhook] No order found for trackingNumber: ${trackingNumber}`,
+        );
+
         return null;
       }
 
       const lowerStatus = rawStatus.toLowerCase();
+
       const isPickedUpState =
         rawStatus === "Picked By PostEx" ||
         rawStatus === "Out For Delivery" ||
@@ -79,12 +94,20 @@ export async function POST(req: NextRequest) {
         rawStatus === "At PostEx Warehouse" ||
         statusCode === "0003" ||
         statusCode === "0004" ||
-        (lowerStatus.includes("picked") && !lowerStatus.includes("un-assigned")) ||
+        (lowerStatus.includes("picked") &&
+          !lowerStatus.includes("un-assigned")) ||
         lowerStatus.includes("transit") ||
         lowerStatus.includes("route");
 
-      const isDeliveredState = statusCode === "0005" || statusCode === "5" || lowerStatus === "delivered";
-      const isReturnedState = ["0002", "0006", "0007"].includes(statusCode) || lowerStatus.includes("return");
+      const isDeliveredState =
+        statusCode === "0005" ||
+        statusCode === "5" ||
+        lowerStatus === "delivered";
+
+      const isReturnedState =
+        ["0002", "0006", "0007"].includes(statusCode) ||
+        lowerStatus.includes("return");
+
       const isCancelledState =
         rawStatus === "Un-Assigned By Me" ||
         rawStatus === "Cancelled" ||
@@ -111,12 +134,15 @@ export async function POST(req: NextRequest) {
         order.status !== "delivered"
       ) {
         const shippedAt = new Date();
+
         updateFields.status = "Shipped";
         updateFields.shippedAt = shippedAt;
         updateFields["postexDetails.shippedAt"] = shippedAt;
 
         // Trigger Email #2: "Order Dispatched / Shipped" using emailTemplates
-        const recipientEmail = order.customerEmail || order.email || order.userEmail;
+        const recipientEmail =
+          order.customerEmail || order.email || order.userEmail;
+
         if (recipientEmail) {
           try {
             const customerName =
@@ -125,6 +151,7 @@ export async function POST(req: NextRequest) {
               order.customerName ||
               order.userEmail ||
               "Customer";
+
             const orderRefNumber = String(order.orderNumber || order._id);
 
             const htmlContent = orderStatusEmail({
@@ -147,13 +174,20 @@ export async function POST(req: NextRequest) {
         }
       } else if (isDeliveredState) {
         const deliveredAt = new Date();
+
         updateFields.status = "Delivered";
         updateFields.deliveredAt = deliveredAt;
         updateFields["postexDetails.deliveredAt"] = deliveredAt;
 
         // Trigger Delivered Email notification if order was not already Delivered
-        const recipientEmail = order.customerEmail || order.email || order.userEmail;
-        if (recipientEmail && order.status !== "Delivered" && order.status !== "delivered") {
+        const recipientEmail =
+          order.customerEmail || order.email || order.userEmail;
+
+        if (
+          recipientEmail &&
+          order.status !== "Delivered" &&
+          order.status !== "delivered"
+        ) {
           try {
             const customerName =
               order.shippingAddress?.name ||
@@ -161,6 +195,7 @@ export async function POST(req: NextRequest) {
               order.customerName ||
               order.userEmail ||
               "Customer";
+
             const orderRefNumber = String(order.orderNumber || order._id);
 
             const htmlContent = orderStatusEmail({
@@ -181,8 +216,13 @@ export async function POST(req: NextRequest) {
       } else if (isReturnedState) {
         updateFields.status = "Returned";
       } else if (isCancelledState && order.status !== "cancelled") {
-        const { cancelCustomerOrder } = await import("@/services/orderCancelService");
-        await cancelCustomerOrder(String(order._id), { role: "admin", userId: "postex_webhook" }).catch((err) => {
+        const { cancelCustomerOrder } =
+          await import("@/services/orderCancelService");
+
+        await cancelCustomerOrder(String(order._id), {
+          role: "admin",
+          userId: "postex_webhook",
+        }).catch((err) => {
           console.error("[PostEx Webhook] Error auto-cancelling order:", err);
         });
         updateFields.status = "cancelled";
@@ -199,7 +239,7 @@ export async function POST(req: NextRequest) {
               timestamp: new Date(),
             },
           } as unknown as Record<string, never>,
-        }
+        },
       );
     });
 
@@ -212,10 +252,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const err = error as { message?: string };
+
     console.error("❌ PostEx Webhook Processing Error:", err.message);
+
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to process PostEx webhook" },
-      { status: 500 }
+      {
+        success: false,
+        error: err.message || "Failed to process PostEx webhook",
+      },
+      { status: 500 },
     );
   }
 }

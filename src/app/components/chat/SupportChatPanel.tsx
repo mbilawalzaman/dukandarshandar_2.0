@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   Box,
   Paper,
@@ -25,6 +32,7 @@ import {
   type QueryDocumentSnapshot,
   type DocumentData,
 } from "firebase/firestore";
+
 import { getFirebaseDb } from "@/lib/firebaseClient";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import { authHeaders } from "@/lib/cart";
@@ -55,26 +63,43 @@ interface SupportChatPanelProps {
 
 function toDate(value: ChatMessage["createdAt"]) {
   if (!value) return null;
-  if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
     return value.toDate();
   }
+
   return new Date(String(value));
 }
 
 function formatTime(value: ChatMessage["createdAt"]) {
   const date = toDate(value);
-  return date ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  return date
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
 }
 
 function formatDay(value: ChatMessage["createdAt"]) {
   const date = toDate(value);
+
   if (!date) return "";
   const today = new Date();
   const yesterday = new Date();
+
   yesterday.setDate(today.getDate() - 1);
   if (date.toDateString() === today.toDateString()) return "Today";
   if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+
+  return date.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function mapDoc(doc: QueryDocumentSnapshot<DocumentData>): ChatMessage {
@@ -84,7 +109,9 @@ function mapDoc(doc: QueryDocumentSnapshot<DocumentData>): ChatMessage {
 function sameDay(a: ChatMessage["createdAt"], b: ChatMessage["createdAt"]) {
   const da = toDate(a);
   const db = toDate(b);
+
   if (!da || !db) return false;
+
   return da.toDateString() === db.toDateString();
 }
 
@@ -111,18 +138,25 @@ export default function SupportChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pendingRef = useRef<Map<string, ChatMessage>>(new Map());
-  const oldestCursorRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
+
+  const oldestCursorRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(
+    null,
+  );
+
   const paginationInitializedRef = useRef(false);
   const shouldStickToBottomRef = useRef(true);
   const initialScrollDoneRef = useRef(false);
 
   const allMessages = useMemo(() => {
     const merged = new Map<string, ChatMessage>();
+
     [...olderMessages, ...liveMessages].forEach((m) => merged.set(m.id, m));
     pendingRef.current.forEach((m) => merged.set(m.id, m));
+
     return Array.from(merged.values()).sort((a, b) => {
       const ta = toDate(a.createdAt)?.getTime() || 0;
       const tb = toDate(b.createdAt)?.getTime() || 0;
+
       return ta - tb;
     });
   }, [olderMessages, liveMessages]);
@@ -148,8 +182,18 @@ export default function SupportChatPanel({
       headers: authHeaders(),
     }).catch(() => undefined);
 
-    const messagesCol = collection(getFirebaseDb(), "conversations", conversationId, "messages");
-    const liveQuery = query(messagesCol, orderBy("createdAt", "desc"), limit(PAGE_SIZE));
+    const messagesCol = collection(
+      getFirebaseDb(),
+      "conversations",
+      conversationId,
+      "messages",
+    );
+
+    const liveQuery = query(
+      messagesCol,
+      orderBy("createdAt", "desc"),
+      limit(PAGE_SIZE),
+    );
 
     const unsub = onSnapshot(liveQuery, (snap) => {
       const serverMessages = snap.docs.map(mapDoc).reverse();
@@ -157,12 +201,16 @@ export default function SupportChatPanel({
       if (!paginationInitializedRef.current && snap.docs.length > 0) {
         oldestCursorRef.current = snap.docs[snap.docs.length - 1]!;
         paginationInitializedRef.current = true;
+
         if (snap.docs.length < PAGE_SIZE) {
           setHasMoreOlder(false);
         }
       }
 
-      const serverClientIds = new Set(serverMessages.map((m) => m.clientMessageId).filter(Boolean));
+      const serverClientIds = new Set(
+        serverMessages.map((m) => m.clientMessageId).filter(Boolean),
+      );
+
       pendingRef.current.forEach((pending, key) => {
         if (serverClientIds.has(key)) pendingRef.current.delete(key);
       });
@@ -189,36 +237,52 @@ export default function SupportChatPanel({
     const prevScrollTop = container?.scrollTop || 0;
 
     setLoadingOlder(true);
+
     try {
-      const messagesCol = collection(getFirebaseDb(), "conversations", conversationId, "messages");
+      const messagesCol = collection(
+        getFirebaseDb(),
+        "conversations",
+        conversationId,
+        "messages",
+      );
+
       const olderQuery = query(
         messagesCol,
         orderBy("createdAt", "desc"),
         startAfter(oldestCursorRef.current),
-        limit(PAGE_SIZE)
+        limit(PAGE_SIZE),
       );
+
       const snap = await getDocs(olderQuery);
+
       if (snap.empty) {
         setHasMoreOlder(false);
+
         return;
       }
 
-      oldestCursorRef.current = snap.docs[snap.docs.length - 1] || oldestCursorRef.current;
+      oldestCursorRef.current =
+        snap.docs[snap.docs.length - 1] || oldestCursorRef.current;
+
       if (snap.docs.length < PAGE_SIZE) {
         setHasMoreOlder(false);
       }
 
       const fetched = snap.docs.map(mapDoc).reverse();
+
       setOlderMessages((prev) => {
         const ids = new Set(prev.map((m) => m.id));
         const unique = fetched.filter((m) => !ids.has(m.id));
+
         return [...unique, ...prev];
       });
 
       requestAnimationFrame(() => {
         if (container) {
           const newScrollHeight = container.scrollHeight;
-          container.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+
+          container.scrollTop =
+            newScrollHeight - prevScrollHeight + prevScrollTop;
         }
       });
     } catch (err) {
@@ -230,9 +294,12 @@ export default function SupportChatPanel({
 
   const handleScroll = useCallback(() => {
     const container = scrollRef.current;
+
     if (!container) return;
 
-    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
     shouldStickToBottomRef.current = distanceFromBottom < 80;
 
     if (container.scrollTop <= 48 && hasMoreOlder && !loadingOlder) {
@@ -242,9 +309,11 @@ export default function SupportChatPanel({
 
   const sendMessage = useCallback(async () => {
     const trimmed = text.trim();
+
     if (!trimmed || sending) return;
 
     const clientMessageId = crypto.randomUUID();
+
     const optimistic: ChatMessage = {
       id: `pending-${clientMessageId}`,
       senderId: currentUserId,
@@ -253,6 +322,7 @@ export default function SupportChatPanel({
       pending: true,
       createdAt: new Date(),
     };
+
     pendingRef.current.set(clientMessageId, optimistic);
     setLiveMessages((prev) => [...prev, optimistic]);
     setText("");
@@ -265,21 +335,27 @@ export default function SupportChatPanel({
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ text: trimmed, clientMessageId }),
       });
+
       const data = await res.json();
+
       if (!res.ok || !data.success) {
         pendingRef.current.delete(clientMessageId);
         setLiveMessages((prev) =>
           prev.map((m) =>
-            m.clientMessageId === clientMessageId ? { ...m, pending: false, failed: true } : m
-          )
+            m.clientMessageId === clientMessageId
+              ? { ...m, pending: false, failed: true }
+              : m,
+          ),
         );
       }
     } catch {
       pendingRef.current.delete(clientMessageId);
       setLiveMessages((prev) =>
         prev.map((m) =>
-          m.clientMessageId === clientMessageId ? { ...m, pending: false, failed: true } : m
-        )
+          m.clientMessageId === clientMessageId
+            ? { ...m, pending: false, failed: true }
+            : m,
+        ),
       );
     } finally {
       setSending(false);
@@ -315,7 +391,12 @@ export default function SupportChatPanel({
           flex: 1,
           overflowY: "auto",
           p: widget ? 2 : 2,
-          backgroundColor: widget || customerTheme ? (customerTheme ? "#ffffff" : "#f3f4f6") : "var(--theme-bg-default, #f8fafc)",
+          backgroundColor:
+            widget || customerTheme
+              ? customerTheme
+                ? "#ffffff"
+                : "#f3f4f6"
+              : "var(--theme-bg-default, #f8fafc)",
           minHeight: 0,
         }}
       >
@@ -328,7 +409,10 @@ export default function SupportChatPanel({
                 size="small"
                 variant="text"
                 onClick={loadOlderMessages}
-                sx={{ color: customerTheme ? BRAND.goldDark : "#b8860b", fontWeight: 600 }}
+                sx={{
+                  color: customerTheme ? BRAND.goldDark : "#b8860b",
+                  fontWeight: 600,
+                }}
               >
                 Load older messages
               </Button>
@@ -354,8 +438,12 @@ export default function SupportChatPanel({
                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
                 }}
               >
-                <Typography variant="body2" sx={{ color: "#374151", lineHeight: 1.6 }}>
-                  Hello! I am your {storeName ? `${storeName} ` : ""}Support Assistant. How can I help you today?
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#374151", lineHeight: 1.6 }}
+                >
+                  Hello! I am your {storeName ? `${storeName} ` : ""}Support
+                  Assistant. How can I help you today?
                 </Typography>
               </Box>
             </Box>
@@ -374,13 +462,34 @@ export default function SupportChatPanel({
               return (
                 <React.Fragment key={msg.id}>
                   {showDay && (
-                    <Box sx={{ display: "flex", justifyContent: "center", my: 1.5 }}>
-                      <Chip label={formatDay(msg.createdAt)} size="small" variant="outlined" />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        my: 1.5,
+                      }}
+                    >
+                      <Chip
+                        label={formatDay(msg.createdAt)}
+                        size="small"
+                        variant="outlined"
+                      />
                     </Box>
                   )}
-                  <ListItem disableGutters sx={{ flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", mb: 1 }}>
+                  <ListItem
+                    disableGutters
+                    sx={{
+                      flexDirection: "column",
+                      alignItems: mine ? "flex-end" : "flex-start",
+                      mb: 1,
+                    }}
+                  >
                     {!mine && !widget && (
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.25, ml: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mb: 0.25, ml: 0.5 }}
+                      >
                         {otherPartyLabel}
                       </Typography>
                     )}
@@ -389,7 +498,11 @@ export default function SupportChatPanel({
                         maxWidth: widget ? "88%" : "78%",
                         px: widget ? 2 : 1.5,
                         py: widget ? 1.25 : 1,
-                        borderRadius: widget ? 2.5 : mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                        borderRadius: widget
+                          ? 2.5
+                          : mine
+                            ? "16px 16px 4px 16px"
+                            : "16px 16px 16px 4px",
                         backgroundColor: mine
                           ? customerTheme
                             ? BRAND.gold
@@ -397,21 +510,48 @@ export default function SupportChatPanel({
                               ? "#374151"
                               : "var(--theme-primary-main, #0284c7)"
                           : "#ffffff",
-                        color: mine ? (customerTheme ? BRAND.navy : "#fff") : "#374151",
+                        color: mine
+                          ? customerTheme
+                            ? BRAND.navy
+                            : "#fff"
+                          : "#374151",
                         border: mine ? "none" : "1px solid #e5e7eb",
                         boxShadow: mine ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
                       }}
                     >
-                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                      >
                         {msg.text}
                       </Typography>
-                      <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 0.5, opacity: 0.85, justifyContent: "flex-end" }}>
-                        <Typography variant="caption">{formatTime(msg.createdAt)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          alignItems: "center",
+                          mt: 0.5,
+                          opacity: 0.85,
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <Typography variant="caption">
+                          {formatTime(msg.createdAt)}
+                        </Typography>
                         {msg.pending && (
-                          <Chip label="Sending..." size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+                          <Chip
+                            label="Sending..."
+                            size="small"
+                            sx={{ height: 18, fontSize: "0.65rem" }}
+                          />
                         )}
                         {msg.failed && (
-                          <Chip label="Failed" color="error" size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+                          <Chip
+                            label="Failed"
+                            color="error"
+                            size="small"
+                            sx={{ height: 18, fontSize: "0.65rem" }}
+                          />
                         )}
                       </Box>
                     </Box>
@@ -473,7 +613,11 @@ export default function SupportChatPanel({
                 ? BRAND.gold
                 : "#6b7280"
               : "#e5e7eb",
-            color: text.trim() ? (customerTheme ? BRAND.navy : "#fff") : "#9ca3af",
+            color: text.trim()
+              ? customerTheme
+                ? BRAND.navy
+                : "#fff"
+              : "#9ca3af",
             "&:hover": {
               bgcolor: text.trim()
                 ? customerTheme

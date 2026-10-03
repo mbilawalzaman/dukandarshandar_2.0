@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -13,7 +15,7 @@ import {
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { useRouter } from "next/navigation";
+
 import { useCart } from "@/app/providers/CartProvider";
 import { getProductThumbnail } from "@/lib/productImages";
 import { usePromotions } from "@/app/providers/PromotionProvider";
@@ -40,16 +42,26 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   const { add, toast } = useCart();
   const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
-  const deal = dealFor({ _id: product._id, price: Number(product.price) || 0, category: product.category });
+
+  const deal = dealFor({
+    _id: product._id,
+    price: Number(product.price) || 0,
+    category: product.category,
+  });
+
   const outOfStock = Number(product.quantity) === 0;
   const saved = productIds.has(product._id);
 
   const toggleWishlist = async (event: React.MouseEvent) => {
     event.stopPropagation();
     const result = await toggle(product._id);
+
     if (!result.ok) {
       toast(result.message || "Could not update wishlist", "error");
-      if (result.message === "Please log in to save items") router.push(`/login?next=${encodeURIComponent(`/products/${product._id}`)}`);
+      if (result.message === "Please log in to save items")
+        router.push(
+          `/login?next=${encodeURIComponent(`/products/${product._id}`)}`,
+        );
     } else {
       toast(saved ? "Removed from wishlist" : "Saved to wishlist");
     }
@@ -93,7 +105,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         onClick={() => router.push(`/products/${product._id}`)}
       >
         {deal && (
-          <PromotionBadge badge={{ label: `-${deal.percentOff}%`, color: deal.promotion.badge?.color || "#dc2626" }} sx={{ position: "absolute", top: 10, left: 10, zIndex: 1 }} />
+          <PromotionBadge
+            badge={{
+              label: `-${deal.percentOff}%`,
+              color: deal.promotion.badge?.color || "#dc2626",
+            }}
+            sx={{ position: "absolute", top: 10, left: 10, zIndex: 1 }}
+          />
         )}
         <Box
           component="img"
@@ -124,14 +142,29 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         <IconButton
           aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
           onClick={toggleWishlist}
-          sx={{ position: "absolute", right: 8, bottom: 8, backgroundColor: "rgba(255,255,255,0.94)", color: saved ? "#dc2626" : BRAND.navy, "&:hover": { backgroundColor: "#fff", color: "#dc2626" } }}
+          sx={{
+            position: "absolute",
+            right: 8,
+            bottom: 8,
+            backgroundColor: "rgba(255,255,255,0.94)",
+            color: saved ? "#dc2626" : BRAND.navy,
+            "&:hover": { backgroundColor: "#fff", color: "#dc2626" },
+          }}
         >
           {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
         </IconButton>
       </Box>
 
       {/* Product Information */}
-      <CardContent sx={{ flexGrow: 1, p: 2, pb: 1, display: "flex", flexDirection: "column" }}>
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          p: 2,
+          pb: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {product.category && (
           <Typography
             variant="caption"
@@ -167,16 +200,40 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           {product.name}
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 1, mb: 1 }}>
-          <Rating value={Number(product.rating) || 0} max={5} precision={0.5} readOnly size="small" />
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.75,
+            mt: 1,
+            mb: 1,
+          }}
+        >
+          <Rating
+            value={Number(product.rating) || 0}
+            max={5}
+            precision={0.5}
+            readOnly
+            size="small"
+          />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 500 }}
+          >
             ({(Number(product.rating) || 0).toFixed(1)})
           </Typography>
         </Box>
 
         <Box sx={{ mt: "auto", pt: 0.5 }}>
-          <PriceTag price={Number(product.price) || 0} salePrice={deal?.salePrice} badge={deal?.promotion.badge} />
-          {deal?.promotion.kind === "flash_sale" && <FlashSaleCountdown endAt={deal.promotion.endAt} />}
+          <PriceTag
+            price={Number(product.price) || 0}
+            salePrice={deal?.salePrice}
+            badge={deal?.promotion.badge}
+          />
+          {deal?.promotion.kind === "flash_sale" && (
+            <FlashSaleCountdown endAt={deal.promotion.endAt} />
+          )}
         </Box>
       </CardContent>
 
@@ -197,7 +254,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 image: getProductThumbnail(product),
                 category: product.category,
               },
-              1
+              1,
             );
             router.push("/checkout");
           }}
@@ -220,7 +277,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 image: getProductThumbnail(product),
                 category: product.category,
               },
-              1
+              1,
             )
           }
           sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}

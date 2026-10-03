@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   getSyncedWidgetOpen,
   setSyncedWidgetOpen,
@@ -16,11 +24,16 @@ type ChatWidgetContextValue = {
 
 const ChatWidgetContext = createContext<ChatWidgetContextValue | null>(null);
 
-export function ChatWidgetProvider({ children }: { children: React.ReactNode }) {
+export function ChatWidgetProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setIsOpen(getSyncedWidgetOpen());
+
     return subscribeWidgetOpen(setIsOpen);
   }, []);
 
@@ -37,21 +50,30 @@ export function ChatWidgetProvider({ children }: { children: React.ReactNode }) 
   const toggleWidget = useCallback(() => {
     setIsOpen((prev) => {
       const next = !prev;
+
       setSyncedWidgetOpen(next);
+
       return next;
     });
   }, []);
 
   const value = useMemo(
     () => ({ isOpen, openWidget, closeWidget, toggleWidget }),
-    [isOpen, openWidget, closeWidget, toggleWidget]
+    [isOpen, openWidget, closeWidget, toggleWidget],
   );
 
-  return <ChatWidgetContext.Provider value={value}>{children}</ChatWidgetContext.Provider>;
+  return (
+    <ChatWidgetContext.Provider value={value}>
+      {children}
+    </ChatWidgetContext.Provider>
+  );
 }
 
 export function useChatWidget() {
   const ctx = useContext(ChatWidgetContext);
-  if (!ctx) throw new Error("useChatWidget must be used within ChatWidgetProvider");
+
+  if (!ctx)
+    throw new Error("useChatWidget must be used within ChatWidgetProvider");
+
   return ctx;
 }

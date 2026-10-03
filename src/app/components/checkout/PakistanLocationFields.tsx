@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { Grid, TextField, Autocomplete, CircularProgress } from "@mui/material";
+
 import {
   fetchProvinces,
   fetchCities,
@@ -45,6 +47,7 @@ export default function PakistanLocationFields({
   // 1. Fetch Provinces on mount
   useEffect(() => {
     let active = true;
+
     setLoadingProvinces(true);
     fetchProvinces()
       .then((res) => {
@@ -53,6 +56,7 @@ export default function PakistanLocationFields({
       .finally(() => {
         if (active) setLoadingProvinces(false);
       });
+
     return () => {
       active = false;
     };
@@ -61,10 +65,13 @@ export default function PakistanLocationFields({
   // 2. Fetch Cities whenever currentProvince changes
   useEffect(() => {
     let active = true;
+
     if (!currentProvince) {
       setCityOptions([]);
+
       return;
     }
+
     setLoadingCities(true);
     fetchCities(currentProvince)
       .then((res) => {
@@ -73,6 +80,7 @@ export default function PakistanLocationFields({
       .finally(() => {
         if (active) setLoadingCities(false);
       });
+
     return () => {
       active = false;
     };
@@ -81,10 +89,13 @@ export default function PakistanLocationFields({
   // 3. Fetch Areas whenever currentCity (or province) changes
   useEffect(() => {
     let active = true;
+
     if (!currentCity) {
       setAvailableAreas([]);
+
       return;
     }
+
     setLoadingAreas(true);
     fetchAreas(currentCity, currentProvince || undefined)
       .then((res) => {
@@ -93,6 +104,7 @@ export default function PakistanLocationFields({
       .finally(() => {
         if (active) setLoadingAreas(false);
       });
+
     return () => {
       active = false;
     };
@@ -111,9 +123,11 @@ export default function PakistanLocationFields({
 
   const handleCityChange = (newCity: string | null) => {
     const cityVal = newCity || "";
+
     const matchedCity = cityOptions.find(
-      (c) => c.name.toLowerCase() === cityVal.toLowerCase()
+      (c) => c.name.toLowerCase() === cityVal.toLowerCase(),
     );
+
     const autoProvince = matchedCity?.province || currentProvince;
 
     onChange({
@@ -149,7 +163,9 @@ export default function PakistanLocationFields({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {loadingProvinces ? <CircularProgress color="inherit" size={20} /> : null}
+                    {loadingProvinces ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -176,12 +192,16 @@ export default function PakistanLocationFields({
               required={required}
               name="city"
               label="City"
-              placeholder={!currentProvince ? "Select Province first" : "Select City"}
+              placeholder={
+                !currentProvince ? "Select Province first" : "Select City"
+              }
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {loadingCities ? <CircularProgress color="inherit" size={20} /> : null}
+                    {loadingCities ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -198,14 +218,18 @@ export default function PakistanLocationFields({
           options={availableAreas}
           value={currentArea || (availableAreas.length > 0 ? null : "")}
           onChange={(_, newValue) => {
-            handleAreaChange(typeof newValue === "string" ? newValue : newValue || "");
+            handleAreaChange(
+              typeof newValue === "string" ? newValue : newValue || "",
+            );
           }}
           onInputChange={(_, newInputValue, reason) => {
             if (availableAreas.length === 0 && reason === "input") {
               handleAreaChange(newInputValue);
             }
           }}
-          disabled={disabled || !currentProvince || !currentCity || loadingAreas}
+          disabled={
+            disabled || !currentProvince || !currentCity || loadingAreas
+          }
           loading={loadingAreas}
           renderInput={(params) => (
             <TextField
@@ -234,7 +258,9 @@ export default function PakistanLocationFields({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {loadingAreas ? <CircularProgress color="inherit" size={20} /> : null}
+                    {loadingAreas ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),

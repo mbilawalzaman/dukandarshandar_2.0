@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -24,8 +25,13 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
-import { getProductImageUrls, MAX_PRODUCT_IMAGES, type ProductImage } from "@/lib/productImages";
+import {
+  getProductImageUrls,
+  MAX_PRODUCT_IMAGES,
+  type ProductImage,
+} from "@/lib/productImages";
 
 export interface ProductFormData {
   _id?: string;
@@ -76,13 +82,24 @@ export default function ProductFormModal({
   useEffect(() => {
     if (productToEdit) {
       const existingImages = getProductImageUrls(productToEdit);
+
       setFormData({
         _id: productToEdit._id,
         name: productToEdit.name || "",
         category: productToEdit.category || "",
-        price: productToEdit.price !== undefined && productToEdit.price !== null ? productToEdit.price : "",
-        quantity: productToEdit.quantity !== undefined && productToEdit.quantity !== null ? productToEdit.quantity : "",
-        rating: productToEdit.rating !== undefined && productToEdit.rating !== null ? productToEdit.rating : 5,
+        price:
+          productToEdit.price !== undefined && productToEdit.price !== null
+            ? productToEdit.price
+            : "",
+        quantity:
+          productToEdit.quantity !== undefined &&
+          productToEdit.quantity !== null
+            ? productToEdit.quantity
+            : "",
+        rating:
+          productToEdit.rating !== undefined && productToEdit.rating !== null
+            ? productToEdit.rating
+            : 5,
         description: productToEdit.description || "",
         image: existingImages[0] || productToEdit.image || "",
         images: productToEdit.images,
@@ -93,12 +110,16 @@ export default function ProductFormModal({
       setFormData(initialFormState);
       setSelectedImages([]);
     }
+
     setErrorMsg("");
     setIsDragging(false);
   }, [productToEdit, open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -111,6 +132,7 @@ export default function ProductFormModal({
 
     if (remaining <= 0) {
       setErrorMsg(`You can upload up to ${MAX_PRODUCT_IMAGES} images.`);
+
       return;
     }
 
@@ -122,25 +144,33 @@ export default function ProductFormModal({
       if (!file.type.startsWith("image/")) {
         setErrorMsg("Please upload valid image files (JPEG, PNG, WebP).");
         pending -= 1;
+
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
         setErrorMsg("Each image must be under 5MB.");
         pending -= 1;
+
         return;
       }
 
       const reader = new FileReader();
+
       reader.readAsDataURL(file);
+
       reader.onload = () => {
         newImages.push(reader.result as string);
         pending -= 1;
+
         if (pending === 0) {
           setErrorMsg("");
-          setSelectedImages((prev) => [...prev, ...newImages].slice(0, MAX_PRODUCT_IMAGES));
+          setSelectedImages((prev) =>
+            [...prev, ...newImages].slice(0, MAX_PRODUCT_IMAGES),
+          );
         }
       };
+
       reader.onerror = () => {
         pending -= 1;
         setErrorMsg("Failed to read one or more image files.");
@@ -184,10 +214,13 @@ export default function ProductFormModal({
 
   const moveImage = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
+
     if (nextIndex < 0 || nextIndex >= selectedImages.length) return;
     setSelectedImages((prev) => {
       const next = [...prev];
+
       [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+
       return next;
     });
   };
@@ -200,23 +233,36 @@ export default function ProductFormModal({
     const qtyNum = Number(formData.quantity);
     const ratingNum = formData.rating !== "" ? Number(formData.rating) : 5;
 
-    if (!formData.name.trim() || !formData.category || isNaN(priceNum) || priceNum <= 0 || !formData.description.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.category ||
+      isNaN(priceNum) ||
+      priceNum <= 0 ||
+      !formData.description.trim()
+    ) {
       setErrorMsg("Please fill in all required fields with valid values.");
+
       return;
     }
 
     if (!selectedImages.length) {
       setErrorMsg("Please upload at least one product image.");
+
       return;
     }
 
     try {
       setSubmitting(true);
       const isEdit = Boolean(formData._id);
-      const url = isEdit ? `/api/products/${formData._id}` : "/api/products/upload";
+
+      const url = isEdit
+        ? `/api/products/${formData._id}`
+        : "/api/products/upload";
+
       const method = isEdit ? "PUT" : "POST";
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       const res = await fetch(url, {
         method,
@@ -238,6 +284,7 @@ export default function ProductFormModal({
       });
 
       const data = await res.json();
+
       if (res.ok && data.success) {
         onSuccess();
         onClose();
@@ -282,7 +329,12 @@ export default function ProductFormModal({
                   name="category"
                   label="Category"
                   value={formData.category}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, category: String(e.target.value) }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: String(e.target.value),
+                    }))
+                  }
                 >
                   {PRODUCT_CATEGORIES.map((cat) => (
                     <MenuItem key={cat} value={cat}>
@@ -344,7 +396,12 @@ export default function ProductFormModal({
                 control={
                   <Checkbox
                     checked={Boolean(formData.featured)}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        featured: e.target.checked,
+                      }))
+                    }
                   />
                 }
                 label="Feature this product (Featured / Top Product)"
@@ -355,15 +412,21 @@ export default function ProductFormModal({
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                 Product Images ({selectedImages.length}/{MAX_PRODUCT_IMAGES})
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                The first image is used as the listing thumbnail. Drag order with arrows to reorder.
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mb: 1.5 }}
+              >
+                The first image is used as the listing thumbnail. Drag order
+                with arrows to reorder.
               </Typography>
 
               {selectedImages.length > 0 && (
                 <Box
                   sx={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(110px, 1fr))",
                     gap: 1.5,
                     mb: 2,
                   }}
@@ -375,7 +438,10 @@ export default function ProductFormModal({
                         position: "relative",
                         borderRadius: 2,
                         overflow: "hidden",
-                        border: index === 0 ? "2px solid #febe4c" : "1px solid #e2e8f0",
+                        border:
+                          index === 0
+                            ? "2px solid #febe4c"
+                            : "1px solid #e2e8f0",
                         backgroundColor: "#fff",
                       }}
                     >
@@ -383,7 +449,12 @@ export default function ProductFormModal({
                         component="img"
                         src={src}
                         alt={`Product image ${index + 1}`}
-                        sx={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+                        sx={{
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
                       />
                       {index === 0 && (
                         <Chip
@@ -396,7 +467,8 @@ export default function ProductFormModal({
                             height: 22,
                             fontSize: "0.65rem",
                             fontWeight: 700,
-                            backgroundColor: "var(--theme-primary-main, #febe4c)",
+                            backgroundColor:
+                              "var(--theme-primary-main, #febe4c)",
                             color: "#1e293b",
                           }}
                         />
@@ -420,14 +492,24 @@ export default function ProductFormModal({
                           sx={{
                             backgroundColor: "rgba(0,0,0,0.6)",
                             color: "#fff",
-                            "&:hover": { backgroundColor: "rgba(239, 68, 68, 0.9)" },
+                            "&:hover": {
+                              backgroundColor: "rgba(239, 68, 68, 0.9)",
+                            },
                           }}
                           title="Remove image"
                         >
                           <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Box>
-                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, p: 0.5, bgcolor: "var(--theme-bg-default, #f8fafc)" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: 0.5,
+                          p: 0.5,
+                          bgcolor: "var(--theme-bg-default, #f8fafc)",
+                        }}
+                      >
                         <IconButton
                           size="small"
                           disabled={index === 0}
@@ -457,8 +539,12 @@ export default function ProductFormModal({
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 sx={{
-                  border: isDragging ? "2px dashed #febe4c" : "2px dashed #cbd5e1",
-                  backgroundColor: isDragging ? "rgba(254, 190, 76, 0.08)" : "#fafafa",
+                  border: isDragging
+                    ? "2px dashed #febe4c"
+                    : "2px dashed #cbd5e1",
+                  backgroundColor: isDragging
+                    ? "rgba(254, 190, 76, 0.08)"
+                    : "#fafafa",
                   borderRadius: 2.5,
                   p: 3,
                   textAlign: "center",
@@ -479,16 +565,37 @@ export default function ProductFormModal({
                   style={{ display: "none" }}
                 />
 
-                <CloudUploadIcon sx={{ fontSize: 44, color: isDragging ? "primary.main" : "#94a3b8", mb: 1 }} />
-                <Typography variant="body1" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                <CloudUploadIcon
+                  sx={{
+                    fontSize: 44,
+                    color: isDragging ? "primary.main" : "#94a3b8",
+                    mb: 1,
+                  }}
+                />
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 600, color: "#1e293b" }}
+                >
                   {isDragging ? "Drop images here" : "Drag & drop images here"}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
                   or{" "}
-                  <Box component="span" sx={{ color: "primary.main", fontWeight: 600, textDecoration: "underline" }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      color: "primary.main",
+                      fontWeight: 600,
+                      textDecoration: "underline",
+                    }}
+                  >
                     browse
                   </Box>{" "}
-                  from your computer (max 5MB each, up to {MAX_PRODUCT_IMAGES} images)
+                  from your computer (max 5MB each, up to {MAX_PRODUCT_IMAGES}{" "}
+                  images)
                 </Typography>
               </Box>
             </Grid>
@@ -498,8 +605,17 @@ export default function ProductFormModal({
           <Button onClick={onClose} color="inherit" disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {submitting ? "Saving..." : formData._id ? "Update Product" : "Save Product"}
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Saving..."
+              : formData._id
+                ? "Update Product"
+                : "Save Product"}
           </Button>
         </DialogActions>
       </form>

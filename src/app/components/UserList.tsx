@@ -16,8 +16,10 @@ export default function UserList() {
       try {
         if (typeof window !== "undefined") {
           const token = localStorage.getItem("token");
+
           if (!token) {
             setError("Unauthorized: Please log in first.");
+
             return;
           }
 
@@ -26,7 +28,9 @@ export default function UserList() {
           });
 
           const data = await res.json();
-          if (!data.success) throw new Error(data.error || "Failed to fetch users");
+
+          if (!data.success)
+            throw new Error(data.error || "Failed to fetch users");
 
           setUsers(data.users);
         }

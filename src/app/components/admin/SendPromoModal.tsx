@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -24,8 +25,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import SendIcon from "@mui/icons-material/Send";
+
 import { authHeaders } from "@/lib/cart";
-import type { Promotion, SendPromoEmailInput } from "@/types/apps/promotionTypes";
+import type {
+  Promotion,
+  SendPromoEmailInput,
+} from "@/types/apps/promotionTypes";
 import { rewardLabel } from "@/lib/promotionDisplay";
 
 interface UserItem {
@@ -42,7 +47,10 @@ interface SendPromoModalProps {
   onSuccess?: () => void;
 }
 
-const SEGMENTS: Array<{ value: NonNullable<SendPromoEmailInput["segment"]>; label: string }> = [
+const SEGMENTS: Array<{
+  value: NonNullable<SendPromoEmailInput["segment"]>;
+  label: string;
+}> = [
   { value: "none", label: "No segment (pick users below)" },
   { value: "all_users", label: "All registered customers" },
   { value: "with_orders", label: "Customers who have ordered" },
@@ -50,36 +58,59 @@ const SEGMENTS: Array<{ value: NonNullable<SendPromoEmailInput["segment"]>; labe
   { value: "subscribers", label: "Newsletter subscribers" },
 ];
 
-const AVATAR_COLORS = ["#e11d48", "#7c3aed", "var(--theme-primary-main, #0284c7)", "#059669", "#d97706", "#4f46e5", "#db2777"];
+const AVATAR_COLORS = [
+  "#e11d48",
+  "#7c3aed",
+  "var(--theme-primary-main, #0284c7)",
+  "#059669",
+  "#d97706",
+  "#4f46e5",
+  "#db2777",
+];
 
 function getInitials(name: string): string {
   if (!name) return "U";
   const parts = name.trim().split(" ");
+
   if (parts.length >= 2) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
+
   return parts[0].slice(0, 2).toUpperCase();
 }
 
 function getAvatarColor(str: string): string {
   let hash = 0;
+
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
+
   const index = Math.abs(hash) % AVATAR_COLORS.length;
+
   return AVATAR_COLORS[index];
 }
 
-export default function SendPromoModal({ open, onClose, promotion, onSuccess }: SendPromoModalProps) {
+export default function SendPromoModal({
+  open,
+  onClose,
+  promotion,
+  onSuccess,
+}: SendPromoModalProps) {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
-  
+
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
+    new Set(),
+  );
+
   const [manualInput, setManualInput] = useState("");
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [customMessage, setCustomMessage] = useState("");
-  const [segment, setSegment] = useState<NonNullable<SendPromoEmailInput["segment"]>>("none");
+
+  const [segment, setSegment] =
+    useState<NonNullable<SendPromoEmailInput["segment"]>>("none");
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -103,10 +134,13 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
+
       const res = await fetch("/api/users", {
         headers: authHeaders(),
       });
+
       const data = await res.json();
+
       if (data.success && Array.isArray(data.users)) {
         setUsers(data.users);
       }
@@ -120,26 +154,37 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
     const q = searchQuery.toLowerCase();
+
     return users.filter(
-      (u) => (u.name && u.name.toLowerCase().includes(q)) || (u.email && u.email.toLowerCase().includes(q))
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)),
     );
   }, [users, searchQuery]);
 
   const handleToggleUser = (userId: string) => {
     setSelectedUserIds((prev) => {
       const next = new Set(prev);
+
       if (next.has(userId)) {
         next.delete(userId);
       } else {
         next.add(userId);
       }
+
       return next;
     });
   };
 
   const handleAddManualEmail = (emailStr: string) => {
-    const rawEmails = emailStr.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);
-    const validEmails = rawEmails.filter((e) => e.includes("@") && !manualEmails.includes(e));
+    const rawEmails = emailStr
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    const validEmails = rawEmails.filter(
+      (e) => e.includes("@") && !manualEmails.includes(e),
+    );
 
     if (validEmails.length > 0) {
       setManualEmails((prev) => [...prev, ...validEmails]);
@@ -163,8 +208,12 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
 
   const handleSendEmails = async () => {
     if (!promotion?._id) return;
+
     if (!canSend) {
-      setError("Pick a segment, select registered users, or enter an email address.");
+      setError(
+        "Pick a segment, select registered users, or enter an email address.",
+      );
+
       return;
     }
 
@@ -173,20 +222,27 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
     setSuccessMessage("");
 
     try {
-      const res = await fetch(`/api/admin/promotions/${promotion._id}/send-email`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          userIds: Array.from(selectedUserIds),
-          manualEmails,
-          segment,
-          customMessage,
-        }),
-      });
+      const res = await fetch(
+        `/api/admin/promotions/${promotion._id}/send-email`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            userIds: Array.from(selectedUserIds),
+            manualEmails,
+            segment,
+            customMessage,
+          }),
+        },
+      );
 
       const data = await res.json();
+
       if (res.ok && data.success) {
-        setSuccessMessage(data.message || `Successfully sent promo code to ${data.sentCount} recipients!`);
+        setSuccessMessage(
+          data.message ||
+            `Successfully sent promo code to ${data.sentCount} recipients!`,
+        );
         if (onSuccess) onSuccess();
         setTimeout(() => {
           onClose();
@@ -203,10 +259,28 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, p: 1 } }}>
-      <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+    >
+      <DialogTitle
+        component="div"
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pb: 1,
+        }}
+      >
         <Box>
-          <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 0.5, color: "#0f172a" }}>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            sx={{ letterSpacing: 0.5, color: "#0f172a" }}
+          >
             SEND PROMO EMAIL
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -218,7 +292,10 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2.5, py: 2.5 }}>
+      <DialogContent
+        dividers
+        sx={{ display: "flex", flexDirection: "column", gap: 2.5, py: 2.5 }}
+      >
         {error && <Alert severity="error">{error}</Alert>}
         {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
@@ -236,7 +313,12 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             }}
           >
             <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={600}
+                textTransform="uppercase"
+              >
                 Promo Code
               </Typography>
               <Typography variant="h6" fontWeight={800} color="#0f172a">
@@ -245,7 +327,11 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             </Box>
             <Chip
               label={rewardLabel(promotion.reward)}
-              sx={{ backgroundColor: "var(--theme-primary-main, #febe4c)", color: "#0f172a", fontWeight: 700 }}
+              sx={{
+                backgroundColor: "var(--theme-primary-main, #febe4c)",
+                color: "#0f172a",
+                fontWeight: 700,
+              }}
             />
           </Paper>
         )}
@@ -256,9 +342,18 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             Recipients
           </Typography>
 
-          <TextField select fullWidth size="small" label="Customer segment" value={segment} onChange={(e) => setSegment(e.target.value as typeof segment)}>
+          <TextField
+            select
+            fullWidth
+            size="small"
+            label="Customer segment"
+            value={segment}
+            onChange={(e) => setSegment(e.target.value as typeof segment)}
+          >
             {SEGMENTS.map((s) => (
-              <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
+              <MenuItem key={s.value} value={s.value}>
+                {s.label}
+              </MenuItem>
             ))}
           </TextField>
 
@@ -289,7 +384,11 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
                   label={email}
                   size="small"
                   onDelete={() => handleRemoveManualEmail(email)}
-                  sx={{ backgroundColor: "#e2e8f0", color: "#1e293b", fontWeight: 500 }}
+                  sx={{
+                    backgroundColor: "#e2e8f0",
+                    color: "#1e293b",
+                    fontWeight: 500,
+                  }}
                 />
               ))}
             </Box>
@@ -327,7 +426,12 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
                 <CircularProgress size={28} />
               </Box>
             ) : filteredUsers.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                align="center"
+                sx={{ py: 3 }}
+              >
                 No users found.
               </Typography>
             ) : (
@@ -349,18 +453,34 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
                       borderRadius: 1.5,
                       cursor: "pointer",
                       transition: "all 0.15s ease",
-                      backgroundColor: isSelected ? "rgba(56, 189, 248, 0.08)" : "transparent",
+                      backgroundColor: isSelected
+                        ? "rgba(56, 189, 248, 0.08)"
+                        : "transparent",
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.04)",
                       },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Avatar sx={{ bgcolor: bg, width: 36, height: 36, fontSize: "0.85rem", fontWeight: 700 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: bg,
+                          width: 36,
+                          height: 36,
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                        }}
+                      >
                         {initials}
                       </Avatar>
                       <Box>
-                        <Typography variant="body2" fontWeight={700} color="#0f172a">
+                        <Typography
+                          variant="body2"
+                          fontWeight={700}
+                          color="#0f172a"
+                        >
                           {user.name || "Customer"}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -368,7 +488,11 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
                         </Typography>
                       </Box>
                     </Box>
-                    <Checkbox checked={isSelected} size="small" sx={{ color: "#cbd5e1" }} />
+                    <Checkbox
+                      checked={isSelected}
+                      size="small"
+                      sx={{ color: "#cbd5e1" }}
+                    />
                   </Box>
                 );
               })
@@ -389,15 +513,27 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, pt: 1.5, justifyContent: "flex-end", gap: 1.5 }}>
-        <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2, textTransform: "none", color: "#475569" }}>
+      <DialogActions
+        sx={{ p: 2, pt: 1.5, justifyContent: "flex-end", gap: 1.5 }}
+      >
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          sx={{ borderRadius: 2, textTransform: "none", color: "#475569" }}
+        >
           Cancel
         </Button>
         <Button
           onClick={handleSendEmails}
           variant="contained"
           disabled={sending || !canSend}
-          startIcon={sending ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+          startIcon={
+            sending ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <SendIcon />
+            )
+          }
           sx={{
             borderRadius: "24px",
             px: 3,
@@ -409,7 +545,11 @@ export default function SendPromoModal({ open, onClose, promotion, onSuccess }: 
             "&:hover": { backgroundColor: "#b91c1c", color: "#ffffff" },
           }}
         >
-          {sending ? "Sending..." : segment !== "none" ? `Send to segment${totalRecipientsCount ? ` + ${totalRecipientsCount}` : ""}` : `Send to ${totalRecipientsCount} recipient${totalRecipientsCount === 1 ? "" : "s"}`}
+          {sending
+            ? "Sending..."
+            : segment !== "none"
+              ? `Send to segment${totalRecipientsCount ? ` + ${totalRecipientsCount}` : ""}`
+              : `Send to ${totalRecipientsCount} recipient${totalRecipientsCount === 1 ? "" : "s"}`}
         </Button>
       </DialogActions>
     </Dialog>

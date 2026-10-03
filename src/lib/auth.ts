@@ -1,6 +1,8 @@
+import { NextResponse } from "next/server";
+
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
+
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_COOKIE,
@@ -13,10 +15,13 @@ export type JwtPayload = JwtPayloadType;
 
 export function getJwtSecret() {
   const secret = process.env.JWT_SECRET?.trim();
+
   if (secret) return secret;
 
   if (process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET environment variable is required in production");
+    throw new Error(
+      "JWT_SECRET environment variable is required in production",
+    );
   }
 
   // Local/dev only — never used when NODE_ENV=production
@@ -28,6 +33,7 @@ export function verifyToken(token: string): JwtPayload | null {
     return jwt.verify(token, getJwtSecret()) as JwtPayload;
   } catch (error) {
     console.error("Token verification failed:", error);
+
     return null;
   }
 }
@@ -38,38 +44,59 @@ export async function hashPassword(password: string): Promise<string> {
 
 export function getTokenFromRequest(req: Request): string | null {
   const header = req.headers.get("authorization");
+
   if (header?.startsWith("Bearer ")) {
     return header.slice(7);
   }
 
   const cookieHeader = req.headers.get("cookie") || "";
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${TOKEN_COOKIE}=([^;]+)`));
+
+  const match = cookieHeader.match(
+    new RegExp(`(?:^|;\\s*)${TOKEN_COOKIE}=([^;]+)`),
+  );
+
   return match ? decodeURIComponent(match[1]) : null;
 }
 
 export function getAuthUser(req: Request): JwtPayload | null {
   const token = getTokenFromRequest(req);
+
   if (!token) return null;
+
   return verifyToken(token);
 }
 
 export function requireAuth(req: Request) {
   const user = getAuthUser(req);
+
   if (!user) {
-    return { ok: false as const, response: NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }) };
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      ),
+    };
   }
+
   return { ok: true as const, user };
 }
 
 export function requireAdmin(req: Request) {
   const auth = requireAuth(req);
+
   if (!auth.ok) return auth;
+
   if (auth.user.role !== "admin") {
     return {
       ok: false as const,
-      response: NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 }),
+      response: NextResponse.json(
+        { success: false, error: "Admin access required" },
+        { status: 403 },
+      ),
     };
   }
+
   return auth;
 }
 
@@ -83,22 +110,36 @@ export function cookieOptions(maxAgeSeconds = ACCESS_TOKEN_TTL_SECONDS) {
   };
 }
 
-export function attachAuthCookie(response: NextResponse, token: string, refreshToken?: string) {
+export function attachAuthCookie(
+  response: NextResponse,
+  token: string,
+  refreshToken?: string,
+) {
   // Keep access cookie for the refresh window so middleware still sees a session;
   // the JWT itself expires sooner and is renewed via /api/auth/refresh.
-  response.cookies.set(TOKEN_COOKIE, token, cookieOptions(REFRESH_TOKEN_TTL_SECONDS));
+  response.cookies.set(
+    TOKEN_COOKIE,
+    token,
+    cookieOptions(REFRESH_TOKEN_TTL_SECONDS),
+  );
+
   if (refreshToken) {
     response.cookies.set(
       REFRESH_TOKEN_COOKIE,
       refreshToken,
-      cookieOptions(REFRESH_TOKEN_TTL_SECONDS)
+      cookieOptions(REFRESH_TOKEN_TTL_SECONDS),
     );
   }
+
   return response;
 }
 
 export function clearAuthCookie(response: NextResponse) {
   response.cookies.set(TOKEN_COOKIE, "", { ...cookieOptions(0), maxAge: 0 });
-  response.cookies.set(REFRESH_TOKEN_COOKIE, "", { ...cookieOptions(0), maxAge: 0 });
+  response.cookies.set(REFRESH_TOKEN_COOKIE, "", {
+    ...cookieOptions(0),
+    maxAge: 0,
+  });
+
   return response;
 }

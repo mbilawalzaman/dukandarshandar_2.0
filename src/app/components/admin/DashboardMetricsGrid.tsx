@@ -1,12 +1,15 @@
 "use client";
 
 import React from "react";
+
 import { Grid } from "@mui/material";
-import StatCard from "./StatCard";
+
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PeopleIcon from "@mui/icons-material/People";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PaidIcon from "@mui/icons-material/Paid";
+
+import StatCard from "./StatCard";
 import type { AdminDashboardStats } from "@/types/apps/adminDashboardTypes";
 
 interface DashboardMetricsGridProps {
@@ -14,7 +17,10 @@ interface DashboardMetricsGridProps {
   loading: boolean;
 }
 
-export default function DashboardMetricsGrid({ stats, loading }: DashboardMetricsGridProps) {
+export default function DashboardMetricsGrid({
+  stats,
+  loading,
+}: DashboardMetricsGridProps) {
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
       <Grid item xs={12} sm={6} md={3}>
@@ -47,7 +53,9 @@ export default function DashboardMetricsGrid({ stats, loading }: DashboardMetric
       <Grid item xs={12} sm={6} md={3}>
         <StatCard
           title="Delivered Revenue"
-          value={loading ? "..." : `PKR ${stats.totalEarnings.toLocaleString()}`}
+          value={
+            loading ? "..." : `PKR ${stats.totalEarnings.toLocaleString()}`
+          }
           icon={<PaidIcon />}
           color="#10b981"
           subtitle="Fulfilled sales earnings"

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { calculatePostExShippingRate } from "@/lib/postexCalculator";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +15,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const err = error as { message?: string };
+
     console.error("Shipping calculator error:", err.message);
-    return NextResponse.json({ success: false, fee: 200, error: err.message }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, fee: 200, error: err.message },
+      { status: 500 },
+    );
   }
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import type { AvatarProps } from "@mui/material";
 import { Avatar } from "@mui/material";
+
 import { BRAND } from "@/lib/uiBrand";
 import {
   getAvatarSrc,
@@ -18,7 +20,12 @@ type UserAvatarProps = {
 } & Omit<AvatarProps, "src" | "children" | "sx">;
 
 /** Shared avatar for Navbar, admin, profile, lists. */
-export default function UserAvatar({ user, size = 40, sx, ...rest }: UserAvatarProps) {
+export default function UserAvatar({
+  user,
+  size = 40,
+  sx,
+  ...rest
+}: UserAvatarProps) {
   const src = getAvatarSrc(user);
   const initials = getUserInitials(user);
   const label = getDisplayName(user);

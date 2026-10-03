@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+
 import {
   Alert,
   Box,
@@ -15,6 +17,7 @@ import {
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
@@ -67,14 +70,19 @@ const ProductDetails = () => {
 
   const loadReviews = useCallback(async (pid: string) => {
     try {
-      const res = await fetch(`/api/products/${pid}/reviews`, { headers: authHeaders() });
+      const res = await fetch(`/api/products/${pid}/reviews`, {
+        headers: authHeaders(),
+      });
+
       const data = await res.json();
+
       if (!data.success) return;
       setReviews(data.reviews || []);
       setMyReview(data.myReview || null);
       setCanReview(Boolean(data.canReview));
       setAverageRating(Number(data.averageRating) || 0);
       setReviewCount(Number(data.reviewCount) || 0);
+
       if (data.myReview) {
         setDraftRating(Number(data.myReview.rating) || null);
         setDraftComment(String(data.myReview.comment || ""));
@@ -85,7 +93,9 @@ const ProductDetails = () => {
   }, []);
 
   useEffect(() => {
-    setIsLoggedIn(Boolean(typeof window !== "undefined" && localStorage.getItem("token")));
+    setIsLoggedIn(
+      Boolean(typeof window !== "undefined" && localStorage.getItem("token")),
+    );
   }, []);
 
   useEffect(() => {
@@ -96,10 +106,12 @@ const ProductDetails = () => {
         setLoading(true);
         const res = await fetch(`/api/products/${productId}`);
         const data = await res.json();
+
         if (data.success) {
           setProduct(data.product);
           setAverageRating(Number(data.product.rating) || 0);
         }
+
         await loadReviews(productId);
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -114,20 +126,26 @@ const ProductDetails = () => {
   const handleSubmitReview = async () => {
     if (!productId || draftRating === null) {
       setReviewError("Please choose a star rating");
+
       return;
     }
+
     if (!isLoggedIn) {
       router.push(`/login?next=/products/${productId}`);
+
       return;
     }
+
     if (!canReview) {
       setReviewError("Unable to submit a review for this product.");
+
       return;
     }
 
     setSubmitting(true);
     setReviewError("");
     setReviewSuccess("");
+
     try {
       const res = await fetch(`/api/products/${productId}/reviews`, {
         method: "POST",
@@ -137,18 +155,24 @@ const ProductDetails = () => {
           comment: draftComment.trim(),
         }),
       });
+
       const data = await res.json();
+
       if (!res.ok || !data.success) {
         setReviewError(data.message || data.error || "Could not submit review");
+
         return;
       }
+
       setReviews(data.reviews || []);
       setMyReview(data.myReview || null);
       setCanReview(Boolean(data.canReview ?? true));
       setAverageRating(Number(data.averageRating) || 0);
       setReviewCount(Number(data.reviewCount) || 0);
       setProduct((prev) =>
-        prev ? { ...prev, rating: Number(data.averageRating) || prev.rating } : prev
+        prev
+          ? { ...prev, rating: Number(data.averageRating) || prev.rating }
+          : prev,
       );
       setReviewSuccess(data.message || "Review saved");
     } catch {
@@ -168,7 +192,7 @@ const ProductDetails = () => {
         image: getProductThumbnail(product),
         category: product.category,
       },
-      quantity
+      quantity,
     );
   };
 
@@ -182,7 +206,7 @@ const ProductDetails = () => {
         image: getProductThumbnail(product),
         category: product.category,
       },
-      quantity
+      quantity,
     );
     router.push("/checkout");
   };
@@ -190,8 +214,11 @@ const ProductDetails = () => {
   const handleWishlist = async () => {
     if (!product) return;
     const result = await toggle(product._id);
+
     if (!result.ok && result.message === "Please log in to save items") {
-      router.push(`/login?next=${encodeURIComponent(`/products/${product._id}`)}`);
+      router.push(
+        `/login?next=${encodeURIComponent(`/products/${product._id}`)}`,
+      );
     }
   };
 
@@ -201,7 +228,11 @@ const ProductDetails = () => {
 
   if (!product) {
     return (
-      <Typography variant="h6" color="error" sx={{ textAlign: "center", mt: 8 }}>
+      <Typography
+        variant="h6"
+        color="error"
+        sx={{ textAlign: "center", mt: 8 }}
+      >
         Product not found.
       </Typography>
     );
@@ -242,7 +273,12 @@ const ProductDetails = () => {
             Category: {product.category}
           </Typography>
           {(() => {
-            const deal = dealFor({ _id: product._id, price: Number(product.price) || 0, category: product.category });
+            const deal = dealFor({
+              _id: product._id,
+              price: Number(product.price) || 0,
+              category: product.category,
+            });
+
             return (
               <Box sx={{ mt: 2 }}>
                 <PriceTag
@@ -250,19 +286,43 @@ const ProductDetails = () => {
                   salePrice={deal?.salePrice}
                   badge={deal?.promotion.badge}
                   size="large"
-                  suffix={<Typography component="span" sx={{ fontSize: "0.8rem", color: "text.secondary" }}>per piece</Typography>}
+                  suffix={
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: "0.8rem", color: "text.secondary" }}
+                    >
+                      per piece
+                    </Typography>
+                  }
                 />
-                {deal?.promotion.kind === "flash_sale" && <FlashSaleCountdown endAt={deal.promotion.endAt} />}
+                {deal?.promotion.kind === "flash_sale" && (
+                  <FlashSaleCountdown endAt={deal.promotion.endAt} />
+                )}
               </Box>
             );
           })()}
 
-          <VoucherStrip product={{ _id: product._id, price: Number(product.price) || 0, category: product.category }} />
+          <VoucherStrip
+            product={{
+              _id: product._id,
+              price: Number(product.price) || 0,
+              category: product.category,
+            }}
+          />
 
-          <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              mt: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+            }}
+          >
             <Rating value={averageRating} max={5} precision={0.5} readOnly />
             <Typography variant="body2" color="text.secondary">
-              {averageRating.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? "" : "s"}
+              {averageRating.toFixed(1)} · {reviewCount} review
+              {reviewCount === 1 ? "" : "s"}
             </Typography>
           </Box>
 
@@ -272,10 +332,18 @@ const ProductDetails = () => {
 
           <Box sx={{ display: "flex", alignItems: "center", mt: 3, gap: 1 }}>
             <Typography>Quantity:</Typography>
-            <Button variant="outlined" onClick={() => setQuantity((prev) => Math.max(1, prev - 1))} disabled={quantity <= 1}>
+            <Button
+              variant="outlined"
+              onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+              disabled={quantity <= 1}
+            >
               -
             </Button>
-            <Typography sx={{ minWidth: 32, textAlign: "center", fontWeight: 700 }}>{quantity}</Typography>
+            <Typography
+              sx={{ minWidth: 32, textAlign: "center", fontWeight: 700 }}
+            >
+              {quantity}
+            </Typography>
             <Button
               variant="outlined"
               onClick={() => setQuantity((prev) => Math.min(maxQty, prev + 1))}
@@ -291,9 +359,20 @@ const ProductDetails = () => {
             </Typography>
           )}
 
-          <Box sx={{ mt: 4, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+          <Box
+            sx={{
+              mt: 4,
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
             <IconButton
-              aria-label={productIds.has(product._id) ? "Remove from wishlist" : "Save to wishlist"}
+              aria-label={
+                productIds.has(product._id)
+                  ? "Remove from wishlist"
+                  : "Save to wishlist"
+              }
               onClick={handleWishlist}
               sx={{
                 width: 48,
@@ -301,22 +380,41 @@ const ProductDetails = () => {
                 flex: "0 0 48px",
                 alignSelf: { xs: "center", sm: "auto" },
                 border: "1px solid",
-                borderColor: productIds.has(product._id) ? "error.main" : "divider",
-                color: productIds.has(product._id) ? "error.main" : "text.primary",
+                borderColor: productIds.has(product._id)
+                  ? "error.main"
+                  : "divider",
+                color: productIds.has(product._id)
+                  ? "error.main"
+                  : "text.primary",
               }}
             >
-              {productIds.has(product._id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+              {productIds.has(product._id) ? (
+                <FavoriteIcon />
+              ) : (
+                <FavoriteBorderIcon />
+              )}
             </IconButton>
             <Button
               onClick={handleBuyNow}
               variant="contained"
               disabled={outOfStock}
               fullWidth
-              sx={{ py: 1.4, backgroundColor: "primary.main", color: "primary.contrastText", "&:hover": { backgroundColor: "primary.dark" } }}
+              sx={{
+                py: 1.4,
+                backgroundColor: "primary.main",
+                color: "primary.contrastText",
+                "&:hover": { backgroundColor: "primary.dark" },
+              }}
             >
               Buy Now
             </Button>
-            <Button onClick={handleAddToCart} variant="outlined" disabled={outOfStock} fullWidth sx={{ py: 1.4 }}>
+            <Button
+              onClick={handleAddToCart}
+              variant="outlined"
+              disabled={outOfStock}
+              fullWidth
+              sx={{ py: 1.4 }}
+            >
               Add to Cart
             </Button>
           </Box>
@@ -332,16 +430,23 @@ const ProductDetails = () => {
           boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 800, color: BRAND.navy, mb: 1 }}>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 800, color: BRAND.navy, mb: 1 }}
+        >
           Ratings & reviews
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Share your experience. One review per account, you can update it anytime.
+          Share your experience. One review per account, you can update it
+          anytime.
         </Typography>
 
         {!isLoggedIn ? (
           <Alert severity="info" sx={{ mb: 3 }}>
-            <Link href={`/login?next=/products/${productId}`} style={{ fontWeight: 700, color: BRAND.navy }}>
+            <Link
+              href={`/login?next=/products/${productId}`}
+              style={{ fontWeight: 700, color: BRAND.navy }}
+            >
               Log in
             </Link>{" "}
             to leave a rating and comment.
@@ -389,7 +494,11 @@ const ProductDetails = () => {
                 backgroundColor: BRAND.navy,
               }}
             >
-              {submitting ? "Saving…" : myReview ? "Update review" : "Submit review"}
+              {submitting
+                ? "Saving…"
+                : myReview
+                  ? "Update review"
+                  : "Submit review"}
             </Button>
           </Box>
         ) : null}
@@ -397,7 +506,9 @@ const ProductDetails = () => {
         <Divider sx={{ mb: 3 }} />
 
         {reviews.length === 0 ? (
-          <Typography color="text.secondary">No reviews yet. Be the first to rate this product.</Typography>
+          <Typography color="text.secondary">
+            No reviews yet. Be the first to rate this product.
+          </Typography>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             {reviews.map((review) => (
@@ -409,20 +520,43 @@ const ProductDetails = () => {
                   "&:last-child": { borderBottom: "none", pb: 0 },
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                  <Typography sx={{ fontWeight: 700 }}>{review.userName}</Typography>
-                  <Rating value={review.rating} max={5} precision={0.5} size="small" readOnly />
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {review.userName}
+                  </Typography>
+                  <Rating
+                    value={review.rating}
+                    max={5}
+                    precision={0.5}
+                    size="small"
+                    readOnly
+                  />
                   <Typography variant="caption" color="text.secondary">
-                    {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                    {review.createdAt
+                      ? new Date(review.createdAt).toLocaleDateString()
+                      : ""}
                     {myReview?._id === review._id ? " · You" : ""}
                   </Typography>
                 </Box>
                 {review.comment ? (
-                  <Typography variant="body2" sx={{ mt: 1, lineHeight: 1.6, color: "text.primary" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ mt: 1, lineHeight: 1.6, color: "text.primary" }}
+                  >
                     {review.comment}
                   </Typography>
                 ) : (
-                  <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}
+                  >
                     No written comment
                   </Typography>
                 )}

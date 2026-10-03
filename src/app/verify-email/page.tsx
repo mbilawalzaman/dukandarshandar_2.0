@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Container, Card, CardContent, Typography, Box, CircularProgress, Button, Alert } from "@mui/material";
+
+import {
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
+  Button,
+  Alert,
+} from "@mui/material";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
+
 import { BRAND } from "@/lib/uiBrand";
 
 function VerifyEmailContent() {
@@ -19,6 +31,7 @@ function VerifyEmailContent() {
     if (!token) {
       setLoading(false);
       setMessage("Missing email verification token.");
+
       return;
     }
 
@@ -48,7 +61,15 @@ function VerifyEmailContent() {
 
   return (
     <Container maxWidth="xs" sx={{ mt: 10, mb: 10 }}>
-      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }} elevation={0}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+        }}
+        elevation={0}
+      >
         <CardContent sx={{ p: 4, textAlign: "center" }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             <Box
@@ -56,7 +77,8 @@ function VerifyEmailContent() {
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                backgroundColor: "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
+                backgroundColor:
+                  "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -66,7 +88,10 @@ function VerifyEmailContent() {
             </Box>
           </Box>
 
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: BRAND.navy }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 700, mb: 2, color: BRAND.navy }}
+          >
             Email Verification
           </Typography>
 

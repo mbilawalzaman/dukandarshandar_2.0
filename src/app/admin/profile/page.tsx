@@ -2,6 +2,7 @@
 
 import { Box, Typography, Paper } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+
 import ProfileEditor from "@/app/components/ProfileEditor";
 import { BRAND } from "@/lib/uiBrand";
 

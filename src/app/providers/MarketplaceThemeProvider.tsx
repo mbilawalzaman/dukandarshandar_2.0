@@ -1,11 +1,25 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { CssBaseline, ThemeProvider, createTheme, getContrastRatio } from "@mui/material";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import { usePathname } from "next/navigation";
+
+import {
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+  getContrastRatio,
+} from "@mui/material";
+
 import { useStoreSettings } from "./StoreSettingsProvider";
 import type { ThemeKey, ThemePreset } from "@/lib/themePresets";
 import { getThemePreset, normalizeThemeKey } from "@/lib/themePresets";
-import { usePathname } from "next/navigation";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -46,49 +60,119 @@ interface MarketplaceThemeContextType {
   preset: ThemePreset;
 }
 
-const MarketplaceThemeContext = createContext<MarketplaceThemeContextType | undefined>(undefined);
+const MarketplaceThemeContext = createContext<
+  MarketplaceThemeContextType | undefined
+>(undefined);
 
-export function MarketplaceThemeProvider({ children }: { children: React.ReactNode }) {
+export function MarketplaceThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { settings } = useStoreSettings();
   const [previewThemeKey, setPreviewThemeKey] = useState<ThemeKey | null>(null);
   const pathname = usePathname();
-  useEffect(() => { setPreviewThemeKey(null); }, [pathname]);
+
+  useEffect(() => {
+    setPreviewThemeKey(null);
+  }, [pathname]);
   useEffect(() => {
     const clear = () => setPreviewThemeKey(null);
+
     window.addEventListener("authChange", clear);
+
     return () => window.removeEventListener("authChange", clear);
   }, []);
 
-  const savedThemeKey = useMemo(() => normalizeThemeKey(settings.activeThemeKey), [settings.activeThemeKey]);
-  const activeThemeKey = (pathname === "/admin/settings" ? previewThemeKey : null) || savedThemeKey;
-  const preset = useMemo(() => getThemePreset(activeThemeKey), [activeThemeKey]);
-  const primaryText = getContrastRatio(preset.palette.primary.main, preset.palette.primary.contrastText) >= 4.5
-    ? preset.palette.primary.contrastText : "#111111";
-  const footerText = getContrastRatio(preset.palette.background.footer, "#ffffff") >= 4.5 ? "#ffffff" : "#111111";
+  const savedThemeKey = useMemo(
+    () => normalizeThemeKey(settings.activeThemeKey),
+    [settings.activeThemeKey],
+  );
+
+  const activeThemeKey =
+    (pathname === "/admin/settings" ? previewThemeKey : null) || savedThemeKey;
+
+  const preset = useMemo(
+    () => getThemePreset(activeThemeKey),
+    [activeThemeKey],
+  );
+
+  const primaryText =
+    getContrastRatio(
+      preset.palette.primary.main,
+      preset.palette.primary.contrastText,
+    ) >= 4.5
+      ? preset.palette.primary.contrastText
+      : "#111111";
+
+  const footerText =
+    getContrastRatio(preset.palette.background.footer, "#ffffff") >= 4.5
+      ? "#ffffff"
+      : "#111111";
 
   useEffect(() => {
     const root = document.documentElement;
+
     root.style.setProperty("--theme-primary-main", preset.palette.primary.main);
     root.style.setProperty("--theme-text-primary", "#0f172a");
     root.style.setProperty("--theme-text-secondary", "#58575c");
-    root.style.setProperty("--theme-header-text", ["amazon", "walmart"].includes(preset.key) ? "#ffffff" : "#0f172a");
-    root.style.setProperty("--theme-primary-light", preset.palette.primary.light);
+    root.style.setProperty(
+      "--theme-header-text",
+      ["amazon", "walmart"].includes(preset.key) ? "#ffffff" : "#0f172a",
+    );
+    root.style.setProperty(
+      "--theme-primary-light",
+      preset.palette.primary.light,
+    );
     root.style.setProperty("--theme-primary-dark", preset.palette.primary.dark);
     root.style.setProperty("--theme-primary-contrast", primaryText);
-    root.style.setProperty("--theme-secondary-main", preset.palette.secondary.main);
-    root.style.setProperty("--theme-secondary-dark", preset.palette.secondary.dark);
-    root.style.setProperty("--theme-bg-default", preset.palette.background.default);
+    root.style.setProperty(
+      "--theme-secondary-main",
+      preset.palette.secondary.main,
+    );
+    root.style.setProperty(
+      "--theme-secondary-dark",
+      preset.palette.secondary.dark,
+    );
+    root.style.setProperty(
+      "--theme-bg-default",
+      preset.palette.background.default,
+    );
     root.style.setProperty("--theme-bg-paper", preset.palette.background.paper);
-    root.style.setProperty("--theme-bg-header", preset.palette.background.header);
-    root.style.setProperty("--theme-bg-footer", preset.palette.background.footer);
-    root.style.setProperty("--theme-highlight-badge-bg", preset.palette.marketplace.highlightBadgeBg);
-    root.style.setProperty("--theme-highlight-badge-text", preset.palette.marketplace.highlightBadgeText);
+    root.style.setProperty(
+      "--theme-bg-header",
+      preset.palette.background.header,
+    );
+    root.style.setProperty(
+      "--theme-bg-footer",
+      preset.palette.background.footer,
+    );
+    root.style.setProperty(
+      "--theme-highlight-badge-bg",
+      preset.palette.marketplace.highlightBadgeBg,
+    );
+    root.style.setProperty(
+      "--theme-highlight-badge-text",
+      preset.palette.marketplace.highlightBadgeText,
+    );
     root.style.setProperty("--theme-footer-text", footerText);
     root.style.setProperty("--theme-sidebar-selected-bg", footerText);
-    root.style.setProperty("--theme-sidebar-selected-text", preset.palette.background.footer);
-    root.style.setProperty("--theme-card-border", preset.palette.marketplace.cardBorder);
-    root.style.setProperty("--theme-card-radius", `${preset.borderRadius.card}px`);
-    root.style.setProperty("--theme-button-radius", `${preset.borderRadius.button}px`);
+    root.style.setProperty(
+      "--theme-sidebar-selected-text",
+      preset.palette.background.footer,
+    );
+    root.style.setProperty(
+      "--theme-card-border",
+      preset.palette.marketplace.cardBorder,
+    );
+    root.style.setProperty(
+      "--theme-card-radius",
+      `${preset.borderRadius.card}px`,
+    );
+    root.style.setProperty(
+      "--theme-button-radius",
+      `${preset.borderRadius.button}px`,
+    );
   }, [preset, primaryText, footerText]);
 
   const muiTheme = useMemo(() => {
@@ -175,7 +259,7 @@ export function MarketplaceThemeProvider({ children }: { children: React.ReactNo
       setPreviewThemeKey,
       preset,
     }),
-    [activeThemeKey, savedThemeKey, previewThemeKey, preset]
+    [activeThemeKey, savedThemeKey, previewThemeKey, preset],
   );
 
   return (
@@ -190,8 +274,12 @@ export function MarketplaceThemeProvider({ children }: { children: React.ReactNo
 
 export function useMarketplaceTheme() {
   const context = useContext(MarketplaceThemeContext);
+
   if (!context) {
-    throw new Error("useMarketplaceTheme must be used within a MarketplaceThemeProvider");
+    throw new Error(
+      "useMarketplaceTheme must be used within a MarketplaceThemeProvider",
+    );
   }
+
   return context;
 }

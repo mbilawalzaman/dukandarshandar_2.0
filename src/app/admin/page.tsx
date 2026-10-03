@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+
 import { Typography, Box, Button, CircularProgress } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
+
 import type { ProductFormData } from "@/app/components/admin/ProductFormModal";
 import ProductFormModal from "@/app/components/admin/ProductFormModal";
 import DashboardMetricsGrid from "@/app/components/admin/DashboardMetricsGrid";
@@ -30,20 +32,26 @@ export default function AdminDashboardPage() {
     recentOrders: [],
     recentUsers: [],
   });
+
   const [loading, setLoading] = useState(true);
 
   // Quick Restock modal state
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
-  const [restockProduct, setRestockProduct] = useState<ProductFormData | null>(null);
+
+  const [restockProduct, setRestockProduct] = useState<ProductFormData | null>(
+    null,
+  );
 
   const { settings: deliverySettings } = useDeliverySettings();
   const storeName = deliverySettings.shopName || "";
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
+
     try {
       const res = await fetch("/api/admin/stats");
       const data = await res.json();
+
       if (data.success) {
         setStats(data.stats);
       }
@@ -72,13 +80,23 @@ export default function AdminDashboardPage() {
   return (
     <Box>
       {/* Header section */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
             Admin Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Overview of your {storeName || "ecommerce store"}, inventory health, and analytics.
+            Overview of your {storeName || "ecommerce store"}, inventory health,
+            and analytics.
           </Typography>
         </Box>
         <Button

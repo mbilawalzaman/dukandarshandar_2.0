@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
+
 import PromotionBadge from "./PromotionBadge";
 import type { PromotionBadge as Badge } from "@/types/apps/promotionTypes";
 
@@ -20,16 +21,41 @@ const SIZES = {
 };
 
 /** Price with optional sale price, strike-through original and badge. Used on cards, product page and cart. */
-export default function PriceTag({ price, salePrice, badge, size = "small", suffix }: Props) {
+export default function PriceTag({
+  price,
+  salePrice,
+  badge,
+  size = "small",
+  suffix,
+}: Props) {
   const onSale = typeof salePrice === "number" && salePrice < price;
   const s = SIZES[size];
+
   return (
-    <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
-      <Typography component="span" sx={{ fontWeight: 800, fontSize: s.main, color: onSale ? "#dc2626" : "#0f172a", lineHeight: 1.2 }}>
+    <Box
+      sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          fontWeight: 800,
+          fontSize: s.main,
+          color: onSale ? "#dc2626" : "#0f172a",
+          lineHeight: 1.2,
+        }}
+      >
         PKR {Number(onSale ? salePrice : price).toLocaleString()}
       </Typography>
       {onSale && (
-        <Typography component="span" sx={{ fontSize: s.strike, color: "#94a3b8", textDecoration: "line-through", fontWeight: 500 }}>
+        <Typography
+          component="span"
+          sx={{
+            fontSize: s.strike,
+            color: "#94a3b8",
+            textDecoration: "line-through",
+            fontWeight: 500,
+          }}
+        >
           PKR {Number(price).toLocaleString()}
         </Typography>
       )}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, Suspense } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+
 import {
   TextField,
   Button,
@@ -19,6 +21,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "@mui/icons-material/Google";
+
 // import FacebookIcon from "@mui/icons-material/Facebook";
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
@@ -29,12 +32,19 @@ import Loader from "@/app/components/loader/Loader";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || searchParams.get("redirect") || "/";
+
+  const nextPath =
+    searchParams.get("next") || searchParams.get("redirect") || "/";
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
+
+  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(
+    null,
+  );
+
   const socialEnabled = isFirebaseClientConfigured();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,15 +69,22 @@ function LoginForm() {
       });
 
       const raw = await res.text();
-      let data: { success?: boolean; token?: string; user?: { role?: string }; error?: string };
+      let data: {
+        success?: boolean;
+        token?: string;
+        user?: { role?: string };
+        error?: string;
+      };
+
       try {
         data = JSON.parse(raw);
       } catch {
         setError(
           res.status >= 500
             ? "Server error check that DATABASE_URL and JWT_SECRET are set on Vercel."
-            : "Unexpected server response. Please try again."
+            : "Unexpected server response. Please try again.",
         );
+
         return;
       }
 
@@ -85,6 +102,7 @@ function LoginForm() {
   const handleGuestLogin = async () => {
     setError("");
     setLoading(true);
+
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
@@ -95,10 +113,12 @@ function LoginForm() {
 
       const raw = await res.text();
       let data: { success?: boolean; token?: string; error?: string };
+
       try {
         data = JSON.parse(raw);
       } catch {
         setError("Server error check that Vercel environment variables.");
+
         return;
       }
 
@@ -116,12 +136,16 @@ function LoginForm() {
   const handleSocial = async (provider: SocialProvider) => {
     setError("");
     setSocialLoading(provider);
+
     try {
       const { token, user } = await signInWithSocial(provider);
+
       persistAccessToken(token);
       redirectAfterLogin(user.role);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Social login failed";
+      const message =
+        err instanceof Error ? err.message : "Social login failed";
+
       // Popup closed by user — keep quiet-ish
       if (/popup-closed|cancelled|canceled/i.test(message)) {
         setError("Sign-in was cancelled.");
@@ -139,7 +163,11 @@ function LoginForm() {
         <Loader
           overlay
           size={180}
-          message={socialLoading ? `Connecting to ${socialLoading}...` : "Logging in..."}
+          message={
+            socialLoading
+              ? `Connecting to ${socialLoading}...`
+              : "Logging in..."
+          }
         />
       )}
       <Card sx={{ borderRadius: 3 }}>
@@ -172,7 +200,9 @@ function LoginForm() {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                         onClick={() => setShowPassword((v) => !v)}
                         onMouseDown={(e) => e.preventDefault()}
                         edge="end"
@@ -183,8 +213,19 @@ function LoginForm() {
                   ),
                 }}
               />
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -0.5 }}>
-                <Link href="/forgot-password" variant="body2" color="primary" sx={{ fontWeight: 600, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-end", mt: -0.5 }}
+              >
+                <Link
+                  href="/forgot-password"
+                  variant="body2"
+                  color="primary"
+                  sx={{
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                >
                   Forgot Password?
                 </Link>
               </Box>
@@ -199,9 +240,18 @@ function LoginForm() {
                 color="primary"
                 fullWidth
                 disabled={loading || !!socialLoading}
-                sx={{ backgroundColor: BRAND.gold, color: BRAND.navy, fontWeight: 700, "&:hover": { backgroundColor: BRAND.goldHover } }}
+                sx={{
+                  backgroundColor: BRAND.gold,
+                  color: BRAND.navy,
+                  fontWeight: 700,
+                  "&:hover": { backgroundColor: BRAND.goldHover },
+                }}
               >
-                {loading && !socialLoading ? <CircularProgress size={22} color="inherit" /> : "Login"}
+                {loading && !socialLoading ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  "Login"
+                )}
               </Button>
               <Button
                 variant="outlined"
@@ -223,10 +273,21 @@ function LoginForm() {
                   <Button
                     variant="outlined"
                     fullWidth
-                    startIcon={socialLoading === "google" ? <CircularProgress size={18} /> : <GoogleIcon />}
+                    startIcon={
+                      socialLoading === "google" ? (
+                        <CircularProgress size={18} />
+                      ) : (
+                        <GoogleIcon />
+                      )
+                    }
                     onClick={() => handleSocial("google")}
                     disabled={loading || !!socialLoading}
-                    sx={{ textTransform: "none", fontWeight: 600, borderColor: "#dadce0", color: "#3c4043" }}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      borderColor: "#dadce0",
+                      color: "#3c4043",
+                    }}
                   >
                     Continue with Google
                   </Button>
@@ -250,7 +311,14 @@ function LoginForm() {
 
               <Typography align="center">
                 Don&apos;t have an account?{" "}
-                <Link href={nextPath !== "/" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup"} color="primary">
+                <Link
+                  href={
+                    nextPath !== "/"
+                      ? `/signup?next=${encodeURIComponent(nextPath)}`
+                      : "/signup"
+                  }
+                  color="primary"
+                >
                   Sign Up
                 </Link>
               </Typography>

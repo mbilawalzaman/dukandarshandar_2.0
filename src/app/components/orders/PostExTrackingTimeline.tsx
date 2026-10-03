@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import {
   Box,
   Typography,
@@ -61,18 +62,41 @@ interface PostExTrackingTimelineProps {
 
 function resolvePostExStage(status?: string): number {
   const s = (status || "").toLowerCase();
+
   if (s.includes("delivered")) return 3;
-  if (s.includes("transit") || s.includes("out for delivery") || s.includes("route")) return 2;
-  if (s.includes("picked") || s.includes("warehouse") || s.includes("shipped")) return 1;
+  if (
+    s.includes("transit") ||
+    s.includes("out for delivery") ||
+    s.includes("route")
+  )
+    return 2;
+  if (s.includes("picked") || s.includes("warehouse") || s.includes("shipped"))
+    return 1;
+
   return 0; // Booked / Ready
 }
 
-function getStatusChipColor(status?: string): "success" | "primary" | "info" | "error" | "warning" | "default" {
+function getStatusChipColor(
+  status?: string,
+): "success" | "primary" | "info" | "error" | "warning" | "default" {
   const s = (status || "").toLowerCase();
+
   if (s.includes("delivered")) return "success";
-  if (s.includes("transit") || s.includes("out for delivery") || s.includes("route")) return "primary";
+  if (
+    s.includes("transit") ||
+    s.includes("out for delivery") ||
+    s.includes("route")
+  )
+    return "primary";
   if (s.includes("picked") || s.includes("shipped")) return "info";
-  if (s.includes("cancel") || s.includes("un-assigned") || s.includes("return") || s.includes("expired")) return "error";
+  if (
+    s.includes("cancel") ||
+    s.includes("un-assigned") ||
+    s.includes("return") ||
+    s.includes("expired")
+  )
+    return "error";
+
   return "warning";
 }
 
@@ -88,7 +112,10 @@ export default function PostExTrackingTimeline({
 
   // Extract raw details from dist object if present
   const dist = (data?.dist || data || {}) as PostExDistData;
-  const activeStatus = dist.transactionStatus || dist.orderStatus || currentStatus || "Booked";
+
+  const activeStatus =
+    dist.transactionStatus || dist.orderStatus || currentStatus || "Booked";
+
   const isCancelled =
     activeStatus.toLowerCase().includes("cancel") ||
     activeStatus.toLowerCase().includes("un-assigned") ||
@@ -98,7 +125,10 @@ export default function PostExTrackingTimeline({
   const stage = resolvePostExStage(activeStatus);
 
   const historyRaw = dist.transactionStatusHistory || dist.statusHistory || [];
-  const history: StatusHistoryItem[] = Array.isArray(historyRaw) ? historyRaw : [];
+
+  const history: StatusHistoryItem[] = Array.isArray(historyRaw)
+    ? historyRaw
+    : [];
 
   const handleCopy = () => {
     if (!trackingNumber) return;
@@ -110,10 +140,26 @@ export default function PostExTrackingTimeline({
   const trackingUrl = `https://postex.pk/tracking?cn=${encodeURIComponent(trackingNumber)}`;
 
   const stages = [
-    { label: "Booked", subtitle: "Ready for Pickup", icon: <InventoryIcon fontSize="small" /> },
-    { label: "Picked Up", subtitle: "Handed to PostEx", icon: <LocalShippingIcon fontSize="small" /> },
-    { label: "In Transit", subtitle: "On the way", icon: <DirectionsBusIcon fontSize="small" /> },
-    { label: "Delivered", subtitle: "Parcel Received", icon: <CheckCircleIcon fontSize="small" /> },
+    {
+      label: "Booked",
+      subtitle: "Ready for Pickup",
+      icon: <InventoryIcon fontSize="small" />,
+    },
+    {
+      label: "Picked Up",
+      subtitle: "Handed to PostEx",
+      icon: <LocalShippingIcon fontSize="small" />,
+    },
+    {
+      label: "In Transit",
+      subtitle: "On the way",
+      icon: <DirectionsBusIcon fontSize="small" />,
+    },
+    {
+      label: "Delivered",
+      subtitle: "Parcel Received",
+      icon: <CheckCircleIcon fontSize="small" />,
+    },
   ];
 
   return (
@@ -134,16 +180,32 @@ export default function PostExTrackingTimeline({
         }}
       >
         <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 600, display: "block" }}
+          >
             POSTEX TRACKING NUMBER
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.25 }}>
-            <Typography variant="h6" sx={{ fontFamily: "monospace", fontWeight: 800, color: "#0f172a" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: "monospace",
+                fontWeight: 800,
+                color: "#0f172a",
+              }}
+            >
               {trackingNumber}
             </Typography>
             <Tooltip title={copied ? "Copied!" : "Copy Tracking Number"}>
               <IconButton size="small" onClick={handleCopy} sx={{ p: 0.4 }}>
-                <ContentCopyIcon sx={{ fontSize: 16, color: copied ? "success.main" : "text.secondary" }} />
+                <ContentCopyIcon
+                  sx={{
+                    fontSize: 16,
+                    color: copied ? "success.main" : "text.secondary",
+                  }}
+                />
               </IconButton>
             </Tooltip>
           </Box>
@@ -164,15 +226,29 @@ export default function PostExTrackingTimeline({
               size="small"
               variant="outlined"
               endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-              sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, fontSize: "0.78rem" }}
+              sx={{
+                textTransform: "none",
+                borderRadius: 2,
+                fontWeight: 600,
+                fontSize: "0.78rem",
+              }}
             >
               PostEx.pk
             </Button>
           </Tooltip>
           {onRefresh && (
             <Tooltip title="Refresh Status">
-              <IconButton size="small" onClick={onRefresh} disabled={loading} sx={{ border: "1px solid #cbd5e1" }}>
-                {loading ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
+              <IconButton
+                size="small"
+                onClick={onRefresh}
+                disabled={loading}
+                sx={{ border: "1px solid #cbd5e1" }}
+              >
+                {loading ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  <RefreshIcon fontSize="small" />
+                )}
               </IconButton>
             </Tooltip>
           )}
@@ -181,8 +257,13 @@ export default function PostExTrackingTimeline({
 
       {/* CANCELLED / UNASSIGNED ALERT BANNER */}
       {isCancelled ? (
-        <Alert severity="error" icon={<CancelOutlinedIcon />} sx={{ borderRadius: 2.5, fontWeight: 600 }}>
-          This shipment is marked as <strong>{activeStatus}</strong>. Order booking has been cancelled or un-assigned by courier.
+        <Alert
+          severity="error"
+          icon={<CancelOutlinedIcon />}
+          sx={{ borderRadius: 2.5, fontWeight: 600 }}
+        >
+          This shipment is marked as <strong>{activeStatus}</strong>. Order
+          booking has been cancelled or un-assigned by courier.
         </Alert>
       ) : (
         /* VISUAL STEPPER PROCESS BAR */
@@ -212,9 +293,15 @@ export default function PostExTrackingTimeline({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: isCompleted ? (isCurrent ? "#0284c7" : "#0284c7") : "#e2e8f0",
+                        backgroundColor: isCompleted
+                          ? isCurrent
+                            ? "#0284c7"
+                            : "#0284c7"
+                          : "#e2e8f0",
                         color: isCompleted ? "#ffffff" : "#94a3b8",
-                        boxShadow: isCurrent ? "0 0 0 4px rgba(2, 132, 199, 0.2)" : "none",
+                        boxShadow: isCurrent
+                          ? "0 0 0 4px rgba(2, 132, 199, 0.2)"
+                          : "none",
                         transition: "all 0.3s ease",
                         zIndex: 2,
                       }}
@@ -235,7 +322,14 @@ export default function PostExTrackingTimeline({
                     >
                       {stg.label}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontSize: "0.68rem", color: "text.disabled", display: { xs: "none", sm: "block" } }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontSize: "0.68rem",
+                        color: "text.disabled",
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
                       {stg.subtitle}
                     </Typography>
                   </Box>
@@ -247,41 +341,69 @@ export default function PostExTrackingTimeline({
       )}
 
       {/* METADATA SUMMARY CARDS */}
-      {showOrderMeta && Boolean(dist.customerName || dist.cityName || dist.deliveryAddress) && (
-        <Paper elevation={0} sx={{ p: 2, borderRadius: 2.5, border: "1px solid #e2e8f0", backgroundColor: "#ffffff" }}>
-          <Stack spacing={1.25}>
-            {Boolean(dist.customerName) && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-                <Typography variant="body2" sx={{ color: "#334155" }}>
-                  Recipient: <strong>{dist.customerName}</strong> {dist.customerPhone ? `(${dist.customerPhone})` : ""}
-                </Typography>
-              </Box>
-            )}
-            {Boolean(dist.deliveryAddress || dist.cityName) && (
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                <PlaceOutlinedIcon sx={{ fontSize: 18, color: "text.secondary", mt: 0.2 }} />
-                <Typography variant="body2" sx={{ color: "#334155" }}>
-                  Destination: <strong>{[dist.deliveryAddress, dist.cityName].filter(Boolean).join(", ")}</strong>
-                </Typography>
-              </Box>
-            )}
-            {Boolean(dist.invoicePayment) && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PaymentsOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-                <Typography variant="body2" sx={{ color: "#334155" }}>
-                  COD Invoice Amount: <strong>PKR {Number(dist.invoicePayment).toLocaleString()}</strong>
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-        </Paper>
-      )}
+      {showOrderMeta &&
+        Boolean(dist.customerName || dist.cityName || dist.deliveryAddress) && (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 2.5,
+              border: "1px solid #e2e8f0",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <Stack spacing={1.25}>
+              {Boolean(dist.customerName) && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <PersonOutlinedIcon
+                    sx={{ fontSize: 18, color: "text.secondary" }}
+                  />
+                  <Typography variant="body2" sx={{ color: "#334155" }}>
+                    Recipient: <strong>{dist.customerName}</strong>{" "}
+                    {dist.customerPhone ? `(${dist.customerPhone})` : ""}
+                  </Typography>
+                </Box>
+              )}
+              {Boolean(dist.deliveryAddress || dist.cityName) && (
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                  <PlaceOutlinedIcon
+                    sx={{ fontSize: 18, color: "text.secondary", mt: 0.2 }}
+                  />
+                  <Typography variant="body2" sx={{ color: "#334155" }}>
+                    Destination:{" "}
+                    <strong>
+                      {[dist.deliveryAddress, dist.cityName]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </strong>
+                  </Typography>
+                </Box>
+              )}
+              {Boolean(dist.invoicePayment) && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <PaymentsOutlinedIcon
+                    sx={{ fontSize: 18, color: "text.secondary" }}
+                  />
+                  <Typography variant="body2" sx={{ color: "#334155" }}>
+                    COD Invoice Amount:{" "}
+                    <strong>
+                      PKR {Number(dist.invoicePayment).toLocaleString()}
+                    </strong>
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          </Paper>
+        )}
 
       {/* STATUS HISTORY TIMELINE */}
       <Box sx={{ mt: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#1e293b", mb: 1.5 }}>
-          Tracking History ({history.length} Event{history.length === 1 ? "" : "s"})
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 800, color: "#1e293b", mb: 1.5 }}
+        >
+          Tracking History ({history.length} Event
+          {history.length === 1 ? "" : "s"})
         </Typography>
 
         {loading ? (
@@ -289,9 +411,18 @@ export default function PostExTrackingTimeline({
             <CircularProgress size={28} />
           </Box>
         ) : history.length === 0 ? (
-          <Paper elevation={0} sx={{ p: 2.5, textAlign: "center", border: "1px dashed #cbd5e1", borderRadius: 2.5 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              textAlign: "center",
+              border: "1px dashed #cbd5e1",
+              borderRadius: 2.5,
+            }}
+          >
             <Typography variant="body2" color="text.secondary">
-              No detailed history events logged yet. Check back once courier updates parcel status.
+              No detailed history events logged yet. Check back once courier
+              updates parcel status.
             </Typography>
           </Paper>
         ) : (
@@ -302,7 +433,9 @@ export default function PostExTrackingTimeline({
                 item.statusMessage ||
                 item.orderStatus ||
                 "Status Updated";
+
               const rawDate = item.createdAt || item.timestamp || item.date;
+
               const formattedDate = rawDate
                 ? new Date(rawDate).toLocaleString("en-US", {
                     month: "short",
@@ -347,7 +480,9 @@ export default function PostExTrackingTimeline({
                       borderRadius: "50%",
                       backgroundColor: isFirst ? "#0284c7" : "#cbd5e1",
                       border: "3px solid #ffffff",
-                      boxShadow: isFirst ? "0 0 0 2px rgba(2, 132, 199, 0.25)" : "none",
+                      boxShadow: isFirst
+                        ? "0 0 0 2px rgba(2, 132, 199, 0.25)"
+                        : "none",
                       flexShrink: 0,
                       mt: 0.25,
                       zIndex: 1,
@@ -367,7 +502,11 @@ export default function PostExTrackingTimeline({
                       {message}
                     </Typography>
                     {formattedDate && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mt: 0.25 }}
+                      >
                         {formattedDate}
                       </Typography>
                     )}

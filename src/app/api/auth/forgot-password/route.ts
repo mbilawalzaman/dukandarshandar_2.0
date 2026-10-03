@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from "crypto";
+
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { getDb } from "@/lib/db";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { passwordResetEmail } from "@/lib/emailTemplates";
@@ -11,10 +13,19 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const limited = await throttleRequest(req, "password-reset-request", 5, 60 * 60 * 1000);
+    const limited = await throttleRequest(
+      req,
+      "password-reset-request",
+      5,
+      60 * 60 * 1000,
+    );
+
     if (limited) return limited;
     const body = await req.json();
-    const email = String(body.email || "").trim().toLowerCase();
+
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
 
     const { shopName } = await getDeliverySettings();
     const storeName = shopName || "Ecommerce Store";
@@ -22,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { success: false, message: "Please enter a valid email address" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,14 +43,18 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: `Not a registered email on ${storeName}` },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (user.authProvider === "google" || !user.password) {
       return NextResponse.json(
-        { success: false, message: "This email is registered via Google Login. Please sign in with Google." },
-        { status: 400 }
+        {
+          success: false,
+          message:
+            "This email is registered via Google Login. Please sign in with Google.",
+        },
+        { status: 400 },
       );
     }
 
@@ -58,10 +73,13 @@ export async function POST(req: NextRequest) {
         },
         $unset: { token: "" },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+
     const resetUrl = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
     const html = passwordResetEmail({
@@ -82,10 +100,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Forgot password error:", error);
+
     return NextResponse.json(
       { success: false, message: "Failed to process password reset request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

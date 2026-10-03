@@ -1,9 +1,12 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+
 import { Box, Container, Typography, Alert } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
+
 import PageBanner from "../components/PageBanner";
 import SupportChatPanel from "../components/chat/SupportChatPanel";
 import { authHeaders } from "@/lib/cart";
@@ -22,23 +25,32 @@ function SupportContent() {
   const { settings: deliverySettings } = useDeliverySettings();
   const storeName = deliverySettings.shopName || "";
 
-  const [conversationId, setConversationId] = useState<string | null>(presetConversation);
+  const [conversationId, setConversationId] = useState<string | null>(
+    presetConversation,
+  );
+
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (!token) {
       router.replace("/login?next=/support");
+
       return;
     }
+
     try {
       const decoded = jwtDecode<{ userId?: string; role?: string }>(token);
+
       if (decoded.role === "guest") {
         router.replace("/login?next=/support");
+
         return;
       }
+
       setUserId(decoded.userId || null);
     } catch {
       router.replace("/login?next=/support");
@@ -48,11 +60,14 @@ function SupportContent() {
   useEffect(() => {
     if (!userId || !isChatEnabled()) {
       setLoading(false);
+
       return;
     }
+
     if (presetConversation) {
       setConversationId(presetConversation);
       setLoading(false);
+
       return;
     }
 
@@ -63,7 +78,9 @@ function SupportContent() {
           headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({ orderId }),
         });
+
         const data = await res.json();
+
         if (data.success) {
           setConversationId(data.conversationId);
         } else {
@@ -75,6 +92,7 @@ function SupportContent() {
         setLoading(false);
       }
     };
+
     init();
   }, [userId, orderId, presetConversation]);
 
@@ -83,7 +101,9 @@ function SupportContent() {
       <Box>
         <PageBanner title="Support" subtitle="Chat with our team" />
         <Container maxWidth="md" sx={{ py: 6 }}>
-          <Alert severity="info">Support chat is not enabled in this environment.</Alert>
+          <Alert severity="info">
+            Support chat is not enabled in this environment.
+          </Alert>
         </Container>
       </Box>
     );
@@ -91,13 +111,29 @@ function SupportContent() {
 
   return (
     <Box>
-      <PageBanner title="Support" subtitle={storeName ? `Chat with ${storeName} for order help and questions` : "Chat with us for order help and questions"} />
+      <PageBanner
+        title="Support"
+        subtitle={
+          storeName
+            ? `Chat with ${storeName} for order help and questions`
+            : "Chat with us for order help and questions"
+        }
+      />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Send a message to our support team for order help, product questions, or account issues.
+          Send a message to our support team for order help, product questions,
+          or account issues.
         </Typography>
-        {firebaseError && <Alert severity="warning" sx={{ mb: 2 }}>{firebaseError}</Alert>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {firebaseError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {firebaseError}
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         {loading || !ready || !firebaseUser || !conversationId || !userId ? (
           <Loader size={180} message="Connecting to support chat…" />
         ) : (

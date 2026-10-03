@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+
 import {
   AppBar,
   Box,
@@ -28,6 +30,9 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { jwtDecode } from "jwt-decode";
+
+import { signOut } from "firebase/auth";
+
 import { BRAND } from "@/lib/uiBrand";
 import { useCart } from "@/app/providers/CartProvider";
 import { useWishlist } from "@/app/providers/WishlistProvider";
@@ -40,9 +45,13 @@ import { ensureFreshAccessToken, logoutClientSession } from "@/lib/authFetch";
 import { getDisplayName } from "@/lib/userDisplay";
 import UserAvatar from "@/app/components/ui/UserAvatar";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
-import { signOut } from "firebase/auth";
 
-type DecodedToken = { userName?: string; role?: string; email?: string; userId?: string };
+type DecodedToken = {
+  userName?: string;
+  role?: string;
+  email?: string;
+  userId?: string;
+};
 
 const storePages = [
   { label: "Home", path: "/" },
@@ -74,14 +83,17 @@ export default function Navbar() {
     const checkAuth = () => {
       try {
         const token = localStorage.getItem("token");
+
         if (token) {
           const decoded: DecodedToken = jwtDecode(token);
+
           setUserName(decoded.userName || null);
           setUserEmail(decoded.email || null);
           setRole(decoded.role || null);
           setIsAuthenticated(true);
           // Optional profile image cached after profile load
           const cachedImage = localStorage.getItem("userImage");
+
           setUserImage(cachedImage);
         } else {
           setUserName(null);
@@ -106,6 +118,7 @@ export default function Navbar() {
 
     window.addEventListener("storage", checkAuth);
     window.addEventListener("authChange", checkAuth);
+
     return () => {
       window.removeEventListener("storage", checkAuth);
       window.removeEventListener("authChange", checkAuth);
@@ -114,12 +127,15 @@ export default function Navbar() {
 
   const pages = [
     ...storePages,
-    ...(isAuthenticated && role !== "guest" ? [{ label: "Support", path: "/support" }] : []),
+    ...(isAuthenticated && role !== "guest"
+      ? [{ label: "Support", path: "/support" }]
+      : []),
     ...(role === "admin" ? [{ label: "Admin Portal", path: "/admin" }] : []),
   ];
 
   const handleLogout = async () => {
     await unregisterWebPushToken().catch(() => undefined);
+
     if (isChatEnabled()) {
       try {
         await signOut(getFirebaseAuth());
@@ -127,6 +143,7 @@ export default function Navbar() {
         /* ignore */
       }
     }
+
     clearChatSessionState();
     await logoutClientSession();
     setIsAuthenticated(false);
@@ -139,8 +156,15 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  const avatarUser = { name: userName, email: userEmail, image: userImage, role };
+  const avatarUser = {
+    name: userName,
+    email: userEmail,
+    image: userImage,
+    role,
+  };
+
   const storeName = settings.shopName || "";
+
   const storeInitials = storeName
     .split(" ")
     .filter(Boolean)
@@ -173,7 +197,13 @@ export default function Navbar() {
             }}
           >
             {/* LEFT SECTION: Mobile Hamburger + Brand Logo */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 1, sm: 1.5 },
+              }}
+            >
               {/* Mobile Hamburger Button on the Extreme Left */}
               <IconButton
                 onClick={() => setMobileDrawerOpen(true)}
@@ -185,14 +215,32 @@ export default function Navbar() {
               </IconButton>
 
               {/* Brand Logo Link: Uploaded Cloudinary logo or dynamic store badge */}
-              <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, cursor: "pointer" }}>
+              <Link
+                href="/"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  textDecoration: "none",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    cursor: "pointer",
+                  }}
+                >
                   {storeLogo ? (
                     <Box
                       component="img"
                       src={storeLogo}
                       alt={storeName}
-                      sx={{ height: { xs: 36, md: 44 }, maxWidth: 180, objectFit: "contain" }}
+                      sx={{
+                        height: { xs: 36, md: 44 },
+                        maxWidth: 180,
+                        objectFit: "contain",
+                      }}
                     />
                   ) : (
                     <>
@@ -233,9 +281,16 @@ export default function Navbar() {
             </Box>
 
             {/* CENTER SECTION (Desktop Only): Main Navigation Links */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                display: { xs: "none", md: "flex" },
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
               {pages.map((page) => {
                 const isActive = pathname === page.path;
+
                 return (
                   <Button
                     key={page.label}
@@ -263,7 +318,13 @@ export default function Navbar() {
             </Box>
 
             {/* RIGHT SECTION: Cart + Auth (Desktop & Mobile) */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 1, sm: 1.5 },
+              }}
+            >
               {/* Cart Icon */}
               <IconButton
                 component={Link}
@@ -318,7 +379,9 @@ export default function Navbar() {
                 </IconButton>
               )}
 
-              {mounted && isAuthenticated && isChatEnabled() && <NotificationBell />}
+              {mounted && isAuthenticated && isChatEnabled() && (
+                <NotificationBell />
+              )}
 
               {/* User Account / Auth Actions */}
               {mounted && isAuthenticated ? (
@@ -342,11 +405,20 @@ export default function Navbar() {
                   >
                     <MenuItem disabled sx={{ opacity: "1 !important" }}>
                       <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: BRAND.navy }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, color: BRAND.navy }}
+                        >
                           {getDisplayName(avatarUser)}
                         </Typography>
                         {role === "admin" && (
-                          <Typography variant="caption" sx={{ color: "var(--theme-primary-main, #0284c7)", fontWeight: 600 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "var(--theme-primary-main, #0284c7)",
+                              fontWeight: 600,
+                            }}
+                          >
                             Administrator
                           </Typography>
                         )}
@@ -367,7 +439,9 @@ export default function Navbar() {
                       <MenuItem
                         onClick={() => {
                           setAnchorElUser(null);
-                          router.push(role === "admin" ? "/admin/profile" : "/profile");
+                          router.push(
+                            role === "admin" ? "/admin/profile" : "/profile",
+                          );
                         }}
                       >
                         Profile
@@ -430,7 +504,10 @@ export default function Navbar() {
                         color: BRAND.navy,
                         textTransform: "none",
                         fontWeight: 600,
-                        "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                        "&:hover": {
+                          borderColor: BRAND.gold,
+                          backgroundColor: "#fffbeb",
+                        },
                       }}
                     >
                       Login
@@ -495,10 +572,23 @@ export default function Navbar() {
         }}
       >
         {/* Drawer Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexShrink: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            flexShrink: 0,
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {storeLogo ? (
-              <Box component="img" src={storeLogo} alt="Store Logo" sx={{ height: 32, maxWidth: 140, objectFit: "contain" }} />
+              <Box
+                component="img"
+                src={storeLogo}
+                alt="Store Logo"
+                sx={{ height: 32, maxWidth: 140, objectFit: "contain" }}
+              />
             ) : (
               <>
                 {storeInitials ? (
@@ -507,7 +597,8 @@ export default function Navbar() {
                       width: 32,
                       height: 32,
                       borderRadius: "8px",
-                      background: "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
+                      background:
+                        "linear-gradient(135deg, #0284c7 0%, #042549 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -520,14 +611,21 @@ export default function Navbar() {
                   </Box>
                 ) : null}
                 {storeName ? (
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: BRAND.navy }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 800, color: BRAND.navy }}
+                  >
                     {storeName}
                   </Typography>
                 ) : null}
               </>
             )}
           </Box>
-          <IconButton onClick={() => setMobileDrawerOpen(false)} size="small" aria-label="close navigation drawer">
+          <IconButton
+            onClick={() => setMobileDrawerOpen(false)}
+            size="small"
+            aria-label="close navigation drawer"
+          >
             <CloseIcon />
           </IconButton>
         </Box>
@@ -538,6 +636,7 @@ export default function Navbar() {
         <List sx={{ flexGrow: 1, py: 0 }}>
           {pages.map((page) => {
             const isActive = pathname === page.path;
+
             return (
               <ListItem key={page.label} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
@@ -549,7 +648,9 @@ export default function Navbar() {
                     backgroundColor: isActive ? "#fffbeb" : "transparent",
                     color: isActive ? BRAND.navy : "#475569",
                     fontWeight: isActive ? 700 : 500,
-                    borderLeft: isActive ? `4px solid ${BRAND.gold}` : "4px solid transparent",
+                    borderLeft: isActive
+                      ? `4px solid ${BRAND.gold}`
+                      : "4px solid transparent",
                     py: 1,
                   }}
                 >
@@ -570,7 +671,15 @@ export default function Navbar() {
 
         {/* Mobile Drawer Auth Footer */}
         {mounted && isAuthenticated ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flexShrink: 0, mt: "auto" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              flexShrink: 0,
+              mt: "auto",
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -584,7 +693,15 @@ export default function Navbar() {
             >
               <UserAvatar user={avatarUser} size={38} />
               <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 700,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {getDisplayName(avatarUser)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -605,7 +722,10 @@ export default function Navbar() {
                   borderColor: "#cbd5e1",
                   color: BRAND.navy,
                   py: 1,
-                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                  "&:hover": {
+                    borderColor: BRAND.gold,
+                    backgroundColor: "#fffbeb",
+                  },
                 }}
               >
                 Profile
@@ -624,7 +744,10 @@ export default function Navbar() {
                   borderColor: "#cbd5e1",
                   color: BRAND.navy,
                   py: 1,
-                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                  "&:hover": {
+                    borderColor: BRAND.gold,
+                    backgroundColor: "#fffbeb",
+                  },
                 }}
               >
                 My Wishlist
@@ -642,7 +765,10 @@ export default function Navbar() {
                 borderColor: "#cbd5e1",
                 color: BRAND.navy,
                 py: 1,
-                "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                "&:hover": {
+                  borderColor: BRAND.gold,
+                  backgroundColor: "#fffbeb",
+                },
               }}
             >
               My Orders
@@ -660,7 +786,10 @@ export default function Navbar() {
                   borderColor: "#cbd5e1",
                   color: BRAND.navy,
                   py: 1,
-                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                  "&:hover": {
+                    borderColor: BRAND.gold,
+                    backgroundColor: "#fffbeb",
+                  },
                 }}
               >
                 My Vouchers
@@ -679,7 +808,10 @@ export default function Navbar() {
                   borderColor: "#cbd5e1",
                   color: BRAND.navy,
                   py: 1,
-                  "&:hover": { borderColor: BRAND.gold, backgroundColor: "#fffbeb" },
+                  "&:hover": {
+                    borderColor: BRAND.gold,
+                    backgroundColor: "#fffbeb",
+                  },
                 }}
               >
                 Chat
@@ -696,14 +828,28 @@ export default function Navbar() {
             </Button>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flexShrink: 0, mt: "auto" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              flexShrink: 0,
+              mt: "auto",
+            }}
+          >
             <Button
               component={Link}
               href="/login"
               variant="outlined"
               fullWidth
               onClick={() => setMobileDrawerOpen(false)}
-              sx={{ textTransform: "none", fontWeight: 600, borderColor: BRAND.gold, color: BRAND.navy, py: 1 }}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                borderColor: BRAND.gold,
+                color: BRAND.navy,
+                py: 1,
+              }}
             >
               Login
             </Button>

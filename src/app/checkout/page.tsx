@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { useRouter } from "next/navigation";
+
+import Link from "next/link";
+
 import {
   Container,
   Typography,
@@ -14,6 +18,7 @@ import {
   Alert,
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
+
 import PageBanner from "../components/PageBanner";
 import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
 import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector";
@@ -38,9 +43,11 @@ import {
 } from "@/lib/guestCheckout";
 import type { CheckoutShippingFormType } from "@/types/apps/orderTypes";
 import { fetchAreas } from "@/lib/locationClient";
-import type { CheckoutSafepaySessionType, PaymentMethod } from "@/types/apps/paymentTypes";
+import type {
+  CheckoutSafepaySessionType,
+  PaymentMethod,
+} from "@/types/apps/paymentTypes";
 import type { UserTokenType } from "@/types/shared/authTypes";
-import Link from "next/link";
 
 type TokenUser = UserTokenType;
 
@@ -53,9 +60,17 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
-  const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(null);
+
+  const [paymentSession, setPaymentSession] = useState<SafepaySession | null>(
+    null,
+  );
+
   const [emailRequiredHint, setEmailRequiredHint] = useState(false);
-  const [calculatedShippingFee, setCalculatedShippingFee] = useState<number | null>(null);
+
+  const [calculatedShippingFee, setCalculatedShippingFee] = useState<
+    number | null
+  >(null);
+
   const [form, setForm] = useState<CheckoutShippingFormType>({
     customer_name: "",
     customer_email: "",
@@ -69,34 +84,43 @@ export default function CheckoutPage() {
   const storeName = settings.shopName || "Ecommerce Store";
 
   const safepayEnabled =
-    process.env.NEXT_PUBLIC_SAFEPAY_ENV === "sandbox" || process.env.NEXT_PUBLIC_SAFEPAY_ENV === "production";
+    process.env.NEXT_PUBLIC_SAFEPAY_ENV === "sandbox" ||
+    process.env.NEXT_PUBLIC_SAFEPAY_ENV === "production";
 
   useEffect(() => {
     const redirectToLogin = (severity: "info" | "error" = "info") => {
-      toast("Please login, sign up, or continue as guest to place an order.", severity);
+      toast(
+        "Please login, sign up, or continue as guest to place an order.",
+        severity,
+      );
       router.push("/login?next=/checkout");
     };
 
     void (async () => {
       try {
         const token = localStorage.getItem("token");
+
         if (!token) {
           redirectToLogin();
+
           return;
         }
 
         let decoded: TokenUser;
+
         try {
           decoded = jwtDecode(token);
         } catch {
           localStorage.removeItem("token");
           redirectToLogin("error");
+
           return;
         }
 
         if (!decoded.userId && decoded.role !== "guest") {
           localStorage.removeItem("token");
           redirectToLogin("error");
+
           return;
         }
 
@@ -107,6 +131,7 @@ export default function CheckoutPage() {
           // Do NOT set name/email from JWT placeholder token
           // Load guestCheckoutInfo → prefill if present
           const guestInfo = getGuestCheckoutInfo();
+
           setForm({
             customer_name: guestInfo.customer_name,
             customer_email: guestInfo.customer_email,
@@ -118,6 +143,7 @@ export default function CheckoutPage() {
           });
           setEmailRequiredHint(true);
           setCheckingAuth(false);
+
           return;
         }
 
@@ -127,14 +153,18 @@ export default function CheckoutPage() {
         setForm((prev) => ({
           ...prev,
           customer_name: decoded.userName || prev.customer_name,
-          customer_email: needsRealEmail ? "" : tokenEmail || prev.customer_email,
+          customer_email: needsRealEmail
+            ? ""
+            : tokenEmail || prev.customer_email,
         }));
         setEmailRequiredHint(needsRealEmail);
         setCheckingAuth(false);
 
         const res = await authFetch("/api/profile");
+
         if (!res.ok) return;
         const data = await res.json();
+
         if (!data.success || !data.profile) return;
 
         const p = data.profile as {
@@ -148,10 +178,12 @@ export default function CheckoutPage() {
           needsEmail?: boolean;
           image?: string;
         };
+
         setEmailRequiredHint(Boolean(p.needsEmail) || needsRealEmail);
         setForm((prev) => ({
           customer_name: p.name || prev.customer_name,
-          customer_email: p.email || (needsRealEmail ? "" : prev.customer_email),
+          customer_email:
+            p.email || (needsRealEmail ? "" : prev.customer_email),
           phone: p.phone || prev.phone,
           province: p.province || prev.province,
           city: p.city || prev.city,
@@ -166,12 +198,27 @@ export default function CheckoutPage() {
   }, [router, toast]);
 
   const { quoteLocal } = usePromotions();
-  const localSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const engineItems = useMemo(
-    () => items.map((i) => ({ productId: i._id, category: i.category, price: i.price, quantity: i.quantity, name: i.name })),
-    [items]
+
+  const localSubtotal = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
   );
-  const cartFingerprint = items.map((item) => `${item._id}:${item.quantity}`).join("|");
+
+  const engineItems = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i._id,
+        category: i.category,
+        price: i.price,
+        quantity: i.quantity,
+        name: i.name,
+      })),
+    [items],
+  );
+
+  const cartFingerprint = items
+    .map((item) => `${item._id}:${item.quantity}`)
+    .join("|");
 
   // Voucher + server-authoritative quote. The local engine gives an instant preview until the server answers.
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
@@ -183,6 +230,7 @@ export default function CheckoutPage() {
     async (code: string | null, customShippingFee: number) => {
       if (items.length === 0) return;
       setQuoting(true);
+
       try {
         const res = await fetch("/api/promotions/quote", {
           method: "POST",
@@ -191,21 +239,29 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             items: items.map((i) => ({ _id: i._id, quantity: i.quantity })),
             voucherCode: code,
-            customerEmail: form.customer_email.trim().toLowerCase() || undefined,
+            customerEmail:
+              form.customer_email.trim().toLowerCase() || undefined,
             shippingFee: customShippingFee,
           }),
         });
+
         const data = await res.json();
+
         if (!res.ok || !data.success) {
           if (code) toast(data.error || "Could not apply voucher", "error");
+
           return;
         }
+
         const q = data.quote as EngineResult;
+
         if (code && q.rejected.length > 0) {
           toast(q.rejected[0].message, "error");
           setAppliedCode(null);
+
           return;
         }
+
         setServerQuote(q);
         if (code && announceRef.current) toast("Voucher applied!", "success");
       } catch {
@@ -215,10 +271,13 @@ export default function CheckoutPage() {
         setQuoting(false);
       }
     },
-    [items, form.customer_email, toast]
+    [items, form.customer_email, toast],
   );
 
-  const effectiveShippingFee = getShipping(localSubtotal, calculatedShippingFee ?? settings.fee);
+  const effectiveShippingFee = getShipping(
+    localSubtotal,
+    calculatedShippingFee ?? settings.fee,
+  );
 
   useEffect(() => {
     requestQuote(appliedCode, effectiveShippingFee);
@@ -228,6 +287,7 @@ export default function CheckoutPage() {
   // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("promo");
+
     if (code) {
       announceRef.current = true;
       setAppliedCode(code.trim().toUpperCase());
@@ -238,6 +298,7 @@ export default function CheckoutPage() {
     announceRef.current = true;
     setAppliedCode(code.trim().toUpperCase());
   };
+
   const removeVoucher = () => {
     setAppliedCode(null);
     toast("Voucher removed", "info");
@@ -247,6 +308,7 @@ export default function CheckoutPage() {
     if (!form.city || !form.city.trim()) return;
 
     let isMounted = true;
+
     void (async () => {
       try {
         const res = await fetch("/api/shipping/calculate", {
@@ -257,8 +319,10 @@ export default function CheckoutPage() {
             city: form.city,
           }),
         });
+
         if (!res.ok) return;
         const data = await res.json();
+
         if (isMounted && data.success && typeof data.fee === "number") {
           setCalculatedShippingFee(data.fee);
         }
@@ -273,27 +337,44 @@ export default function CheckoutPage() {
   }, [form.city, form.province]);
 
   const standardFee = calculatedShippingFee ?? settings.fee;
-  const quote = serverQuote ?? quoteLocal(engineItems, { shippingFee: getShipping(localSubtotal, standardFee), voucherCode: appliedCode });
+
+  const quote =
+    serverQuote ??
+    quoteLocal(engineItems, {
+      shippingFee: getShipping(localSubtotal, standardFee),
+      voucherCode: appliedCode,
+    });
+
   const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
   const subtotal = quote.subtotal;
   const shipping = quote.shipping;
-  const promoActive = isPromoActive(subtotal) || (subtotal > 0 && quote.shippingDiscount > 0);
+
+  const promoActive =
+    isPromoActive(subtotal) || (subtotal > 0 && quote.shippingDiscount > 0);
+
   const itemSavings = quote.itemDiscount + quote.bundleDiscount;
   const grandTotal = quote.total;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setForm((prev) => {
       const next = { ...prev, [name]: value };
+
       persistGuestDraft(next);
+
       return next;
     });
   };
 
-  const handleLocationFieldsChange = (updatedFields: Partial<CheckoutShippingFormType>) => {
+  const handleLocationFieldsChange = (
+    updatedFields: Partial<CheckoutShippingFormType>,
+  ) => {
     setForm((prev) => {
       const next = { ...prev, ...updatedFields };
+
       persistGuestDraft(next);
+
       return next;
     });
   };
@@ -306,8 +387,10 @@ export default function CheckoutPage() {
   const persistGuestDraft = (info: CheckoutShippingFormType) => {
     try {
       const token = localStorage.getItem("token");
+
       if (!token) return;
       const decoded: TokenUser = jwtDecode(token);
+
       if (isGuestUser(decoded)) {
         saveGuestCheckoutInfo(info);
       }
@@ -322,49 +405,78 @@ export default function CheckoutPage() {
 
   const validateForm = async (): Promise<boolean> => {
     const token = localStorage.getItem("token");
+
     if (!token) {
-      toast("Please login, sign up, or continue as guest to place your order.", "error");
+      toast(
+        "Please login, sign up, or continue as guest to place your order.",
+        "error",
+      );
       router.push("/login?next=/checkout");
+
       return false;
     }
+
     try {
       jwtDecode(token);
     } catch {
       localStorage.removeItem("token");
-      toast("Please login, sign up, or continue as guest to place your order.", "error");
+      toast(
+        "Please login, sign up, or continue as guest to place your order.",
+        "error",
+      );
       router.push("/login?next=/checkout");
+
       return false;
     }
 
-    if (!form.customer_name || /^guest(\s*user)?$/i.test(form.customer_name.trim())) {
+    if (
+      !form.customer_name ||
+      /^guest(\s*user)?$/i.test(form.customer_name.trim())
+    ) {
       toast("Please enter your full name", "error");
+
       return false;
     }
+
     if (!form.customer_email || !isValidCustomerEmail(form.customer_email)) {
       toast("Please enter a valid email address for order updates", "error");
+
       return false;
     }
+
     if (!form.phone || !form.province || !form.city || !form.address) {
-      toast("Please fill in all required shipping fields (Phone, Province, City, Address)", "error");
+      toast(
+        "Please fill in all required shipping fields (Phone, Province, City, Address)",
+        "error",
+      );
+
       return false;
     }
+
     const areaCheck = await fetchAreas(form.city, form.province);
+
     if (areaCheck.hasCuratedAreas && !(form.area || "").trim()) {
       toast("Please select an area / neighborhood", "error");
+
       return false;
     }
+
     if (items.length === 0) {
       toast("Your cart is empty", "error");
+
       return false;
     }
+
     return true;
   };
 
   const syncShippingToProfile = async () => {
     try {
       const token = localStorage.getItem("token");
+
       if (!token) return;
       const decoded: TokenUser = jwtDecode(token);
+
       if (isGuestUser(decoded)) return;
 
       const res = await authFetch("/api/profile", {
@@ -379,7 +491,9 @@ export default function CheckoutPage() {
           address: form.address.trim(),
         }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         if (data.token) persistAccessToken(data.token);
         setEmailRequiredHint(false);
@@ -390,13 +504,33 @@ export default function CheckoutPage() {
   };
 
   const checkoutRequestKey = () => {
-    const content = JSON.stringify({ form, items: items.map(({ _id, quantity }) => ({ _id, quantity })), paymentMethod, appliedCode });
+    const content = JSON.stringify({
+      form,
+      items: items.map(({ _id, quantity }) => ({ _id, quantity })),
+      paymentMethod,
+      appliedCode,
+    });
+
     const stored = sessionStorage.getItem("checkout_attempt");
+
     if (stored) {
-      try { const attempt = JSON.parse(stored); if (attempt.content === content && attempt.key) return attempt.key as string; } catch { /* replace invalid saved attempt */ }
+      try {
+        const attempt = JSON.parse(stored);
+
+        if (attempt.content === content && attempt.key)
+          return attempt.key as string;
+      } catch {
+        /* replace invalid saved attempt */
+      }
     }
+
     const key = crypto.randomUUID();
-    sessionStorage.setItem("checkout_attempt", JSON.stringify({ content, key }));
+
+    sessionStorage.setItem(
+      "checkout_attempt",
+      JSON.stringify({ content, key }),
+    );
+
     return key;
   };
 
@@ -421,12 +555,16 @@ export default function CheckoutPage() {
           shippingFee: getShipping(localSubtotal, standardFee),
         }),
       });
+
       const data = await res.json();
+
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
         router.push("/login?next=/checkout");
+
         return;
       }
+
       if (res.ok && data.success) {
         if (data.token) persistAccessToken(data.token);
         setEmailRequiredHint(false);
@@ -446,8 +584,10 @@ export default function CheckoutPage() {
 
   const startOnlinePayment = async () => {
     if (!(await validateForm())) return;
+
     if (!safepayEnabled) {
       toast("Online payments are not available right now", "error");
+
       return;
     }
 
@@ -471,13 +611,17 @@ export default function CheckoutPage() {
       });
 
       const data = await res.json();
+
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
         router.push("/login?next=/checkout");
+
         return;
       }
+
       if (!res.ok || !data.success || !data.session) {
         toast(data.message || "Could not start payment session", "error");
+
         return;
       }
 
@@ -496,6 +640,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (paymentMethod === "cod") {
       await placeCodOrder();
     } else {
@@ -527,9 +672,17 @@ export default function CheckoutPage() {
   }
 
   return (
-    <Box sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", minHeight: "70vh" }}>
+    <Box
+      sx={{
+        backgroundColor: "var(--theme-bg-default, #f8fafc)",
+        minHeight: "70vh",
+      }}
+    >
       {submitting && <Loader overlay message="Processing order..." />}
-      <PageBanner title="Checkout" subtitle="Choose how you want to pay and confirm your order" />
+      <PageBanner
+        title="Checkout"
+        subtitle="Choose how you want to pay and confirm your order"
+      />
       <Container maxWidth="lg" sx={{ py: 6 }}>
         {items.length === 0 ? (
           <Paper sx={{ p: 6, textAlign: "center", borderRadius: 4 }}>
@@ -542,10 +695,18 @@ export default function CheckoutPage() {
           <Grid container spacing={4}>
             <Grid item xs={12} md={7}>
               <Paper sx={{ p: 4, borderRadius: 4, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: BRAND.navy }}>
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 3, fontWeight: 700, color: BRAND.navy }}
+                >
                   Shipping details
                 </Typography>
-                <Grid container spacing={2} component="form" onSubmit={handleSubmit}>
+                <Grid
+                  container
+                  spacing={2}
+                  component="form"
+                  onSubmit={handleSubmit}
+                >
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -564,7 +725,9 @@ export default function CheckoutPage() {
                       type="email"
                       name="customer_email"
                       label="Email"
-                      placeholder={emailRequiredHint ? "Enter your email" : undefined}
+                      placeholder={
+                        emailRequiredHint ? "Enter your email" : undefined
+                      }
                       helperText={
                         emailRequiredHint
                           ? "Required for order updates — social account did not share an email"
@@ -613,7 +776,8 @@ export default function CheckoutPage() {
                 <Paper sx={{ p: 4, borderRadius: 4 }}>
                   {paymentMethod === "cod" && (
                     <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-                      You will pay PKR {grandTotal.toLocaleString()} in cash when your order is delivered.
+                      You will pay PKR {grandTotal.toLocaleString()} in cash
+                      when your order is delivered.
                     </Alert>
                   )}
                   {/* Raast & wallet disabled until Safepay merchant auth is configured.
@@ -639,15 +803,27 @@ export default function CheckoutPage() {
                   >
                     {submitLabel}
                   </Button>
-                  <Typography variant="caption" align="center" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
+                  <Typography
+                    variant="caption"
+                    align="center"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 1.5 }}
+                  >
                     By placing your order, you agree to {storeName}’s{" "}
-                    <Link href="/terms-of-service" style={{ color: BRAND.navy, fontWeight: 600 }}>
+                    <Link
+                      href="/terms-of-service"
+                      style={{ color: BRAND.navy, fontWeight: 600 }}
+                    >
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy-policy" style={{ color: BRAND.navy, fontWeight: 600 }}>
+                    <Link
+                      href="/privacy-policy"
+                      style={{ color: BRAND.navy, fontWeight: 600 }}
+                    >
                       Privacy Policy
-                    </Link>.
+                    </Link>
+                    .
                   </Typography>
                 </Paper>
               )}
@@ -662,24 +838,42 @@ export default function CheckoutPage() {
                     onError={(message) => toast(message, "error")}
                   />
                   <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
-                    Your order will be confirmed once Safepay verifies the payment via webhook.
+                    Your order will be confirmed once Safepay verifies the
+                    payment via webhook.
                   </Alert>
                 </Paper>
               )}
             </Grid>
 
             <Grid item xs={12} md={5}>
-              <Paper sx={{ p: 4, borderRadius: 4, position: "sticky", top: 90 }}>
-                {promoActive && <FreeDeliveryPromoBanner savedAmount={standardFee} compact />}
+              <Paper
+                sx={{ p: 4, borderRadius: 4, position: "sticky", top: 90 }}
+              >
+                {promoActive && (
+                  <FreeDeliveryPromoBanner savedAmount={standardFee} compact />
+                )}
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                   Order summary
                 </Typography>
                 {items.map((item) => (
-                  <Box key={item._id} sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                  <Box
+                    key={item._id}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
                     <Typography variant="body2">
                       {item.name} × {item.quantity}
                     </Typography>
-                    <Typography variant="body2">PKR {(lineById.get(item._id)?.lineTotal ?? item.price * item.quantity).toLocaleString()}</Typography>
+                    <Typography variant="body2">
+                      PKR{" "}
+                      {(
+                        lineById.get(item._id)?.lineTotal ??
+                        item.price * item.quantity
+                      ).toLocaleString()}
+                    </Typography>
                   </Box>
                 ))}
                 <Divider sx={{ my: 2 }} />
@@ -695,14 +889,37 @@ export default function CheckoutPage() {
                 />
 
                 {itemSavings > 0 && (
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#166534" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-                      <Typography variant="body2" fontWeight={700}>Promotions</Typography>
-                      {quote.applied.filter((a) => a.kind !== "voucher" && a.kind !== "free_shipping").map((a) => (
-                        <PromotionBadge key={a.promotionId} badge={a.badge} />
-                      ))}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                      color: "#166534",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.75,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={700}>
+                        Promotions
+                      </Typography>
+                      {quote.applied
+                        .filter(
+                          (a) =>
+                            a.kind !== "voucher" && a.kind !== "free_shipping",
+                        )
+                        .map((a) => (
+                          <PromotionBadge key={a.promotionId} badge={a.badge} />
+                        ))}
                     </Box>
-                    <Typography variant="body2" fontWeight={700}>-PKR {itemSavings.toLocaleString()}</Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                      -PKR {itemSavings.toLocaleString()}
+                    </Typography>
                   </Box>
                 )}
 
@@ -712,24 +929,45 @@ export default function CheckoutPage() {
                   standardFee={standardFee}
                   label="Shipping"
                 />
-                {quote.voucher && quote.voucher.kind === "voucher" && quote.voucherDiscount > 0 && quote.shippingDiscount === 0 && (
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#166534" }}>
-                    <Typography variant="body2" fontWeight={700}>
-                      Voucher ({quote.voucher.code})
-                    </Typography>
-                    <Typography variant="body2" fontWeight={700}>
-                      -PKR {quote.voucherDiscount.toLocaleString()}
-                    </Typography>
-                  </Box>
-                )}
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                {quote.voucher &&
+                  quote.voucher.kind === "voucher" &&
+                  quote.voucherDiscount > 0 &&
+                  quote.shippingDiscount === 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                        color: "#166534",
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={700}>
+                        Voucher ({quote.voucher.code})
+                      </Typography>
+                      <Typography variant="body2" fontWeight={700}>
+                        -PKR {quote.voucherDiscount.toLocaleString()}
+                      </Typography>
+                    </Box>
+                  )}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
                   <Typography fontWeight={800}>Total</Typography>
                   <Typography fontWeight={800} color="primary">
                     PKR {grandTotal.toLocaleString()}
                   </Typography>
                 </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-                  Payment: {paymentMethod === "cod" ? "Cash on Delivery" : "Card"}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 2 }}
+                >
+                  Payment:{" "}
+                  {paymentMethod === "cod" ? "Cash on Delivery" : "Card"}
                 </Typography>
               </Paper>
             </Grid>

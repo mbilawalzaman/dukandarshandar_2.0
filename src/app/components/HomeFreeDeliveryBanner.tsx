@@ -1,13 +1,16 @@
 "use client";
 
 import { Box } from "@mui/material";
+
 import FreeDeliveryPromoBanner from "@/app/components/FreeDeliveryPromoBanner";
 
 type HomeFreeDeliveryBannerProps = {
   savedAmount: number;
 };
 
-export default function HomeFreeDeliveryBanner({ savedAmount }: HomeFreeDeliveryBannerProps) {
+export default function HomeFreeDeliveryBanner({
+  savedAmount,
+}: HomeFreeDeliveryBannerProps) {
   return (
     <Box
       sx={{

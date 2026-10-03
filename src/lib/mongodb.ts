@@ -6,12 +6,17 @@ declare global {
 
 function createClientPromise(): Promise<MongoClient> {
   const uri = process.env.DATABASE_URL;
+
   if (!uri) {
     return Promise.reject(
-      new Error("DATABASE_URL is not configured. Add it in Vercel → Project Settings → Environment Variables.")
+      new Error(
+        "DATABASE_URL is not configured. Add it in Vercel → Project Settings → Environment Variables.",
+      ),
     );
   }
+
   const client = new MongoClient(uri);
+
   return client.connect();
 }
 
@@ -22,6 +27,7 @@ function getClientPromise(): Promise<MongoClient> {
       throw err;
     });
   }
+
   return global._mongoClientPromise;
 }
 

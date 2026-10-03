@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -18,6 +19,7 @@ import {
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PrintIcon from "@mui/icons-material/Print";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+
 import PostExTrackingTimeline from "@/app/components/orders/PostExTrackingTimeline";
 
 interface PostExBookingModalProps {
@@ -54,9 +56,17 @@ export default function PostExBookingModal({
   const [orderType, setOrderType] = useState<string>("Normal");
   const [transactionNotes, setTransactionNotes] = useState<string>("");
 
-  const [trackingInfo, setTrackingInfo] = useState<Record<string, unknown> | null>(null);
+  const [trackingInfo, setTrackingInfo] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+
   const [trackingLoading, setTrackingLoading] = useState<boolean>(false);
-  const [newlyBookedTrackingNumber, setNewlyBookedTrackingNumber] = useState<string | null>(null);
+
+  const [newlyBookedTrackingNumber, setNewlyBookedTrackingNumber] = useState<
+    string | null
+  >(null);
+
   const [loadSheetLoading, setLoadSheetLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -70,8 +80,12 @@ export default function PostExBookingModal({
 
   if (!order) return null;
 
-  const trackingNumber = order.postexDetails?.trackingNumber || newlyBookedTrackingNumber;
-  const currentPostExStatus = order.postexDetails?.orderStatus || (newlyBookedTrackingNumber ? "UnBooked" : "Not Booked");
+  const trackingNumber =
+    order.postexDetails?.trackingNumber || newlyBookedTrackingNumber;
+
+  const currentPostExStatus =
+    order.postexDetails?.orderStatus ||
+    (newlyBookedTrackingNumber ? "UnBooked" : "Not Booked");
 
   const handleBookOrder = async () => {
     setLoading(true);
@@ -101,11 +115,15 @@ export default function PostExBookingModal({
       }
 
       const newTracking = data.data?.trackingNumber || null;
+
       setNewlyBookedTrackingNumber(newTracking);
-      setSuccessMsg(`Successfully booked! PostEx Tracking Number: ${newTracking || ""}`);
+      setSuccessMsg(
+        `Successfully booked! PostEx Tracking Number: ${newTracking || ""}`,
+      );
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setError(errorObj.message || "An error occurred during booking");
     } finally {
       setLoading(false);
@@ -115,6 +133,7 @@ export default function PostExBookingModal({
   const handleGenerateLoadSheet = async () => {
     if (!trackingNumber) {
       setError("No tracking number available to generate Load Sheet.");
+
       return;
     }
 
@@ -131,15 +150,22 @@ export default function PostExBookingModal({
       });
 
       if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error || "Failed to generate PostEx Load Sheet PDF");
+        const errData = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        throw new Error(
+          errData.error || "Failed to generate PostEx Load Sheet PDF",
+        );
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
+
       window.open(url, "_blank");
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setError(errorObj.message || "Failed to generate Load Sheet");
     } finally {
       setLoadSheetLoading(false);
@@ -149,6 +175,7 @@ export default function PostExBookingModal({
   const handlePrintAirwayBill = async () => {
     if (!trackingNumber) {
       setError("No tracking number available to print label.");
+
       return;
     }
 
@@ -164,15 +191,20 @@ export default function PostExBookingModal({
       });
 
       if (!res.ok) {
-        const errorData = (await res.json().catch(() => ({}))) as { error?: string };
+        const errorData = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
         throw new Error(errorData.error || "Failed to fetch Airway Bill PDF");
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
+
       window.open(url, "_blank");
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setError(errorObj.message || "Failed to print label");
     }
   };
@@ -180,17 +212,24 @@ export default function PostExBookingModal({
   const handleTrackPackage = async () => {
     if (!trackingNumber) return;
     setTrackingLoading(true);
+
     try {
-      const res = await fetch(`/api/admin/postex/track?trackingNumber=${encodeURIComponent(trackingNumber)}`);
+      const res = await fetch(
+        `/api/admin/postex/track?trackingNumber=${encodeURIComponent(trackingNumber)}`,
+      );
+
       const data = (await res.json()) as {
         success?: boolean;
         error?: string;
         data?: Record<string, unknown>;
       };
-      if (!res.ok || !data.success) throw new Error(data.error || "Failed to track order");
+
+      if (!res.ok || !data.success)
+        throw new Error(data.error || "Failed to track order");
       setTrackingInfo(data.data || null);
     } catch (err: unknown) {
       const errorObj = err as Error;
+
       setError(errorObj.message || "Failed to track shipment");
     } finally {
       setTrackingLoading(false);
@@ -221,7 +260,10 @@ export default function PostExBookingModal({
               Booked Tracking Number:
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, my: 1 }}>
-              <Typography variant="h6" sx={{ fontFamily: "monospace", fontWeight: "bold" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontFamily: "monospace", fontWeight: "bold" }}
+              >
                 {trackingNumber}
               </Typography>
               <Chip label={currentPostExStatus} color="info" size="small" />
@@ -251,13 +293,19 @@ export default function PostExBookingModal({
                 onClick={handleTrackPackage}
                 disabled={trackingLoading}
               >
-                {trackingLoading ? <CircularProgress size={20} /> : "Track Package"}
+                {trackingLoading ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  "Track Package"
+                )}
               </Button>
             </Box>
 
             {String(currentPostExStatus).toLowerCase().includes("unbooked") && (
               <Alert severity="info" sx={{ mt: 2, fontSize: "0.825rem" }}>
-                <strong>Note:</strong> PostEx generates Airway Bill PDFs after orders are booked or assigned to a loadsheet in your PostEx Merchant Portal.
+                <strong>Note:</strong> PostEx generates Airway Bill PDFs after
+                orders are booked or assigned to a loadsheet in your PostEx
+                Merchant Portal.
               </Alert>
             )}
 
@@ -276,7 +324,8 @@ export default function PostExBookingModal({
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Customer: <strong>{order.customer_name || "N/A"}</strong> ({order.city || "No City"})
+              Customer: <strong>{order.customer_name || "N/A"}</strong> (
+              {order.city || "No City"})
               <br />
               COD Amount: <strong>PKR {order.total_amount || 0}</strong>
             </Typography>
@@ -323,7 +372,9 @@ export default function PostExBookingModal({
             variant="contained"
             color="primary"
             disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : <LocalShippingIcon />}
+            startIcon={
+              loading ? <CircularProgress size={20} /> : <LocalShippingIcon />
+            }
           >
             {loading ? "Booking..." : "Book with PostEx"}
           </Button>

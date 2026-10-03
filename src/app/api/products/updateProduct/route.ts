@@ -5,8 +5,9 @@ export async function PATCH() {
   return NextResponse.json(
     {
       success: false,
-      message: "Use POST /api/products/{id}/reviews. Reviews require a delivered order for that product.",
+      message:
+        "Use POST /api/products/{id}/reviews. Reviews require a delivered order for that product.",
     },
-    { status: 410 }
+    { status: 410 },
   );
 }

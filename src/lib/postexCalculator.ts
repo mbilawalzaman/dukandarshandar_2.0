@@ -4,7 +4,10 @@ import PostExService from "@/services/postex.service.js";
  * Dynamic PostEx Delivery Charge Calculator
  * Calculates verified shipping fee for 0.5kg parcels based on Destination Province & City
  */
-export async function calculatePostExShippingRate(province: string, city: string): Promise<number> {
+export async function calculatePostExShippingRate(
+  province: string,
+  city: string,
+): Promise<number> {
   const destCity = (city || "").trim().toLowerCase();
   const destProvince = (province || "").trim().toLowerCase();
 
@@ -13,13 +16,17 @@ export async function calculatePostExShippingRate(province: string, city: string
 
   try {
     const addressesRes = await PostExService.getPickupAddresses();
+
     const defaultAddr = Array.isArray(addressesRes?.dist)
-      ? addressesRes.dist.find((a: { addressCode?: string }) => a.addressCode === "001") || addressesRes.dist[0]
+      ? addressesRes.dist.find(
+          (a: { addressCode?: string }) => a.addressCode === "001",
+        ) || addressesRes.dist[0]
       : null;
 
     if (defaultAddr?.cityName) {
       originCityName = defaultAddr.cityName.trim().toLowerCase();
     }
+
     if (defaultAddr?.cityId) {
       originCityId = Number(defaultAddr.cityId) || 1;
     }
@@ -28,11 +35,15 @@ export async function calculatePostExShippingRate(province: string, city: string
   }
 
   const isSameCity = destCity.includes("lahore") || destCity === originCityName;
+
   const isSameProvince =
     destProvince.includes("punjab") ||
-    (originCityName === "lahore" && (destProvince.includes("punjab") || isSameCity));
+    (originCityName === "lahore" &&
+      (destProvince.includes("punjab") || isSameCity));
 
-  let routeType: "SAME_CITY" | "SAME_PROVINCE_OTHER_CITY" | "OTHER_PROVINCE_OTHER_CITY" = "OTHER_PROVINCE_OTHER_CITY";
+  let routeType:
+    "SAME_CITY" | "SAME_PROVINCE_OTHER_CITY" | "OTHER_PROVINCE_OTHER_CITY" =
+    "OTHER_PROVINCE_OTHER_CITY";
   let destinationCityId = 2;
 
   if (isSameCity) {
@@ -59,6 +70,7 @@ export async function calculatePostExShippingRate(province: string, city: string
 
     if (postexRes.ok) {
       const data = await postexRes.json();
+
       if (data.statusCode === "200" && data.dist) {
         return Math.round(Number(data.dist.finalPrice) || 200);
       }
@@ -69,5 +81,6 @@ export async function calculatePostExShippingRate(province: string, city: string
 
   if (routeType === "SAME_CITY") return 157;
   if (routeType === "SAME_PROVINCE_OTHER_CITY") return 258;
+
   return 274;
 }

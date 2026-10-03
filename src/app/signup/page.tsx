@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, Suspense } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+
 import {
   TextField,
   Button,
@@ -19,6 +21,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "@mui/icons-material/Google";
+
 // import FacebookIcon from "@mui/icons-material/Facebook";
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 import { persistAccessToken } from "@/lib/authFetch";
@@ -29,19 +32,27 @@ import Loader from "@/app/components/loader/Loader";
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || searchParams.get("redirect") || "/";
+
+  const nextPath =
+    searchParams.get("next") || searchParams.get("redirect") || "/";
 
   const [showPassword, setShowPassword] = useState(false);
   const [blockAutofill, setBlockAutofill] = useState(true);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     role: "user",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
+
+  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(
+    null,
+  );
+
   const socialEnabled = isFirebaseClientConfigured();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +74,7 @@ function SignupForm() {
       });
 
       const data = await res.json();
+
       if (data.success) {
         // Automatically log in the user after signup
         const loginRes = await fetch("/api/auth", {
@@ -75,12 +87,22 @@ function SignupForm() {
             type: "login",
           }),
         });
+
         const loginData = await loginRes.json();
+
         if (loginData.success && loginData.token) {
           persistAccessToken(loginData.token);
-          router.push(loginData.user?.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
+          router.push(
+            loginData.user?.role === "admin" && nextPath === "/"
+              ? "/admin"
+              : nextPath,
+          );
         } else {
-          router.push(nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login");
+          router.push(
+            nextPath !== "/"
+              ? `/login?next=${encodeURIComponent(nextPath)}`
+              : "/login",
+          );
         }
       } else {
         setError(data.error || "Signup failed");
@@ -95,6 +117,7 @@ function SignupForm() {
   const handleGuestLogin = async () => {
     setError("");
     setLoading(true);
+
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
@@ -105,10 +128,12 @@ function SignupForm() {
 
       const raw = await res.text();
       let data: { success?: boolean; token?: string; error?: string };
+
       try {
         data = JSON.parse(raw);
       } catch {
         setError("Server error check Vercel environment variables.");
+
         return;
       }
 
@@ -126,12 +151,18 @@ function SignupForm() {
   const handleSocial = async (provider: SocialProvider) => {
     setError("");
     setSocialLoading(provider);
+
     try {
       const { token, user } = await signInWithSocial(provider);
+
       persistAccessToken(token);
-      router.push(user.role === "admin" && nextPath === "/" ? "/admin" : nextPath);
+      router.push(
+        user.role === "admin" && nextPath === "/" ? "/admin" : nextPath,
+      );
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Social signup failed";
+      const message =
+        err instanceof Error ? err.message : "Social signup failed";
+
       if (/popup-closed|cancelled|canceled/i.test(message)) {
         setError("Sign-in was cancelled.");
       } else {
@@ -154,7 +185,11 @@ function SignupForm() {
         <Loader
           overlay
           size={180}
-          message={socialLoading ? `Connecting to ${socialLoading}...` : "Creating account..."}
+          message={
+            socialLoading
+              ? `Connecting to ${socialLoading}...`
+              : "Creating account..."
+          }
         />
       )}
       <Card sx={{ borderRadius: 3 }}>
@@ -206,7 +241,9 @@ function SignupForm() {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                         onClick={() => setShowPassword((v) => !v)}
                         onMouseDown={(e) => e.preventDefault()}
                         edge="end"
@@ -237,7 +274,11 @@ function SignupForm() {
                   "&:hover": { backgroundColor: BRAND.goldHover },
                 }}
               >
-                {loading && !socialLoading ? <CircularProgress size={22} color="inherit" /> : "Sign Up"}
+                {loading && !socialLoading ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  "Sign Up"
+                )}
               </Button>
               <Button
                 variant="outlined"
@@ -259,10 +300,21 @@ function SignupForm() {
                   <Button
                     variant="outlined"
                     fullWidth
-                    startIcon={socialLoading === "google" ? <CircularProgress size={18} /> : <GoogleIcon />}
+                    startIcon={
+                      socialLoading === "google" ? (
+                        <CircularProgress size={18} />
+                      ) : (
+                        <GoogleIcon />
+                      )
+                    }
                     onClick={() => handleSocial("google")}
                     disabled={loading || !!socialLoading}
-                    sx={{ textTransform: "none", fontWeight: 600, borderColor: "#dadce0", color: "#3c4043" }}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      borderColor: "#dadce0",
+                      color: "#3c4043",
+                    }}
                   >
                     Continue with Google
                   </Button>
@@ -286,7 +338,14 @@ function SignupForm() {
 
               <Typography align="center">
                 Already have an account?{" "}
-                <Link href={nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"} color="primary">
+                <Link
+                  href={
+                    nextPath !== "/"
+                      ? `/login?next=${encodeURIComponent(nextPath)}`
+                      : "/login"
+                  }
+                  color="primary"
+                >
                   Login
                 </Link>
               </Typography>

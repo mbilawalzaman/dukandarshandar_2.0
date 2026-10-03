@@ -11,6 +11,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+
 import PageBanner from "../components/PageBanner";
 import ContactForm from "../components/contact/ContactForm";
 import { getGlobalPageSettings } from "@/lib/pageSettingsServer";
@@ -26,7 +27,10 @@ export default async function ContactPage() {
 
   const storeName = deliverySettings.shopName || "";
   const storeEmail = deliverySettings.storeEmail || "";
-  const whatsAppNumber = deliverySettings.whatsAppNumber || deliverySettings.shopPhone || "";
+
+  const whatsAppNumber =
+    deliverySettings.whatsAppNumber || deliverySettings.shopPhone || "";
+
   const cleanedPhone = whatsAppNumber.replace(/[^0-9]/g, "");
   const whatsAppUrl = cleanedPhone ? `https://wa.me/${cleanedPhone}` : "#";
 
@@ -45,10 +49,14 @@ export default async function ContactPage() {
               Get in touch
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Questions about an order, a product, or a custom craft request? Send {storeName ? `${storeName} ` : ""}a message and we will reply as soon as we can.
+              Questions about an order, a product, or a custom craft request?
+              Send {storeName ? `${storeName} ` : ""}a message and we will reply
+              as soon as we can.
             </Typography>
             <Card sx={{ mb: 2, borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <CardContent
+                sx={{ display: "flex", gap: 2, alignItems: "center" }}
+              >
                 <EmailIcon color="primary" />
                 <Box>
                   <Typography fontWeight={700}>Email</Typography>
@@ -97,7 +105,9 @@ export default async function ContactPage() {
               </CardContent>
             </Card>
             <Card sx={{ mb: 2, borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <CardContent
+                sx={{ display: "flex", gap: 2, alignItems: "center" }}
+              >
                 <PlaceIcon color="primary" />
                 <Box>
                   <Typography fontWeight={700}>Location</Typography>
@@ -108,7 +118,9 @@ export default async function ContactPage() {
               </CardContent>
             </Card>
             <Card sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <CardContent
+                sx={{ display: "flex", gap: 2, alignItems: "center" }}
+              >
                 <AccessTimeIcon color="primary" />
                 <Box>
                   <Typography fontWeight={700}>Hours</Typography>
@@ -127,4 +139,3 @@ export default async function ContactPage() {
     </Box>
   );
 }
-

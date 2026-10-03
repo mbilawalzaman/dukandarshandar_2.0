@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+
 import Image from "next/image";
+
 import {
   Dialog,
   DialogTitle,
@@ -16,6 +18,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+
 import { authFetch } from "@/lib/authFetch";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
@@ -58,27 +61,48 @@ interface ShippingLabelModalProps {
 function SimpleSvgBarcode({ value }: { value: string }) {
   const bars: { x: number; width: number }[] = [];
   let currentX = 10;
-  const hashStr = value.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
+
+  const hashStr = value
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
   for (let i = 0; i < 45; i++) {
     const width = ((hashStr + i * 7) % 3) + 1.5;
+
     bars.push({ x: currentX, width });
     currentX += width + (((hashStr + i * 13) % 3) + 1.5);
   }
 
   return (
-    <svg width="100%" height="55" viewBox={`0 0 ${currentX + 10} 55`} style={{ display: "block" }}>
+    <svg
+      width="100%"
+      height="55"
+      viewBox={`0 0 ${currentX + 10} 55`}
+      style={{ display: "block" }}
+    >
       <rect width="100%" height="55" fill="#ffffff" />
       {bars.map((bar, idx) => (
-        <rect key={idx} x={bar.x} y="5" width={bar.width} height="45" fill="#000000" />
+        <rect
+          key={idx}
+          x={bar.x}
+          y="5"
+          width={bar.width}
+          height="45"
+          fill="#000000"
+        />
       ))}
     </svg>
   );
 }
 
-export default function ShippingLabelModal({ open, onClose, order }: ShippingLabelModalProps) {
+export default function ShippingLabelModal({
+  open,
+  onClose,
+  order,
+}: ShippingLabelModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const { settings } = useDeliverySettings();
+
   const [storeProfile, setStoreProfile] = useState<{
     name?: string;
     storeName?: string;
@@ -103,22 +127,32 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
 
   if (!order) return null;
 
-  const brandName = settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
-  const senderName = settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
+  const brandName =
+    settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
+
+  const senderName =
+    settings.shopName || storeProfile?.storeName || storeProfile?.name || "";
+
   const senderAddressParts = [
     settings.address || storeProfile?.address,
     settings.area || storeProfile?.area,
     settings.city || storeProfile?.city,
     settings.province || storeProfile?.province,
   ].filter(Boolean);
-  const senderAddress = settings.shopAddress || (senderAddressParts.length > 0
-    ? senderAddressParts.join(", ")
-    : "N/A");
+
+  const senderAddress =
+    settings.shopAddress ||
+    (senderAddressParts.length > 0 ? senderAddressParts.join(", ") : "N/A");
+
   const senderPhone = settings.shopPhone || storeProfile?.phone || "N/A";
 
   const isCOD = order.payment_method === "cod" || !order.payment_method;
   const orderIdShort = order._id.slice(-8).toUpperCase();
-  const totalWeight = Math.max(0.2, (order.items?.length || 1) * 0.4).toFixed(1);
+
+  const totalWeight = Math.max(0.2, (order.items?.length || 1) * 0.4).toFixed(
+    1,
+  );
+
   const cityTag = order.city
     ? `${order.city.slice(0, 3).toUpperCase()}-${order.province ? order.province.slice(0, 3).toUpperCase() : "PK"}`
     : "ISB-PK";
@@ -126,13 +160,16 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
   const creationDate = order.created_at
     ? new Date(order.created_at).toLocaleDateString()
     : new Date().toLocaleDateString();
+
   const printDate = new Date().toLocaleDateString();
 
   const handlePrint = () => {
     const content = printRef.current;
+
     if (!content) return;
 
     let extractedCss = "";
+
     try {
       extractedCss = Array.from(document.styleSheets)
         .map((sheet) => {
@@ -150,6 +187,7 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
     }
 
     const printWindow = window.open("", "_blank", "width=800,height=900");
+
     if (!printWindow) return;
 
     printWindow.document.write(`
@@ -219,13 +257,25 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
     }, 500);
   };
 
-  const recipientAddress = [order.address, order.area, order.city, order.province]
+  const recipientAddress = [
+    order.address,
+    order.area,
+    order.city,
+    order.province,
+  ]
     .filter(Boolean)
     .join(", ");
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pb: 1,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <LocalShippingIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -238,7 +288,14 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
       </DialogTitle>
       <Divider />
 
-      <DialogContent sx={{ backgroundColor: "var(--theme-bg-default, #f8fafc)", py: 3, display: "flex", justifyContent: "center" }}>
+      <DialogContent
+        sx={{
+          backgroundColor: "var(--theme-bg-default, #f8fafc)",
+          py: 3,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         {/* Printable Shipping Label Container */}
         <Box
           ref={printRef}
@@ -255,14 +312,27 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
         >
           {/* Top Barcodes */}
           <Box sx={{ display: "flex", borderBottom: "2px solid #000" }}>
-            <Box sx={{ flex: 1, p: 0.5, textAlign: "center", borderRight: "1px solid #000" }}>
-              <Typography variant="caption" sx={{ fontWeight: "bold", fontSize: "9px", display: "block" }}>
+            <Box
+              sx={{
+                flex: 1,
+                p: 0.5,
+                textAlign: "center",
+                borderRight: "1px solid #000",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: "bold", fontSize: "9px", display: "block" }}
+              >
                 Sales_order
               </Typography>
               <SimpleSvgBarcode value={order._id} />
             </Box>
             <Box sx={{ flex: 1, p: 0.5, textAlign: "center" }}>
-              <Typography variant="caption" sx={{ fontWeight: "bold", fontSize: "9px", display: "block" }}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: "bold", fontSize: "9px", display: "block" }}
+              >
                 marketplace
               </Typography>
               <SimpleSvgBarcode value={`MP-${orderIdShort}`} />
@@ -271,14 +341,37 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
 
           {/* PostEx Barcode / Tracking Header Box */}
           {order.postexDetails?.trackingNumber ? (
-            <Box sx={{ py: 0.5, px: 1, borderBottom: "2px solid #000", textAlign: "center", backgroundColor: "#ffffff" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "10px", color: "#000000", display: "block" }}>
+            <Box
+              sx={{
+                py: 0.5,
+                px: 1,
+                borderBottom: "2px solid #000",
+                textAlign: "center",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: "10px",
+                  color: "#000000",
+                  display: "block",
+                }}
+              >
                 PostEx Courier Tracking: {order.postexDetails.trackingNumber}
               </Typography>
               <SimpleSvgBarcode value={order.postexDetails.trackingNumber} />
             </Box>
           ) : (
-            <Box sx={{ py: 1, borderBottom: "2px solid #000", minHeight: "20px", backgroundColor: "#ffffff" }} />
+            <Box
+              sx={{
+                py: 1,
+                borderBottom: "2px solid #000",
+                minHeight: "20px",
+                backgroundColor: "#ffffff",
+              }}
+            />
           )}
           {/* Meta Grid */}
           <Box sx={{ display: "flex", borderBottom: "2px solid #000" }}>
@@ -294,7 +387,15 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
                 justifyContent: "center",
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 900, fontSize: "18px", letterSpacing: -0.5, color: "#000" }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 900,
+                  fontSize: "18px",
+                  letterSpacing: -0.5,
+                  color: "#000",
+                }}
+              >
                 {brandName}
               </Typography>
               <Box
@@ -314,13 +415,34 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
 
             {/* Right Meta Rows */}
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <Box sx={{ p: 0.5, borderBottom: "1px solid #000", textAlign: "center", fontWeight: 700 }}>
+              <Box
+                sx={{
+                  p: 0.5,
+                  borderBottom: "1px solid #000",
+                  textAlign: "center",
+                  fontWeight: 700,
+                }}
+              >
                 STANDARD
               </Box>
-              <Box sx={{ p: 0.5, borderBottom: "1px solid #000", textAlign: "center", fontWeight: 700 }}>
+              <Box
+                sx={{
+                  p: 0.5,
+                  borderBottom: "1px solid #000",
+                  textAlign: "center",
+                  fontWeight: 700,
+                }}
+              >
                 {totalWeight} KG
               </Box>
-              <Box sx={{ p: 0.5, borderBottom: "1px solid #000", textAlign: "center", fontWeight: 700 }}>
+              <Box
+                sx={{
+                  p: 0.5,
+                  borderBottom: "1px solid #000",
+                  textAlign: "center",
+                  fontWeight: 700,
+                }}
+              >
                 HOME
               </Box>
 
@@ -331,7 +453,9 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
                   textAlign: "center",
                   fontWeight: 900,
                   fontSize: "13px",
-                  backgroundColor: isCOD ? "#000000" : "var(--theme-bg-default, #f1f5f9)",
+                  backgroundColor: isCOD
+                    ? "#000000"
+                    : "var(--theme-bg-default, #f1f5f9)",
                   color: isCOD ? "#ffffff" : "#000000",
                   borderBottom: "1px solid #000",
                 }}
@@ -352,18 +476,36 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
                 }}
               >
                 <span>PKR</span>
-                <span>{isCOD ? `${Number(order.total_amount).toLocaleString()}.00` : "0.00"}</span>
+                <span>
+                  {isCOD
+                    ? `${Number(order.total_amount).toLocaleString()}.00`
+                    : "0.00"}
+                </span>
               </Box>
             </Box>
           </Box>
 
           {/* Order Number */}
-          <Box sx={{ p: 0.75, textAlign: "center", fontWeight: 700, borderBottom: "1px solid #000", fontSize: "11px" }}>
+          <Box
+            sx={{
+              p: 0.75,
+              textAlign: "center",
+              fontWeight: 700,
+              borderBottom: "1px solid #000",
+              fontSize: "11px",
+            }}
+          >
             Order Number: {orderIdShort}
           </Box>
 
           {/* Dates Bar */}
-          <Box sx={{ display: "flex", borderBottom: "2px solid #000", fontSize: "9px" }}>
+          <Box
+            sx={{
+              display: "flex",
+              borderBottom: "2px solid #000",
+              fontSize: "9px",
+            }}
+          >
             <Box sx={{ flex: 1, p: 0.5, borderRight: "1px solid #000" }}>
               Order Creation Date: <b>{creationDate}</b>
             </Box>
@@ -390,7 +532,12 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
                 alt="QR Code"
                 width={75}
                 height={75}
-                style={{ width: "75px", height: "75px", display: "block", objectFit: "contain" }}
+                style={{
+                  width: "75px",
+                  height: "75px",
+                  display: "block",
+                  objectFit: "contain",
+                }}
               />
             </Box>
 
@@ -398,32 +545,78 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
               {/* Recipient */}
               <Box sx={{ p: 0.75, borderBottom: "1px solid #000" }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", fontSize: "9px", textDecoration: "underline", display: "block" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    fontSize: "9px",
+                    textDecoration: "underline",
+                    display: "block",
+                  }}
+                >
                   Recipient
                 </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "10px" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 800, display: "block", fontSize: "10px" }}
+                >
                   {order.customer_name}
                 </Typography>
-                <Typography variant="caption" sx={{ display: "block", fontSize: "9.5px", color: "#334155", leading: 1.1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    fontSize: "9.5px",
+                    color: "#334155",
+                    leading: 1.1,
+                  }}
+                >
                   {recipientAddress || "No detailed address provided"}
                 </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700, display: "block", fontSize: "9.5px", mt: 0.25 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    display: "block",
+                    fontSize: "9.5px",
+                    mt: 0.25,
+                  }}
+                >
                   Phone: {order.phone || "N/A"}
                 </Typography>
               </Box>
 
               {/* Sender */}
               <Box sx={{ p: 0.75 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", fontSize: "9px", textDecoration: "underline", display: "block" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    fontSize: "9px",
+                    textDecoration: "underline",
+                    display: "block",
+                  }}
+                >
                   Sender
                 </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "10px" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 800, display: "block", fontSize: "10px" }}
+                >
                   {senderName}
                 </Typography>
-                <Typography variant="caption" sx={{ display: "block", fontSize: "9px", color: "#334155" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ display: "block", fontSize: "9px", color: "#334155" }}
+                >
                   {senderAddress}
                 </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700, display: "block", fontSize: "9px" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 700, display: "block", fontSize: "9px" }}
+                >
                   Phone: {senderPhone}
                 </Typography>
               </Box>
@@ -436,7 +629,12 @@ export default function ShippingLabelModal({ open, onClose, order }: ShippingLab
         <Button onClick={onClose} variant="outlined" color="inherit">
           Close
         </Button>
-        <Button onClick={handlePrint} variant="contained" color="primary" startIcon={<PrintIcon />}>
+        <Button
+          onClick={handlePrint}
+          variant="contained"
+          color="primary"
+          startIcon={<PrintIcon />}
+        >
           Print Shipping Label
         </Button>
       </DialogActions>

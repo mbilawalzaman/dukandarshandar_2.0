@@ -9,14 +9,25 @@ export interface CityLocationDoc {
   isActive?: boolean;
 }
 
-function getProvinceQueryFilter(provinceInput: string): Record<string, unknown> {
+function getProvinceQueryFilter(
+  provinceInput: string,
+): Record<string, unknown> {
   const p = provinceInput.trim().toLowerCase();
+
   if (p.includes("azad") || p.includes("kashmir")) {
-    return { provinceKey: { $in: ["azad kashmir", "azad jammu & kashmir", "azad jammu and kashmir"] } };
+    return {
+      provinceKey: {
+        $in: ["azad kashmir", "azad jammu & kashmir", "azad jammu and kashmir"],
+      },
+    };
   }
+
   if (p.includes("islamabad")) {
-    return { provinceKey: { $in: ["islamabad", "islamabad capital territory"] } };
+    return {
+      provinceKey: { $in: ["islamabad", "islamabad capital territory"] },
+    };
   }
+
   if (p.includes("tribal") || p.includes("fata")) {
     return {
       provinceKey: {
@@ -24,40 +35,62 @@ function getProvinceQueryFilter(provinceInput: string): Record<string, unknown> 
       },
     };
   }
+
   if (p.includes("khyber") || p.includes("kpk") || p.includes("pakhtunkhwa")) {
     return { provinceKey: { $in: ["khyber pakhtunkhwa", "kpk", "kp"] } };
   }
+
   if (p.includes("sindh")) {
     return { provinceKey: "sindh" };
   }
+
   if (p.includes("punjab")) {
     return { provinceKey: "punjab" };
   }
+
   if (p.includes("balochistan")) {
     return { provinceKey: "balochistan" };
   }
+
   if (p.includes("gilgit") || p.includes("baltistan")) {
     return { provinceKey: "gilgit-baltistan" };
   }
+
   return { provinceKey: p };
 }
 
 export async function listProvinces(): Promise<string[]> {
   const db = await getDb();
-  const settingDoc = await db.collection("settings").findOne({ key: "pakistan_provinces" });
-  if (settingDoc && Array.isArray(settingDoc.value) && settingDoc.value.length > 0) {
+
+  const settingDoc = await db
+    .collection("settings")
+    .findOne({ key: "pakistan_provinces" });
+
+  if (
+    settingDoc &&
+    Array.isArray(settingDoc.value) &&
+    settingDoc.value.length > 0
+  ) {
     return settingDoc.value as string[];
   }
-  const distinct = await db.collection("locations").distinct("province", { isActive: { $ne: false } });
+
+  const distinct = await db
+    .collection("locations")
+    .distinct("province", { isActive: { $ne: false } });
+
   return (distinct as string[]).sort();
 }
 
-export async function listCities(province?: string): Promise<{ name: string; province: string }[]> {
+export async function listCities(
+  province?: string,
+): Promise<{ name: string; province: string }[]> {
   const db = await getDb();
   const query: Record<string, unknown> = { isActive: { $ne: false } };
+
   if (province && province.trim()) {
     Object.assign(query, getProvinceQueryFilter(province));
   }
+
   const docs = await db
     .collection<CityLocationDoc>("locations")
     .find(query, { projection: { name: 1, province: 1, _id: 0 } })
@@ -75,7 +108,7 @@ function curatedAreaList(
   cityName: string,
   areas: string[] | undefined,
   parentCityName?: string,
-  suffixArea?: string
+  suffixArea?: string,
 ): string[] {
   const cityKey = cityName.trim().toLowerCase();
   const parentKey = parentCityName ? parentCityName.trim().toLowerCase() : null;
@@ -85,16 +118,21 @@ function curatedAreaList(
     .map((a) => String(a).trim())
     .filter((a) => {
       const lower = a.toLowerCase();
+
       if (!lower) return false;
       if (lower === cityKey) return false;
       if (parentKey && lower === parentKey) return false;
       if (suffixKey && lower === suffixKey) return false;
+
       return true;
     })
     .sort((a, b) => a.localeCompare(b));
 }
 
-export async function listAreas(cityName: string, province?: string): Promise<string[]> {
+export async function listAreas(
+  cityName: string,
+  province?: string,
+): Promise<string[]> {
   if (!cityName || !cityName.trim()) return [];
   const db = await getDb();
   const rawInput = cityName.trim();
@@ -105,7 +143,8 @@ export async function listAreas(cityName: string, province?: string): Promise<st
   const suffixArea = hyphenMatch ? hyphenMatch[2].trim() : null;
   const parentKey = parentCityName.toLowerCase();
 
-  const queryFilter = province && province.trim() ? getProvinceQueryFilter(province) : {};
+  const queryFilter =
+    province && province.trim() ? getProvinceQueryFilter(province) : {};
 
   // 1. Try exact doc matching current nameKey
   const exactDoc = await db
@@ -117,8 +156,9 @@ export async function listAreas(cityName: string, province?: string): Promise<st
       exactDoc.name,
       exactDoc.areas,
       parentCityName,
-      suffixArea || undefined
+      suffixArea || undefined,
     );
+
     if (curated.length > 0) {
       return curated;
     }
@@ -138,18 +178,26 @@ export async function listAreas(cityName: string, province?: string): Promise<st
     .findOne({ nameKey: parentKey, isActive: { $ne: false }, ...queryFilter });
 
   if (parentDoc && parentDoc.areas) {
-    for (const a of curatedAreaList(parentDoc.name, parentDoc.areas, parentCityName)) {
+    for (const a of curatedAreaList(
+      parentDoc.name,
+      parentDoc.areas,
+      parentCityName,
+    )) {
       areaSet.add(a);
     }
   }
 
   // 3. Prefix match for all "ParentCity - *" docs
-  const regex = new RegExp(`^${parentKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+  const regex = new RegExp(
+    `^${parentKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    "i",
+  );
+
   const matchingDocs = await db
     .collection<CityLocationDoc>("locations")
     .find(
       { nameKey: { $regex: regex }, isActive: { $ne: false }, ...queryFilter },
-      { projection: { name: 1, areas: 1, _id: 0 } }
+      { projection: { name: 1, areas: 1, _id: 0 } },
     )
     .toArray();
 
@@ -157,7 +205,9 @@ export async function listAreas(cityName: string, province?: string): Promise<st
     for (const area of curatedAreaList(parentCityName, doc.areas)) {
       areaSet.add(area);
     }
+
     const hMatch = (doc.name || "").match(/^(.+?)\s*[-–]\s*(.+)$/i);
+
     if (hMatch && hMatch[1].trim().toLowerCase() === parentKey) {
       areaSet.add(hMatch[2].trim());
     }
@@ -170,12 +220,13 @@ export async function listAreas(cityName: string, province?: string): Promise<st
 
 export async function getLocationByCity(
   cityName: string,
-  province?: string
+  province?: string,
 ): Promise<CityLocationDoc | null> {
   if (!cityName || !cityName.trim()) return null;
   const db = await getDb();
   const nameKey = cityName.trim().toLowerCase();
   const query: Record<string, unknown> = { nameKey, isActive: { $ne: false } };
+
   if (province && province.trim()) {
     Object.assign(query, getProvinceQueryFilter(province));
   }

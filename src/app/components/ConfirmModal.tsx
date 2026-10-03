@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -42,7 +43,12 @@ export default function ConfirmModal({
       maxWidth="xs"
       fullWidth
     >
-      <DialogTitle sx={{ fontWeight: 700, color: confirmColor === "error" ? "#ef4444" : undefined }}>
+      <DialogTitle
+        sx={{
+          fontWeight: 700,
+          color: confirmColor === "error" ? "#ef4444" : undefined,
+        }}
+      >
         {title}
       </DialogTitle>
       <DialogContent>
@@ -52,7 +58,12 @@ export default function ConfirmModal({
         <Button onClick={onClose} disabled={loading} color="inherit">
           {cancelLabel}
         </Button>
-        <Button onClick={onConfirm} disabled={loading} variant="contained" color={confirmColor}>
+        <Button
+          onClick={onConfirm}
+          disabled={loading}
+          variant="contained"
+          color={confirmColor}
+        >
           {loading ? loadingLabel : confirmLabel}
         </Button>
       </DialogActions>

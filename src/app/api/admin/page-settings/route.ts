@@ -1,5 +1,6 @@
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { safeNavigationHref } from "@/lib/safeNavigation";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -9,7 +10,8 @@ import type {
   PageSettings,
   PageSettingsKey,
   BannerItem,
-  MediaAsset} from "@/lib/pageSettings";
+  MediaAsset,
+} from "@/lib/pageSettings";
 import {
   DEFAULT_PAGE_SETTINGS,
   normalizePageSettings,
@@ -20,7 +22,9 @@ export const revalidate = 0;
 
 function looksLikeVideo(media?: MediaAsset | null, url?: string): boolean {
   const candidate = (url || media?.url || "").toLowerCase();
+
   if (media?.type === "video" || media?.resourceType === "video") return true;
+
   return (
     candidate.includes("/video/upload/") ||
     candidate.endsWith(".mp4") ||
@@ -31,10 +35,11 @@ function looksLikeVideo(media?: MediaAsset | null, url?: string): boolean {
 
 async function resolveImageMedia(
   mediaUpload: string | undefined,
-  existing?: MediaAsset | null
+  existing?: MediaAsset | null,
 ): Promise<MediaAsset> {
   if (mediaUpload?.startsWith("data:image/")) {
     const uploaded = await uploadImage(mediaUpload, "");
+
     return {
       type: "image",
       url: uploaded.url,
@@ -45,9 +50,13 @@ async function resolveImageMedia(
   }
 
   if (existing?.url) {
-    if (existing.url.startsWith("/images/") && !["/images/store-qr-code.png"].includes(existing.url)) {
+    if (
+      existing.url.startsWith("/images/") &&
+      !["/images/store-qr-code.png"].includes(existing.url)
+    ) {
       return { type: "image", url: "" };
     }
+
     if (looksLikeVideo(existing)) {
       return {
         type: "video",
@@ -61,11 +70,13 @@ async function resolveImageMedia(
         bytes: existing.bytes,
       };
     }
+
     return {
       type: "image",
       url: existing.url,
       publicId: existing.publicId,
-      resourceType: existing.resourceType === "video" ? "image" : existing.resourceType,
+      resourceType:
+        existing.resourceType === "video" ? "image" : existing.resourceType,
       format: existing.format,
       width: existing.width,
       height: existing.height,
@@ -84,6 +95,7 @@ function toVideoMedia(input: {
   duration?: number;
 }): MediaAsset | null {
   if (!input.url?.startsWith("http")) return null;
+
   return {
     type: "video",
     url: toPlayableVideoUrl(input.url),
@@ -96,7 +108,8 @@ function toVideoMedia(input: {
 }
 
 async function processHomeSettings(rawHome: Record<string, unknown>) {
-  const bannerMode = rawHome.bannerMode === "single_video" ? "single_video" : "image_slider";
+  const bannerMode =
+    rawHome.bannerMode === "single_video" ? "single_video" : "image_slider";
 
   const rawBanners: Array<{
     id?: string;
@@ -110,10 +123,12 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
   }> = Array.isArray(rawHome.banners) ? rawHome.banners : [];
 
   const processedBanners: BannerItem[] = [];
+
   for (let i = 0; i < rawBanners.length; i++) {
     const b = rawBanners[i];
     const bannerId = b.id || `banner-${i + 1}`;
     const activeMedia = await resolveImageMedia(b.mediaUpload, b.activeMedia);
+
     processedBanners.push({
       id: bannerId,
       title: b.title || "",
@@ -128,7 +143,9 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
   }
 
   const rawSingle = (rawHome.singleBanner || {}) as Record<string, unknown>;
-  const existingSingleMedia = (rawSingle.activeMedia as MediaAsset | undefined) || null;
+
+  const existingSingleMedia =
+    (rawSingle.activeMedia as MediaAsset | undefined) || null;
 
   const videoFromPayload =
     toVideoMedia({
@@ -151,26 +168,36 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     }) || null;
 
   let singleActiveMedia: MediaAsset;
+
   if (videoFromPayload) {
     singleActiveMedia = videoFromPayload;
   } else if (existingSingleMedia?.url && !looksLikeVideo(existingSingleMedia)) {
     singleActiveMedia = await resolveImageMedia(
-      typeof rawSingle.mediaUpload === "string" ? rawSingle.mediaUpload : undefined,
-      existingSingleMedia
+      typeof rawSingle.mediaUpload === "string"
+        ? rawSingle.mediaUpload
+        : undefined,
+      existingSingleMedia,
     );
   } else if (typeof rawSingle.mediaUpload === "string") {
-    singleActiveMedia = await resolveImageMedia(rawSingle.mediaUpload, existingSingleMedia);
+    singleActiveMedia = await resolveImageMedia(
+      rawSingle.mediaUpload,
+      existingSingleMedia,
+    );
   } else if (bannerMode === "single_video") {
     // Never fall back to carousel slide images for video mode
     singleActiveMedia = { type: "video", url: "", resourceType: "video" };
   } else {
-    singleActiveMedia = processedBanners[0]?.activeMedia || { type: "image", url: "" };
+    singleActiveMedia = processedBanners[0]?.activeMedia || {
+      type: "image",
+      url: "",
+    };
   }
 
   const singleBanner: BannerItem = {
     id: (typeof rawSingle.id === "string" && rawSingle.id) || "single-banner-1",
     title: (typeof rawSingle.title === "string" && rawSingle.title) || "",
-    subtitle: (typeof rawSingle.subtitle === "string" && rawSingle.subtitle) || "",
+    subtitle:
+      (typeof rawSingle.subtitle === "string" && rawSingle.subtitle) || "",
     goToLink: safeNavigationHref(rawSingle.goToLink) || undefined,
     order: 1,
     isActive: rawSingle.isActive !== false,
@@ -183,61 +210,107 @@ async function processHomeSettings(rawHome: Record<string, unknown>) {
     bannerMode,
     banners: processedBanners,
     singleBanner,
-    topRatedCount: Math.max(1, Math.min(24, Number(rawHome.topRatedCount) || 4)),
-    productsPerPage: Math.max(1, Math.min(48, Number(rawHome.productsPerPage) || 9)),
-    heroSection: rawHome.heroSection && typeof rawHome.heroSection === "object"
-      ? {
-          enabled: (rawHome.heroSection as Record<string, unknown>).enabled !== false,
-          features: Array.isArray((rawHome.heroSection as Record<string, unknown>).features)
-            ? ((rawHome.heroSection as Record<string, unknown>).features as Array<Record<string, unknown>>).map((f, idx) => ({
-                id: (f.id as string) || `feature-${idx + 1}`,
-                icon: (f.icon as "verified" | "craft" | "shipping" | "security") || (idx === 0 ? "verified" : idx === 1 ? "craft" : idx === 2 ? "shipping" : "security"),
-                title: typeof f.title === "string" ? f.title.trim() : "",
-                desc1: typeof f.desc1 === "string" ? f.desc1.trim() : "",
-                desc2: typeof f.desc2 === "string" ? f.desc2.trim() : "",
-              }))
-            : [],
-        }
-      : undefined,
+    topRatedCount: Math.max(
+      1,
+      Math.min(24, Number(rawHome.topRatedCount) || 4),
+    ),
+    productsPerPage: Math.max(
+      1,
+      Math.min(48, Number(rawHome.productsPerPage) || 9),
+    ),
+    heroSection:
+      rawHome.heroSection && typeof rawHome.heroSection === "object"
+        ? {
+            enabled:
+              (rawHome.heroSection as Record<string, unknown>).enabled !==
+              false,
+            features: Array.isArray(
+              (rawHome.heroSection as Record<string, unknown>).features,
+            )
+              ? (
+                  (rawHome.heroSection as Record<string, unknown>)
+                    .features as Array<Record<string, unknown>>
+                ).map((f, idx) => ({
+                  id: (f.id as string) || `feature-${idx + 1}`,
+                  icon:
+                    (f.icon as
+                      "verified" | "craft" | "shipping" | "security") ||
+                    (idx === 0
+                      ? "verified"
+                      : idx === 1
+                        ? "craft"
+                        : idx === 2
+                          ? "shipping"
+                          : "security"),
+                  title: typeof f.title === "string" ? f.title.trim() : "",
+                  desc1: typeof f.desc1 === "string" ? f.desc1.trim() : "",
+                  desc2: typeof f.desc2 === "string" ? f.desc2.trim() : "",
+                }))
+              : [],
+          }
+        : undefined,
   } satisfies PageSettings["home"];
 }
 
 async function processSubpageSettings(
-  pageKey: "shop" | "about" | "contact" | "privacy" | "terms" | "shipping" | "returns",
-  rawPage: Record<string, unknown>
+  pageKey:
+    "shop" | "about" | "contact" | "privacy" | "terms" | "shipping" | "returns",
+  rawPage: Record<string, unknown>,
 ) {
   const defaults = DEFAULT_PAGE_SETTINGS[pageKey];
+
   const videoMedia = toVideoMedia({
     url: typeof rawPage.videoUrl === "string" ? rawPage.videoUrl : undefined,
-    publicId: typeof rawPage.videoPublicId === "string" ? rawPage.videoPublicId : undefined,
-    format: typeof rawPage.videoFormat === "string" ? rawPage.videoFormat : undefined,
+    publicId:
+      typeof rawPage.videoPublicId === "string"
+        ? rawPage.videoPublicId
+        : undefined,
+    format:
+      typeof rawPage.videoFormat === "string" ? rawPage.videoFormat : undefined,
   });
 
   let bannerMedia: MediaAsset | undefined = videoMedia || undefined;
-  let bannerImage = typeof rawPage.bannerImage === "string" ? rawPage.bannerImage : defaults.bannerImage || "";
-  let bannerType = (rawPage.bannerType as MediaAsset["type"]) || defaults.bannerType;
+  let bannerImage =
+    typeof rawPage.bannerImage === "string"
+      ? rawPage.bannerImage
+      : defaults.bannerImage || "";
+  let bannerType =
+    (rawPage.bannerType as MediaAsset["type"]) || defaults.bannerType;
 
   if (videoMedia) {
     bannerMedia = videoMedia;
     bannerImage = videoMedia.url;
     bannerType = "video";
-  } else if (typeof rawPage.bannerImage === "string" && rawPage.bannerImage.startsWith("data:image/")) {
+  } else if (
+    typeof rawPage.bannerImage === "string" &&
+    rawPage.bannerImage.startsWith("data:image/")
+  ) {
     bannerMedia = await resolveImageMedia(rawPage.bannerImage, null);
     bannerImage = bannerMedia.url;
     bannerType = "image";
   } else if (rawPage.bannerMedia && typeof rawPage.bannerMedia === "object") {
-    bannerMedia = await resolveImageMedia(undefined, rawPage.bannerMedia as MediaAsset);
+    bannerMedia = await resolveImageMedia(
+      undefined,
+      rawPage.bannerMedia as MediaAsset,
+    );
     bannerImage = bannerMedia.url;
     bannerType = bannerMedia.type;
   } else if (bannerImage) {
-    bannerMedia = { type: bannerType === "video" ? "video" : "image", url: bannerImage };
+    bannerMedia = {
+      type: bannerType === "video" ? "video" : "image",
+      url: bannerImage,
+    };
   }
 
   const result = {
     bannerTitle:
-      typeof rawPage.bannerTitle === "string" ? rawPage.bannerTitle.trim() : defaults.bannerTitle,
+      typeof rawPage.bannerTitle === "string"
+        ? rawPage.bannerTitle.trim()
+        : defaults.bannerTitle,
     bannerSubtitle:
-      typeof rawPage.bannerSubtitle === "string" ? rawPage.bannerSubtitle.trim() : defaults.bannerSubtitle,
+      typeof rawPage.bannerSubtitle === "string"
+        ? rawPage.bannerSubtitle.trim()
+        : defaults.bannerSubtitle,
     bannerType,
     bannerImage,
     bannerMedia,
@@ -246,31 +319,57 @@ async function processSubpageSettings(
   if (pageKey === "shop") {
     return {
       ...result,
-      productsPerPage: Math.max(1, Math.min(48, Number(rawPage.productsPerPage) || DEFAULT_PAGE_SETTINGS.shop.productsPerPage)),
+      productsPerPage: Math.max(
+        1,
+        Math.min(
+          48,
+          Number(rawPage.productsPerPage) ||
+            DEFAULT_PAGE_SETTINGS.shop.productsPerPage,
+        ),
+      ),
     } satisfies PageSettings["shop"];
   }
 
   if (pageKey === "about") {
     const highlights = Array.isArray(rawPage.highlights)
-      ? (rawPage.highlights as Array<Record<string, unknown>>).map((h, idx) => ({
-          id: (h.id as string) || `hl-${idx + 1}`,
-          icon: (h.icon as "time" | "craft" | "shipping" | "security") || (idx === 0 ? "time" : idx === 1 ? "craft" : idx === 2 ? "shipping" : "security"),
-          title: typeof h.title === "string" ? h.title.trim() : "",
-          text: typeof h.text === "string" ? h.text.trim() : "",
-        }))
+      ? (rawPage.highlights as Array<Record<string, unknown>>).map(
+          (h, idx) => ({
+            id: (h.id as string) || `hl-${idx + 1}`,
+            icon:
+              (h.icon as "time" | "craft" | "shipping" | "security") ||
+              (idx === 0
+                ? "time"
+                : idx === 1
+                  ? "craft"
+                  : idx === 2
+                    ? "shipping"
+                    : "security"),
+            title: typeof h.title === "string" ? h.title.trim() : "",
+            text: typeof h.text === "string" ? h.text.trim() : "",
+          }),
+        )
       : undefined;
 
     const storyRaw = (rawPage.story || {}) as Record<string, unknown>;
+
     const story = {
       title: typeof storyRaw.title === "string" ? storyRaw.title.trim() : "",
       text: typeof storyRaw.text === "string" ? storyRaw.text.trim() : "",
       image: typeof storyRaw.image === "string" ? storyRaw.image.trim() : "",
-      buttonText: typeof storyRaw.buttonText === "string" && storyRaw.buttonText.trim() ? storyRaw.buttonText.trim() : "View products",
-      buttonLink: typeof storyRaw.buttonLink === "string" && storyRaw.buttonLink.trim() ? storyRaw.buttonLink.trim() : "/shop",
+      buttonText:
+        typeof storyRaw.buttonText === "string" && storyRaw.buttonText.trim()
+          ? storyRaw.buttonText.trim()
+          : "View products",
+      buttonLink:
+        typeof storyRaw.buttonLink === "string" && storyRaw.buttonLink.trim()
+          ? storyRaw.buttonLink.trim()
+          : "/shop",
     };
 
     const quotes = Array.isArray(rawPage.quotes)
-      ? rawPage.quotes.map((q) => (typeof q === "string" ? q.trim() : "")).filter(Boolean)
+      ? rawPage.quotes
+          .map((q) => (typeof q === "string" ? q.trim() : ""))
+          .filter(Boolean)
       : undefined;
 
     return {
@@ -281,15 +380,30 @@ async function processSubpageSettings(
     } satisfies PageSettings["about"];
   }
 
-  if (pageKey === "privacy" || pageKey === "terms" || pageKey === "shipping" || pageKey === "returns") {
+  if (
+    pageKey === "privacy" ||
+    pageKey === "terms" ||
+    pageKey === "shipping" ||
+    pageKey === "returns"
+  ) {
     const policyDefaults = DEFAULT_PAGE_SETTINGS[pageKey];
-    const lastUpdated = typeof rawPage.lastUpdated === "string" ? rawPage.lastUpdated.trim() : policyDefaults.lastUpdated;
-    const rawSections = Array.isArray(rawPage.sections) ? rawPage.sections : policyDefaults.sections;
-    const sections = (rawSections as Array<Record<string, unknown>>).map((s, idx) => ({
-      id: (s.id as string) || `sec-${idx + 1}`,
-      title: typeof s.title === "string" ? s.title.trim() : "",
-      content: typeof s.content === "string" ? s.content.trim() : "",
-    }));
+
+    const lastUpdated =
+      typeof rawPage.lastUpdated === "string"
+        ? rawPage.lastUpdated.trim()
+        : policyDefaults.lastUpdated;
+
+    const rawSections = Array.isArray(rawPage.sections)
+      ? rawPage.sections
+      : policyDefaults.sections;
+
+    const sections = (rawSections as Array<Record<string, unknown>>).map(
+      (s, idx) => ({
+        id: (s.id as string) || `sec-${idx + 1}`,
+        title: typeof s.title === "string" ? s.title.trim() : "",
+        content: typeof s.content === "string" ? s.content.trim() : "",
+      }),
+    );
 
     return {
       ...result,
@@ -303,11 +417,15 @@ async function processSubpageSettings(
 
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);
+
   if (!auth.ok) return auth.response;
 
   try {
     const db = await getDb();
-    const doc = await db.collection("page_settings").findOne({ key: "global_page_settings" });
+
+    const doc = await db
+      .collection("page_settings")
+      .findOne({ key: "global_page_settings" });
 
     if (!doc) {
       return NextResponse.json({
@@ -322,12 +440,17 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Admin error fetching page settings:", error);
-    return NextResponse.json({ success: false, message: "Failed to fetch settings" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch settings" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(req: NextRequest) {
   const auth = requireAdmin(req);
+
   if (!auth.ok) return auth.response;
 
   try {
@@ -335,15 +458,29 @@ export async function PUT(req: NextRequest) {
     const db = await getDb();
     const page = body.page as PageSettingsKey | undefined;
 
-    const validPages: PageSettingsKey[] = ["home", "shop", "about", "contact", "privacy", "terms", "shipping", "returns"];
+    const validPages: PageSettingsKey[] = [
+      "home",
+      "shop",
+      "about",
+      "contact",
+      "privacy",
+      "terms",
+      "shipping",
+      "returns",
+    ];
+
     if (!page || !validPages.includes(page)) {
       return NextResponse.json(
-        { success: false, message: `page must be one of: ${validPages.join(", ")}` },
-        { status: 400 }
+        {
+          success: false,
+          message: `page must be one of: ${validPages.join(", ")}`,
+        },
+        { status: 400 },
       );
     }
 
     const pageData = (body.data || body[page] || {}) as Record<string, unknown>;
+
     const processed =
       page === "home"
         ? await processHomeSettings(pageData)
@@ -359,10 +496,13 @@ export async function PUT(req: NextRequest) {
           updated_by: auth.user.userName,
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
-    const doc = await db.collection("page_settings").findOne({ key: "global_page_settings" });
+    const doc = await db
+      .collection("page_settings")
+      .findOne({ key: "global_page_settings" });
+
     const settings = normalizePageSettings(doc);
 
     return NextResponse.json({
@@ -373,7 +513,10 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error updating page settings:", error);
-    const message = error instanceof Error ? error.message : "Failed to update page settings";
+
+    const message =
+      error instanceof Error ? error.message : "Failed to update page settings";
+
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

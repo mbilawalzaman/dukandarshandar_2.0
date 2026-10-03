@@ -1,7 +1,10 @@
+import { NextResponse } from "next/server";
+
+import { ObjectId } from "mongodb";
+
 import { ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
 import { escapeRegex } from "@/lib/escapeRegex";
-import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+
 import { getDb } from "@/lib/db";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { getAuthUser } from "@/lib/auth";
@@ -13,35 +16,49 @@ type StoredProductImage = { url: string; publicId: string };
 
 function normalizeAdminRating(value: unknown): number | null {
   const numeric = typeof value === "number" ? value : Number(value);
+
   if (!Number.isFinite(numeric) || numeric < 0.5 || numeric > 5) return null;
+
   return Math.round(numeric * 2) / 2;
 }
 
-function getStoredImages(product: Record<string, unknown>): StoredProductImage[] {
+function getStoredImages(
+  product: Record<string, unknown>,
+): StoredProductImage[] {
   const images = product.images as ProductImage[] | undefined;
+
   if (Array.isArray(images) && images.length > 0) {
-    return images.map((img) => ({ url: img.url, publicId: img.publicId || "" }));
+    return images.map((img) => ({
+      url: img.url,
+      publicId: img.publicId || "",
+    }));
   }
+
   const url = product.image as string | undefined;
   const publicId = product.image_public_id as string | undefined;
+
   if (url) return [{ url, publicId: publicId || "" }];
+
   return [];
 }
 
 async function resolveImagesInput(
   input: string[],
-  existing: StoredProductImage[] = []
+  existing: StoredProductImage[] = [],
 ): Promise<StoredProductImage[]> {
   const existingByUrl = new Map(existing.map((img) => [img.url, img]));
   const result: StoredProductImage[] = [];
 
   for (const item of input.slice(0, MAX_PRODUCT_IMAGES)) {
     if (!item?.trim()) continue;
+
     if (item.startsWith("data:")) {
       const uploaded = await uploadImage(item);
+
       result.push({ url: uploaded.url, publicId: uploaded.publicId });
     } else if (item.startsWith("http")) {
       const prev = existingByUrl.get(item);
+
       result.push(prev ?? { url: item, publicId: "" });
     }
   }
@@ -49,8 +66,12 @@ async function resolveImagesInput(
   return result;
 }
 
-async function deleteRemovedImages(previous: StoredProductImage[], next: StoredProductImage[]) {
+async function deleteRemovedImages(
+  previous: StoredProductImage[],
+  next: StoredProductImage[],
+) {
   const nextUrls = new Set(next.map((img) => img.url));
+
   for (const img of previous) {
     if (!nextUrls.has(img.url) && img.publicId) {
       await deleteImage(img.publicId);
@@ -69,31 +90,87 @@ function syncPrimaryImageFields(images: StoredProductImage[]) {
 export const createProduct = async (req: Request) => {
   try {
     const user = getAuthUser(req);
+
     if (!user || user.role !== "admin") {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const { name, category, price, quantity, description, rating, image, images, featured, created_by } =
-      await req.json();
+    const {
+      name,
+      category,
+      price,
+      quantity,
+      description,
+      rating,
+      image,
+      images,
+      featured,
+      created_by,
+    } = await req.json();
 
-    const imageInputs: string[] = Array.isArray(images) && images.length > 0 ? images : image ? [image] : [];
+    const imageInputs: string[] =
+      Array.isArray(images) && images.length > 0
+        ? images
+        : image
+          ? [image]
+          : [];
 
-    if (!name || !category || !price || quantity === undefined || !imageInputs.length || !description) {
-      return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 });
+    if (
+      !name ||
+      !category ||
+      !price ||
+      quantity === undefined ||
+      !imageInputs.length ||
+      !description
+    ) {
+      return NextResponse.json(
+        { success: false, message: "All fields are required" },
+        { status: 400 },
+      );
     }
 
-    if (typeof price !== "number" || !Number.isFinite(price) || price <= 0 ||
-        typeof quantity !== "number" || !Number.isSafeInteger(quantity) || quantity < 0) {
-      return NextResponse.json({ success: false, message: "Price must be positive and stock must be a nonnegative whole number" }, { status: 400 });
+    if (
+      typeof price !== "number" ||
+      !Number.isFinite(price) ||
+      price <= 0 ||
+      typeof quantity !== "number" ||
+      !Number.isSafeInteger(quantity) ||
+      quantity < 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Price must be positive and stock must be a nonnegative whole number",
+        },
+        { status: 400 },
+      );
     }
-    const normalizedRating = rating === undefined ? null : normalizeAdminRating(rating);
+
+    const normalizedRating =
+      rating === undefined ? null : normalizeAdminRating(rating);
+
     if (rating !== undefined && normalizedRating === null) {
-      return NextResponse.json({ success: false, message: "Rating must be a number between 0.5 and 5" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Rating must be a number between 0.5 and 5",
+        },
+        { status: 400 },
+      );
     }
+
     const db = await getDb();
     const storedImages = await resolveImagesInput(imageInputs);
+
     if (!storedImages.length) {
-      return NextResponse.json({ success: false, message: "At least one valid image is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "At least one valid image is required" },
+        { status: 400 },
+      );
     }
 
     const newProduct = {
@@ -114,7 +191,10 @@ export const createProduct = async (req: Request) => {
     };
 
     const result = await db.collection("products").insertOne(newProduct);
-    const insertedProduct = await db.collection("products").findOne({ _id: result.insertedId });
+
+    const insertedProduct = await db
+      .collection("products")
+      .findOne({ _id: result.insertedId });
 
     return NextResponse.json({
       success: true,
@@ -123,7 +203,10 @@ export const createProduct = async (req: Request) => {
     });
   } catch (error) {
     console.error("Error adding product:", error);
-    const message = error instanceof Error ? error.message : "Failed to create product";
+
+    const message =
+      error instanceof Error ? error.message : "Failed to create product";
+
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 };
@@ -131,52 +214,126 @@ export const createProduct = async (req: Request) => {
 export const updateProduct = async (req: Request) => {
   try {
     const admin = getAuthUser(req);
+
     if (!admin || admin.role !== "admin") {
-      return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, message: "Admin access required" },
+        { status: 403 },
+      );
     }
 
-    const { _id, rating, image, images, created_by: _createdBy, ...updateFields } = await req.json();
+    const {
+      _id,
+      rating,
+      image,
+      images,
+      created_by: _createdBy,
+      ...updateFields
+    } = await req.json();
 
     if (!_id) {
-      return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Product ID is required" },
+        { status: 400 },
+      );
     }
 
     if (!ObjectId.isValid(_id)) {
-      return NextResponse.json({ success: false, message: "Invalid Product ID format" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Invalid Product ID format" },
+        { status: 400 },
+      );
     }
 
     const db = await getDb();
-    const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+
+    const product = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(_id) });
 
     if (!product) {
-      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 },
+      );
     }
 
-    const allowedFields = new Set(["name", "category", "price", "quantity", "description", "featured", "status"]);
+    const allowedFields = new Set([
+      "name",
+      "category",
+      "price",
+      "quantity",
+      "description",
+      "featured",
+      "status",
+    ]);
+
     if (Object.keys(updateFields).some((key) => !allowedFields.has(key))) {
-      return NextResponse.json({ success: false, message: "Unsupported product field" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Unsupported product field" },
+        { status: 400 },
+      );
     }
-    if ((updateFields.price !== undefined && (typeof updateFields.price !== "number" || !Number.isFinite(updateFields.price) || updateFields.price <= 0)) ||
-        (updateFields.quantity !== undefined && (typeof updateFields.quantity !== "number" || !Number.isSafeInteger(updateFields.quantity) || updateFields.quantity < 0)) ||
-        (updateFields.status !== undefined && !["active", "inactive"].includes(updateFields.status))) {
-      return NextResponse.json({ success: false, message: "Invalid product price, quantity or status" }, { status: 400 });
+
+    if (
+      (updateFields.price !== undefined &&
+        (typeof updateFields.price !== "number" ||
+          !Number.isFinite(updateFields.price) ||
+          updateFields.price <= 0)) ||
+      (updateFields.quantity !== undefined &&
+        (typeof updateFields.quantity !== "number" ||
+          !Number.isSafeInteger(updateFields.quantity) ||
+          updateFields.quantity < 0)) ||
+      (updateFields.status !== undefined &&
+        !["active", "inactive"].includes(updateFields.status))
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid product price, quantity or status",
+        },
+        { status: 400 },
+      );
     }
-    const normalizedRating = rating === undefined ? null : normalizeAdminRating(rating);
+
+    const normalizedRating =
+      rating === undefined ? null : normalizeAdminRating(rating);
+
     if (rating !== undefined && normalizedRating === null) {
-      return NextResponse.json({ success: false, message: "Rating must be a number between 0.5 and 5" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Rating must be a number between 0.5 and 5",
+        },
+        { status: 400 },
+      );
     }
-    const updateQuery: { $set: Record<string, unknown> } = { $set: { ...updateFields, updated_at: new Date() } };
+
+    const updateQuery: { $set: Record<string, unknown> } = {
+      $set: { ...updateFields, updated_at: new Date() },
+    };
+
     const existingImages = getStoredImages(product);
 
     if (Array.isArray(images)) {
       const storedImages = await resolveImagesInput(images, existingImages);
+
       if (!storedImages.length) {
-        return NextResponse.json({ success: false, message: "At least one product image is required" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "At least one product image is required" },
+          { status: 400 },
+        );
       }
+
       await deleteRemovedImages(existingImages, storedImages);
       Object.assign(updateQuery.$set, syncPrimaryImageFields(storedImages));
-    } else if (image && (image.startsWith("data:") || (image.startsWith("http") && image !== product.image))) {
+    } else if (
+      image &&
+      (image.startsWith("data:") ||
+        (image.startsWith("http") && image !== product.image))
+    ) {
       const storedImages = await resolveImagesInput([image], existingImages);
+
       await deleteRemovedImages(existingImages, storedImages);
       Object.assign(updateQuery.$set, syncPrimaryImageFields(storedImages));
     }
@@ -185,24 +342,47 @@ export const updateProduct = async (req: Request) => {
       const ratings = (Array.isArray(product.ratings) ? product.ratings : [])
         .map((value) => normalizeAdminRating(value))
         .filter((value): value is number => value !== null);
+
       ratings.push(normalizedRating);
+
       const newAverageRating =
-        Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
+        Math.round(
+          (ratings.reduce((sum: number, r: number) => sum + r, 0) /
+            ratings.length) *
+            2,
+        ) / 2;
+
       updateQuery.$set.rating = newAverageRating;
       updateQuery.$set.ratings = ratings;
     }
 
-    const updateResult = await db.collection("products").updateOne({ _id: new ObjectId(_id) }, updateQuery);
+    const updateResult = await db
+      .collection("products")
+      .updateOne({ _id: new ObjectId(_id) }, updateQuery);
 
     if (updateResult.modifiedCount === 0) {
-      return NextResponse.json({ success: false, message: "No changes were made" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "No changes were made" },
+        { status: 400 },
+      );
     }
 
-    const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
-    return NextResponse.json({ success: true, message: "Product updated successfully", product: updatedProduct });
+    const updatedProduct = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(_id) });
+
+    return NextResponse.json({
+      success: true,
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
   } catch (error) {
     console.error("Error updating product:", error);
-    return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 };
 
@@ -210,6 +390,7 @@ export const updateProduct = async (req: Request) => {
 export const submitProductRating = async (req: Request) => {
   try {
     const body = await req.json();
+
     const { _id, rating, ...rest } = body as {
       _id?: string;
       rating?: number;
@@ -217,36 +398,63 @@ export const submitProductRating = async (req: Request) => {
     };
 
     const extraKeys = Object.keys(rest).filter((k) => rest[k] !== undefined);
+
     if (extraKeys.length > 0) {
       return NextResponse.json(
-        { success: false, message: "Only rating updates are allowed on this endpoint" },
-        { status: 400 }
+        {
+          success: false,
+          message: "Only rating updates are allowed on this endpoint",
+        },
+        { status: 400 },
       );
     }
 
     if (!_id || !ObjectId.isValid(_id)) {
-      return NextResponse.json({ success: false, message: "Valid Product ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Valid Product ID is required" },
+        { status: 400 },
+      );
     }
 
-    if (typeof rating !== "number" || Number.isNaN(rating) || rating < 0.5 || rating > 5) {
+    if (
+      typeof rating !== "number" ||
+      Number.isNaN(rating) ||
+      rating < 0.5 ||
+      rating > 5
+    ) {
       return NextResponse.json(
-        { success: false, message: "Rating must be a number between 0.5 and 5" },
-        { status: 400 }
+        {
+          success: false,
+          message: "Rating must be a number between 0.5 and 5",
+        },
+        { status: 400 },
       );
     }
 
     const roundedRating = Math.round(rating * 2) / 2;
     const db = await getDb();
-    const product = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+
+    const product = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(_id) });
 
     if (!product) {
-      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 },
+      );
     }
 
     const ratings = Array.isArray(product.ratings) ? [...product.ratings] : [];
+
     ratings.push(roundedRating);
+
     const newAverageRating =
-      Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 2) / 2;
+      Math.round(
+        (ratings.reduce((sum: number, r: number) => sum + r, 0) /
+          ratings.length) *
+          2,
+      ) / 2;
 
     await db.collection("products").updateOne(
       { _id: new ObjectId(_id) },
@@ -256,10 +464,13 @@ export const submitProductRating = async (req: Request) => {
           ratings,
           updated_at: new Date(),
         },
-      }
+      },
     );
 
-    const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(_id) });
+    const updatedProduct = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(_id) });
+
     return NextResponse.json({
       success: true,
       message: "Rating submitted",
@@ -267,7 +478,11 @@ export const submitProductRating = async (req: Request) => {
     });
   } catch (error) {
     console.error("Error submitting product rating:", error);
-    return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 };
 
@@ -278,7 +493,11 @@ export const getProductByID = async (id: string, includeInactive = false) => {
     }
 
     const db = await getDb();
-    const product = await db.collection("products").findOne({ _id: new ObjectId(id), ...(includeInactive ? {} : ACTIVE_PRODUCT_FILTER) });
+
+    const product = await db.collection("products").findOne({
+      _id: new ObjectId(id),
+      ...(includeInactive ? {} : ACTIVE_PRODUCT_FILTER),
+    });
 
     if (!product) {
       return { success: false, message: "Product not found", status: 404 };
@@ -287,6 +506,7 @@ export const getProductByID = async (id: string, includeInactive = false) => {
     return { success: true, product, status: 200 };
   } catch (error) {
     console.error("Error fetching product:", error);
+
     return { success: false, message: "Failed to fetch product", status: 500 };
   }
 };
@@ -294,10 +514,17 @@ export const getProductByID = async (id: string, includeInactive = false) => {
 export const fetchProducts = async () => {
   try {
     const db = await getDb();
-    const products = await db.collection("products").find(ACTIVE_PRODUCT_FILTER).sort({ created_at: -1 }).toArray();
+
+    const products = await db
+      .collection("products")
+      .find(ACTIVE_PRODUCT_FILTER)
+      .sort({ created_at: -1 })
+      .toArray();
+
     return { success: true, products };
   } catch (error) {
     console.error("Error fetching products:", error);
+
     return { success: false, message: "Failed to fetch products" };
   }
 };
@@ -316,11 +543,15 @@ type ProductQueryOptions = {
 };
 
 function buildProductFilter(options: ProductQueryOptions) {
-  const filter: Record<string, unknown> = options.includeInactive ? {} : { ...ACTIVE_PRODUCT_FILTER };
+  const filter: Record<string, unknown> = options.includeInactive
+    ? {}
+    : { ...ACTIVE_PRODUCT_FILTER };
+
   const and: Record<string, unknown>[] = [];
 
   if (options.search?.trim()) {
     const q = options.search.trim();
+
     and.push({
       $or: [
         { name: { $regex: escapeRegex(q), $options: "i" } },
@@ -331,15 +562,21 @@ function buildProductFilter(options: ProductQueryOptions) {
   }
 
   if (options.category && options.category !== "all") {
-    and.push({ category: { $regex: new RegExp(`^${escapeRegex(options.category)}$`, "i") } });
+    and.push({
+      category: {
+        $regex: new RegExp(`^${escapeRegex(options.category)}$`, "i"),
+      },
+    });
   }
 
   if (options.minPrice !== undefined && !Number.isNaN(options.minPrice)) {
     and.push({ price: { $gte: options.minPrice } });
   }
+
   if (options.maxPrice !== undefined && !Number.isNaN(options.maxPrice)) {
     and.push({ price: { $lte: options.maxPrice } });
   }
+
   if (options.inStockOnly) {
     and.push({ quantity: { $gt: 0 } });
   }
@@ -377,7 +614,9 @@ function productSort(sortBy?: string): Record<string, 1 | -1> {
   }
 }
 
-export const fetchProductsPaginated = async (options: ProductQueryOptions = {}) => {
+export const fetchProductsPaginated = async (
+  options: ProductQueryOptions = {},
+) => {
   try {
     const db = await getDb();
     const page = Math.max(1, options.page || 1);
@@ -387,18 +626,45 @@ export const fetchProductsPaginated = async (options: ProductQueryOptions = {}) 
     const sort = productSort(options.sortBy);
     const visibility = options.includeInactive ? {} : ACTIVE_PRODUCT_FILTER;
 
-    const [products, total, categoryAgg, inStockCount, lowStockCount, outOfStockCount] = await Promise.all([
-      db.collection("products").find(filter).sort(sort).skip(skip).limit(limit).toArray(),
+    const [
+      products,
+      total,
+      categoryAgg,
+      inStockCount,
+      lowStockCount,
+      outOfStockCount,
+    ] = await Promise.all([
+      db
+        .collection("products")
+        .find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
       db.collection("products").countDocuments(filter),
-      db.collection("products").aggregate([{ $match: visibility }, { $group: { _id: "$category", count: { $sum: 1 } } }]).toArray(),
-      db.collection("products").countDocuments({ ...visibility, quantity: { $gt: 5 } }),
-      db.collection("products").countDocuments({ ...visibility, quantity: { $gt: 0, $lte: 5 } }),
-      db.collection("products").countDocuments({ ...visibility, quantity: { $lte: 0 } }),
+      db
+        .collection("products")
+        .aggregate([
+          { $match: visibility },
+          { $group: { _id: "$category", count: { $sum: 1 } } },
+        ])
+        .toArray(),
+      db
+        .collection("products")
+        .countDocuments({ ...visibility, quantity: { $gt: 5 } }),
+      db
+        .collection("products")
+        .countDocuments({ ...visibility, quantity: { $gt: 0, $lte: 5 } }),
+      db
+        .collection("products")
+        .countDocuments({ ...visibility, quantity: { $lte: 0 } }),
     ]);
 
     const categoryCounts: Record<string, number> = { all: 0 };
+
     categoryAgg.forEach((row) => {
       const cat = String(row._id || "Uncategorized");
+
       categoryCounts[cat] = row.count as number;
       categoryCounts.all += row.count as number;
     });
@@ -414,10 +680,15 @@ export const fetchProductsPaginated = async (options: ProductQueryOptions = {}) 
         hasMore: page * limit < total,
       },
       categoryCounts,
-      stockCounts: { inStock: inStockCount, lowStock: lowStockCount, outOfStock: outOfStockCount },
+      stockCounts: {
+        inStock: inStockCount,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount,
+      },
     };
   } catch (error) {
     console.error("Error fetching paginated products:", error);
+
     return { success: false, message: "Failed to fetch products" };
   }
 };
@@ -426,9 +697,16 @@ export const getTopRatedProducts = async (limit: number = 8) => {
   try {
     const db = await getDb();
     const count = Math.max(1, Math.min(24, Number(limit) || 8));
-    return await db.collection("products").find(ACTIVE_PRODUCT_FILTER).sort({ rating: -1 }).limit(count).toArray();
+
+    return await db
+      .collection("products")
+      .find(ACTIVE_PRODUCT_FILTER)
+      .sort({ rating: -1 })
+      .limit(count)
+      .toArray();
   } catch (error) {
     console.error("Error fetching top-rated products:", error);
+
     return [];
   }
 };
@@ -440,25 +718,37 @@ export const deleteProduct = async (id: string) => {
     }
 
     const db = await getDb();
-    const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
+
+    const product = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(id) });
+
     if (!product) {
       return { success: false, message: "Product not found", status: 404 };
     }
 
-    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
+    const result = await db
+      .collection("products")
+      .deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
       return { success: false, message: "Product not found", status: 404 };
     }
 
     const storedImages = getStoredImages(product);
+
     for (const img of storedImages) {
       await deleteImage(img.publicId);
     }
 
-    return { success: true, message: "Product deleted successfully", status: 200 };
+    return {
+      success: true,
+      message: "Product deleted successfully",
+      status: 200,
+    };
   } catch (error) {
     console.error("Error deleting product:", error);
+
     return { success: false, message: "Internal server error", status: 500 };
   }
 };
@@ -466,6 +756,7 @@ export const deleteProduct = async (id: string) => {
 export const getAdminDashboardStats = async () => {
   try {
     const db = await getDb();
+
     const [
       totalProducts,
       totalUsers,
@@ -485,9 +776,14 @@ export const getAdminDashboardStats = async () => {
       db.collection("orders").countDocuments({}),
       db
         .collection("orders")
-        .aggregate([{ $match: { status: "delivered" } }, { $group: { _id: null, total: { $sum: "$total_amount" } } }])
+        .aggregate([
+          { $match: { status: "delivered" } },
+          { $group: { _id: null, total: { $sum: "$total_amount" } } },
+        ])
         .toArray(),
-      db.collection("products").countDocuments({ quantity: { $gt: 0, $lte: 5 } }),
+      db
+        .collection("products")
+        .countDocuments({ quantity: { $gt: 0, $lte: 5 } }),
       db.collection("products").countDocuments({ quantity: { $lte: 0 } }),
       db
         .collection("products")
@@ -498,14 +794,26 @@ export const getAdminDashboardStats = async () => {
       db
         .collection("products")
         .aggregate([
-          { $group: { _id: "$category", count: { $sum: 1 }, totalStock: { $sum: "$quantity" } } },
+          {
+            $group: {
+              _id: "$category",
+              count: { $sum: 1 },
+              totalStock: { $sum: "$quantity" },
+            },
+          },
           { $sort: { count: -1 } },
         ])
         .toArray(),
       db
         .collection("orders")
         .aggregate([
-          { $group: { _id: "$status", count: { $sum: 1 }, totalValue: { $sum: "$total_amount" } } },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+              totalValue: { $sum: "$total_amount" },
+            },
+          },
           { $sort: { count: -1 } },
         ])
         .toArray(),
@@ -521,29 +829,49 @@ export const getAdminDashboardStats = async () => {
         .sort({ created_at: -1 })
         .limit(5)
         .toArray(),
-      db
-        .collection("orders")
-        .find({})
-        .sort({ created_at: 1 })
-        .toArray(),
+      db.collection("orders").find({}).sort({ created_at: 1 }).toArray(),
     ]);
 
     // Build 6-Month Timeline Sales & Orders Trend
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
     const now = new Date();
-    const salesTrendMap: Record<string, { name: string; revenue: number; orders: number }> = {};
+
+    const salesTrendMap: Record<
+      string,
+      { name: string; revenue: number; orders: number }
+    > = {};
 
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
+
       salesTrendMap[key] = { name: key, revenue: 0, orders: 0 };
     }
 
     allOrders.forEach((order) => {
-      const orderDate = order.created_at ? new Date(order.created_at) : new Date();
+      const orderDate = order.created_at
+        ? new Date(order.created_at)
+        : new Date();
+
       const key = `${monthNames[orderDate.getMonth()]} ${orderDate.getFullYear().toString().slice(-2)}`;
+
       if (salesTrendMap[key]) {
         salesTrendMap[key].orders += 1;
+
         if (order.status === "delivered") {
           salesTrendMap[key].revenue += Number(order.total_amount) || 0;
         }
@@ -580,7 +908,10 @@ export const getAdminDashboardStats = async () => {
       if (orderStatus === "pending_payment") {
         paymentBuckets.awaiting.count += 1;
         paymentBuckets.awaiting.value += amount;
-      } else if (orderStatus === "payment_failed" || paymentStatus === "failed") {
+      } else if (
+        orderStatus === "payment_failed" ||
+        paymentStatus === "failed"
+      ) {
         paymentBuckets.failed.count += 1;
         paymentBuckets.failed.value += amount;
       } else if (paymentStatus === "paid" && method === "card") {
@@ -592,7 +923,9 @@ export const getAdminDashboardStats = async () => {
       }
     });
 
-    const paymentBreakdown = Object.values(paymentBuckets).filter((item) => item.count > 0);
+    const paymentBreakdown = Object.values(paymentBuckets).filter(
+      (item) => item.count > 0,
+    );
 
     return {
       success: true,
@@ -614,6 +947,7 @@ export const getAdminDashboardStats = async () => {
     };
   } catch (error) {
     console.error("Error fetching admin stats:", error);
+
     return { success: false, message: "Failed to fetch stats" };
   }
 };

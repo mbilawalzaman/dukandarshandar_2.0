@@ -1,8 +1,11 @@
 "use client";
 
 import React, { Suspense } from "react";
+
 import { useSearchParams } from "next/navigation";
+
 import { Container, Typography, Box } from "@mui/material";
+
 import MessagesWorkspace from "@/app/components/chat/MessagesWorkspace";
 import Loader from "@/app/components/loader/Loader";
 
@@ -16,7 +19,8 @@ function MessagesContent() {
         Messages
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Open this page in another window or tab messages stay in sync in real time.
+        Open this page in another window or tab messages stay in sync in real
+        time.
       </Typography>
       <Box sx={{ mt: 2 }}>
         <MessagesWorkspace variant="page" initialSelectedId={selectedId} />

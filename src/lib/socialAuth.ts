@@ -1,6 +1,12 @@
 "use client";
 
-import { GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, type AuthProvider } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  type AuthProvider,
+} from "firebase/auth";
+
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { isFirebaseClientConfigured } from "@/lib/firebaseConfig";
 
@@ -9,15 +15,19 @@ export type SocialProvider = "google" | "facebook";
 function getProvider(provider: SocialProvider): AuthProvider {
   if (provider === "facebook") {
     const fb = new FacebookAuthProvider();
+
     fb.addScope("email");
     fb.addScope("public_profile");
+
     return fb;
   }
+
   const google = new GoogleAuthProvider();
+
   google.addScope("email");
   google.addScope("profile");
+
   return google;
-  
 }
 
 /**
@@ -28,7 +38,9 @@ export async function signInWithSocial(provider: SocialProvider): Promise<{
   user: { name: string; email: string; role: string };
 }> {
   if (!isFirebaseClientConfigured()) {
-    throw new Error("Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* env vars.");
+    throw new Error(
+      "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* env vars.",
+    );
   }
 
   const auth = getFirebaseAuth();
@@ -43,12 +55,21 @@ export async function signInWithSocial(provider: SocialProvider): Promise<{
   });
 
   const raw = await res.text();
-  let data: { success?: boolean; token?: string; user?: { name: string; email: string; role: string }; error?: string } = {};
+  let data: {
+    success?: boolean;
+    token?: string;
+    user?: { name: string; email: string; role: string };
+    error?: string;
+  } = {};
+
   try {
     data = JSON.parse(raw);
   } catch {
-    throw new Error("Server error. Please verify database and auth environment variables.");
+    throw new Error(
+      "Server error. Please verify database and auth environment variables.",
+    );
   }
+
   if (!res.ok || !data.success || !data.token) {
     throw new Error(data.error || `${provider} login failed`);
   }

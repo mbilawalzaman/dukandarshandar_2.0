@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { Box, FormControlLabel, Paper, Switch, TextField, Typography } from "@mui/material";
+
+import {
+  Box,
+  FormControlLabel,
+  Paper,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
 interface DeliveryFeeSectionProps {
@@ -18,7 +26,17 @@ export default function DeliveryFeeSection({
   onFeeAmountChange,
 }: DeliveryFeeSectionProps) {
   return (
-    <Paper sx={{ p: 3.5, borderRadius: 3, border: "1px solid #e2e8f0", height: "100%", display: "flex", flexDirection: "column" }} elevation={0}>
+    <Paper
+      sx={{
+        p: 3.5,
+        borderRadius: 3,
+        border: "1px solid #e2e8f0",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      elevation={0}
+    >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
         <LocalShippingIcon color="primary" />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -47,15 +65,23 @@ export default function DeliveryFeeSection({
         fullWidth
         type="number"
         label="Delivery fee discount (PKR)"
-        helperText={feeEnabled ? "Amount entered here is deducted from the PostEx live shipping fee (e.g. enter 100 to deduct PKR 100)." : undefined}
+        helperText={
+          feeEnabled
+            ? "Amount entered here is deducted from the PostEx live shipping fee (e.g. enter 100 to deduct PKR 100)."
+            : undefined
+        }
         value={fee === 0 ? "" : fee}
         onChange={(e) => {
           const raw = e.target.value;
+
           if (raw === "") {
             onFeeAmountChange(0);
+
             return;
           }
+
           const val = parseInt(raw, 10);
+
           if (!Number.isNaN(val) && val >= 0) {
             onFeeAmountChange(val);
           }

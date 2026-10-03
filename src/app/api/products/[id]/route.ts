@@ -1,61 +1,95 @@
-import { getAuthUser } from "@/lib/auth";
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getProductByID, deleteProduct, updateProduct } from "@/controllers/productController";
+
+import { getAuthUser } from "@/lib/auth";
+import {
+  getProductByID,
+  deleteProduct,
+  updateProduct,
+} from "@/controllers/productController";
 import { requireAdmin } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
-    const response = await getProductByID(id, getAuthUser(req)?.role === "admin");
+
+    const response = await getProductByID(
+      id,
+      getAuthUser(req)?.role === "admin",
+    );
+
     return NextResponse.json(
-      { success: response.success, message: response.message, product: response.product || null },
-      { status: response.status }
+      {
+        success: response.success,
+        message: response.message,
+        product: response.product || null,
+      },
+      { status: response.status },
     );
   } catch (error) {
     console.error("Error in GET handler:", error);
-    return NextResponse.json({ success: false, message: "Failed to fetch product" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch product" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const admin = requireAdmin(req);
+
     if (!admin.ok) return admin.response;
 
     const { id } = await context.params;
     const response = await deleteProduct(id);
-    return NextResponse.json({ success: response.success, message: response.message }, { status: response.status });
+
+    return NextResponse.json(
+      { success: response.success, message: response.message },
+      { status: response.status },
+    );
   } catch (error) {
     console.error("Error in DELETE handler:", error);
-    return NextResponse.json({ success: false, message: "Failed to delete product" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to delete product" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const admin = requireAdmin(req);
+
     if (!admin.ok) return admin.response;
 
     const { id } = await context.params;
     const body = await req.json();
+
     const reqWithId = new Request(req.url, {
       method: "PUT",
       body: JSON.stringify({ ...body, _id: id }),
       headers: req.headers,
     });
+
     return await updateProduct(reqWithId);
   } catch (error) {
     console.error("Error in PUT handler:", error);
-    return NextResponse.json({ success: false, message: "Failed to update product" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to update product" },
+      { status: 500 },
+    );
   }
 }

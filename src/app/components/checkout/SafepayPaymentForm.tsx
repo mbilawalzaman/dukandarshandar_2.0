@@ -1,8 +1,17 @@
 "use client";
 
 import React, { Suspense, useCallback, useRef, useState } from "react";
-import { Box, Button, CircularProgress, Dialog, DialogContent, Typography } from "@mui/material";
+
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  Typography,
+} from "@mui/material";
 import { CardCapture, Environment, PayerAuthentication } from "@sfpy/atoms";
+
 import "@sfpy/atoms/styles";
 import { BRAND } from "@/lib/uiBrand";
 
@@ -79,7 +88,10 @@ function SafepayPaymentFormInner({
   const cardRef = useRef<CardCaptureRef | null>(null);
   const payerAuthRef = useRef(null);
   const payingRef = useRef(false);
-  const [payerAuthSession, setPayerAuthSession] = useState<PayerAuthSession | null>(null);
+
+  const [payerAuthSession, setPayerAuthSession] =
+    useState<PayerAuthSession | null>(null);
+
   const [discountBody, setDiscountBody] = useState<
     | {
         dry_run: boolean;
@@ -87,9 +99,11 @@ function SafepayPaymentFormInner({
       }
     | undefined
   >();
+
   const [paying, setPaying] = useState(false);
 
-  const safepayEnvironment = environment === "production" ? Environment.Production : Environment.Sandbox;
+  const safepayEnvironment =
+    environment === "production" ? Environment.Production : Environment.Sandbox;
 
   const resetPaying = useCallback(() => {
     payingRef.current = false;
@@ -105,7 +119,7 @@ function SafepayPaymentFormInner({
       resetPaying();
       onError(message);
     },
-    [onError, resetPaying]
+    [onError, resetPaying],
   );
 
   const handlePay = useCallback(async () => {
@@ -116,8 +130,10 @@ function SafepayPaymentFormInner({
       setPaying(true);
 
       const isValid = await cardRef.current?.fetchValidity();
+
       if (!isValid) {
         handlePaymentError("Please enter valid card details");
+
         return;
       }
 
@@ -129,7 +145,10 @@ function SafepayPaymentFormInner({
 
   return (
     <Box>
-      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: BRAND.navy, mb: 2 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{ fontWeight: 700, color: BRAND.navy, mb: 2 }}
+      >
         Card payment
       </Typography>
 
@@ -142,11 +161,22 @@ function SafepayPaymentFormInner({
           inputStyle={CARD_INPUT_STYLE}
           imperativeRef={cardRef}
           onError={(error) =>
-            handlePaymentError(typeof error === "string" ? error : "Payment error occurred")
+            handlePaymentError(
+              typeof error === "string" ? error : "Payment error occurred",
+            )
           }
           onDiscountApplied={(data) => {
-            if (data?.discountBody && "dry_run" in data.discountBody && "bin_discount" in data.discountBody) {
-              setDiscountBody(data.discountBody as { dry_run: boolean; bin_discount: { cardscheme_id: string; bin: string } });
+            if (
+              data?.discountBody &&
+              "dry_run" in data.discountBody &&
+              "bin_discount" in data.discountBody
+            ) {
+              setDiscountBody(
+                data.discountBody as {
+                  dry_run: boolean;
+                  bin_discount: { cardscheme_id: string; bin: string };
+                },
+              );
             }
           }}
           onProceedToAuthentication={(data) => {
@@ -177,7 +207,14 @@ function SafepayPaymentFormInner({
         }}
       >
         {paying ? (
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+            }}
+          >
             <CircularProgress size={18} sx={{ color: BRAND.navy }} />
             Processing payment...
           </Box>

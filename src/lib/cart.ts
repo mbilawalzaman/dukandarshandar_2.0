@@ -11,11 +11,15 @@ const CART_KEY = "cart";
 
 export function getCart(): CartItem[] {
   if (typeof window === "undefined") return [];
+
   try {
     const raw = localStorage.getItem(CART_KEY);
+
     if (!raw) return [];
     const parsed = JSON.parse(raw);
+
     if (!Array.isArray(parsed)) return [];
+
     return parsed
       .map((item: Partial<CartItem> & { selectedQuantity?: number }) => ({
         _id: String(item._id || ""),
@@ -37,15 +41,23 @@ export function saveCart(items: CartItem[]) {
   window.dispatchEvent(new Event("cartChange"));
 }
 
-export type AddToCartProduct = { _id: string; name: string; price: number; image?: string; category?: string };
+export type AddToCartProduct = {
+  _id: string;
+  name: string;
+  price: number;
+  image?: string;
+  category?: string;
+};
 
 export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
   const cart = getCart();
   const existing = cart.find((item) => item._id === product._id);
+
   if (existing) {
     existing.quantity += quantity;
     // Older carts were saved without a category; backfill so promotions can scope by it.
-    if (!existing.category && product.category) existing.category = product.category;
+    if (!existing.category && product.category)
+      existing.category = product.category;
   } else {
     cart.push({
       _id: product._id,
@@ -56,7 +68,9 @@ export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
       category: product.category || undefined,
     });
   }
+
   saveCart(cart);
+
   return cart;
 }
 
@@ -64,13 +78,17 @@ export function updateCartQuantity(id: string, quantity: number): CartItem[] {
   const cart = getCart()
     .map((item) => (item._id === id ? { ...item, quantity } : item))
     .filter((item) => item.quantity > 0);
+
   saveCart(cart);
+
   return cart;
 }
 
 export function removeFromCart(id: string): CartItem[] {
   const cart = getCart().filter((item) => item._id !== id);
+
   saveCart(cart);
+
   return cart;
 }
 
@@ -85,7 +103,9 @@ export function cartCount(items?: CartItem[]) {
 }
 
 export function authHeaders(): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

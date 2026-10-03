@@ -331,23 +331,31 @@ export const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
  * Strictly falls back to "default" for missing, invalid, or corrupted keys.
  */
 export function normalizeThemeKey(rawKey?: unknown): ThemeKey {
-  if (typeof rawKey === "string" && (THEME_KEYS as readonly string[]).includes(rawKey)) {
+  if (
+    typeof rawKey === "string" &&
+    (THEME_KEYS as readonly string[]).includes(rawKey)
+  ) {
     return rawKey as ThemeKey;
   }
+
   return "default";
 }
 
 export function getThemePreset(key?: unknown): ThemePreset {
   const normalizedKey = normalizeThemeKey(key);
+
   return THEME_PRESETS[normalizedKey];
 }
 
 export function getThemePresetName(key?: unknown, shopName?: string): string {
   const normalizedKey = normalizeThemeKey(key);
   const preset = THEME_PRESETS[normalizedKey];
+
   if (normalizedKey === "default") {
     const storeName = shopName?.trim();
+
     return storeName ? `Default (${storeName})` : "Default Store Theme";
   }
+
   return preset.name;
 }

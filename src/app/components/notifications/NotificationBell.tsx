@@ -1,6 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+
+import Link from "next/link";
+
+import { usePathname } from "next/navigation";
+
 import {
   IconButton,
   Badge,
@@ -12,8 +17,7 @@ import {
   Button,
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+
 import { useNotifications } from "@/app/providers/NotificationProvider";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
@@ -31,7 +35,9 @@ export default function NotificationBell() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
 
-  const viewAllHref = pathname.startsWith("/admin") ? "/admin/notifications" : "/notifications";
+  const viewAllHref = pathname.startsWith("/admin")
+    ? "/admin/notifications"
+    : "/notifications";
 
   useEffect(() => {
     setPushSupported(isWebPushSupported());
@@ -41,17 +47,28 @@ export default function NotificationBell() {
   if (!isChatEnabled()) return null;
 
   const latest = notifications.slice(0, 5);
+
   const pushBlocked =
-    pushSupported && typeof window !== "undefined" && Notification.permission === "denied";
+    pushSupported &&
+    typeof window !== "undefined" &&
+    Notification.permission === "denied";
 
   return (
     <>
-      <IconButton color="inherit" onClick={(e) => setAnchor(e.currentTarget)} aria-label="notifications">
+      <IconButton
+        color="inherit"
+        onClick={(e) => setAnchor(e.currentTarget)}
+        aria-label="notifications"
+      >
         <Badge badgeContent={unreadCount} color="error">
           <NotificationsNoneIcon />
         </Badge>
       </IconButton>
-      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+      >
         <Box sx={{ px: 2, py: 1, minWidth: 280 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Notifications
@@ -69,14 +86,20 @@ export default function NotificationBell() {
               onClick={async () => {
                 await fetch(`/api/notifications/${n.id}/read`, {
                   method: "PATCH",
-                  headers: { ...authHeaders(), "Content-Type": "application/json" },
+                  headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                  },
                   body: JSON.stringify({}),
                 });
                 setAnchor(null);
               }}
             >
               <Box>
-                <Typography variant="body2" sx={{ fontWeight: n.isRead ? 400 : 700 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: n.isRead ? 400 : 700 }}
+                >
                   {n.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -87,7 +110,15 @@ export default function NotificationBell() {
           ))
         )}
         <Divider />
-        <Box sx={{ px: 1.5, py: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box
+          sx={{
+            px: 1.5,
+            py: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
           {pushSupported && (
             <>
               {pushEnabled ? (
@@ -112,6 +143,7 @@ export default function NotificationBell() {
                   disabled={pushBlocked}
                   onClick={async () => {
                     const ok = await registerWebPushToken();
+
                     setPushEnabled(ok);
                     setAnchor(null);
                   }}
@@ -120,7 +152,11 @@ export default function NotificationBell() {
                 </Button>
               )}
               {pushBlocked && (
-                <Typography variant="caption" color="text.secondary" sx={{ px: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ px: 0.5 }}
+                >
                   Notifications are blocked in your browser settings.
                 </Typography>
               )}
@@ -131,14 +167,21 @@ export default function NotificationBell() {
             variant="text"
             fullWidth
             onClick={async () => {
-              await fetch("/api/notifications/read-all", { method: "PATCH", headers: authHeaders() });
+              await fetch("/api/notifications/read-all", {
+                method: "PATCH",
+                headers: authHeaders(),
+              });
               setAnchor(null);
             }}
           >
             Mark all read
           </Button>
         </Box>
-        <MenuItem component={Link} href={viewAllHref} onClick={() => setAnchor(null)}>
+        <MenuItem
+          component={Link}
+          href={viewAllHref}
+          onClick={() => setAnchor(null)}
+        >
           View all
         </MenuItem>
       </Menu>

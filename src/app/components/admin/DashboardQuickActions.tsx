@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+
+import Link from "next/link";
+
 import { Grid, Typography, Box, Paper, Button } from "@mui/material";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PeopleIcon from "@mui/icons-material/People";
 import AutoAwesomeMosaicIcon from "@mui/icons-material/AutoAwesomeMosaic";
-import Link from "next/link";
 
 interface QuickActionTileProps {
   title: string;
@@ -18,7 +20,15 @@ interface QuickActionTileProps {
   iconColor: string;
 }
 
-function QuickActionTile({ title, desc, href, btnText, icon, iconBg, iconColor }: QuickActionTileProps) {
+function QuickActionTile({
+  title,
+  desc,
+  href,
+  btnText,
+  icon,
+  iconBg,
+  iconColor,
+}: QuickActionTileProps) {
   return (
     <Grid item xs={12} sm={6} md={3}>
       <Paper
@@ -51,11 +61,18 @@ function QuickActionTile({ title, desc, href, btnText, icon, iconBg, iconColor }
           >
             {icon}
           </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#0f172a" }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 700, color: "#0f172a" }}
+          >
             {title}
           </Typography>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 2, flexGrow: 1 }}
+        >
           {desc}
         </Typography>
         <Button
@@ -76,7 +93,10 @@ function QuickActionTile({ title, desc, href, btnText, icon, iconBg, iconColor }
 export default function DashboardQuickActions() {
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", mb: 2 }}>
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 700, color: "#0f172a", mb: 2 }}
+      >
         Quick Management
       </Typography>
       <Grid container spacing={3}>

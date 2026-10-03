@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Box,
   Typography,
@@ -39,7 +40,10 @@ export interface HomeTabProps {
   slideImageUploads: Record<string, string>;
   onOpenModal: (pageKey: PageSettingsKey, preferVideo?: boolean) => void;
   onRemoveSlide: (slideId: string) => void;
-  onReplaceSlideImage: (e: React.ChangeEvent<HTMLInputElement>, slideId: string) => void;
+  onReplaceSlideImage: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slideId: string,
+  ) => void;
   onSavePage: (page: PageSettingsKey) => Promise<boolean>;
 }
 
@@ -57,10 +61,25 @@ export default function HomeTab({
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+        <Paper
+          sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+          elevation={0}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "#0f172a" }}
+              >
                 Home Banner Format
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -71,7 +90,12 @@ export default function HomeTab({
               <Button
                 variant="contained"
                 startIcon={<AddPhotoAlternateIcon />}
-                onClick={() => onOpenModal("home", settings.home.bannerMode === "single_video")}
+                onClick={() =>
+                  onOpenModal(
+                    "home",
+                    settings.home.bannerMode === "single_video",
+                  )
+                }
                 sx={{
                   borderRadius: 2,
                   textTransform: "none",
@@ -81,7 +105,9 @@ export default function HomeTab({
                   "&:hover": { backgroundColor: "#d97706" },
                 }}
               >
-                {settings.home.bannerMode === "single_video" ? "+ Upload Video Banner" : "+ Add New Slide"}
+                {settings.home.bannerMode === "single_video"
+                  ? "+ Upload Video Banner"
+                  : "+ Add New Slide"}
               </Button>
               <SavePageButton
                 page="home"
@@ -127,22 +153,48 @@ export default function HomeTab({
           </RadioGroup>
 
           {settings.home.bannerMode === "single_video" ? (
-            <Paper sx={{ p: 2.5, borderRadius: 2, border: "1px dashed #cbd5e1", bgcolor: "#fafafa" }} elevation={0}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#475569" }}>
+            <Paper
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                border: "1px dashed #cbd5e1",
+                bgcolor: "#fafafa",
+              }}
+              elevation={0}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 700, mb: 1, color: "#475569" }}
+              >
                 Active Single Video Banner
               </Typography>
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={7}>
-                  <Box sx={{ height: 220, borderRadius: 2, overflow: "hidden", border: "1px solid #e2e8f0", bgcolor: "#0f172a" }}>
+                  <Box
+                    sx={{
+                      height: 220,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#0f172a",
+                    }}
+                  >
                     <BannerMediaRenderer
-                      media={settings.home.singleBanner?.activeMedia || { type: "video", url: "" }}
+                      media={
+                        settings.home.singleBanner?.activeMedia || {
+                          type: "video",
+                          url: "",
+                        }
+                      }
                       alt="Single Video Banner"
                       style={{ width: "100%", height: "100%" }}
                     />
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={5}>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
+                  >
                     <TextField
                       label="Video Banner Title (Optional)"
                       size="small"
@@ -150,6 +202,7 @@ export default function HomeTab({
                       value={settings.home.singleBanner?.title || ""}
                       onChange={(e) => {
                         const val = e.target.value;
+
                         setSettings((prev) => ({
                           ...prev,
                           home: {
@@ -174,6 +227,7 @@ export default function HomeTab({
                       value={settings.home.singleBanner?.subtitle || ""}
                       onChange={(e) => {
                         const val = e.target.value;
+
                         setSettings((prev) => ({
                           ...prev,
                           home: {
@@ -205,17 +259,36 @@ export default function HomeTab({
             </Paper>
           ) : (
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: "#475569" }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 700, mb: 1.5, color: "#475569" }}
+              >
                 Active Slides ({settings.home.banners.length})
               </Typography>
               <Grid container spacing={2}>
                 {settings.home.banners.map((slide, idx) => {
                   return (
                     <Grid item xs={12} sm={6} md={4} key={slide.id}>
-                      <Card sx={{ borderRadius: 2, border: "1px solid #e2e8f0" }} elevation={0}>
-                        <Box sx={{ position: "relative", height: 140, bgcolor: "#0f172a" }}>
+                      <Card
+                        sx={{ borderRadius: 2, border: "1px solid #e2e8f0" }}
+                        elevation={0}
+                      >
+                        <Box
+                          sx={{
+                            position: "relative",
+                            height: 140,
+                            bgcolor: "#0f172a",
+                          }}
+                        >
                           <BannerMediaRenderer
-                            media={slideImageUploads[slide.id] ? { type: "image", url: slideImageUploads[slide.id]! } : slide.activeMedia}
+                            media={
+                              slideImageUploads[slide.id]
+                                ? {
+                                    type: "image",
+                                    url: slideImageUploads[slide.id]!,
+                                  }
+                                : slide.activeMedia
+                            }
                             alt={slide.title || `Slide #${idx + 1}`}
                             style={{ width: "100%", height: "100%" }}
                           />
@@ -242,11 +315,16 @@ export default function HomeTab({
                             value={slide.title || ""}
                             onChange={(e) => {
                               const val = e.target.value;
+
                               setSettings((prev) => ({
                                 ...prev,
                                 home: {
                                   ...prev.home,
-                                  banners: prev.home.banners.map((b) => (b.id === slide.id ? { ...b, title: val } : b)),
+                                  banners: prev.home.banners.map((b) =>
+                                    b.id === slide.id
+                                      ? { ...b, title: val }
+                                      : b,
+                                  ),
                                 },
                               }));
                             }}
@@ -260,18 +338,30 @@ export default function HomeTab({
                             value={slide.goToLink || ""}
                             onChange={(e) => {
                               const val = e.target.value;
+
                               setSettings((prev) => ({
                                 ...prev,
                                 home: {
                                   ...prev.home,
-                                  banners: prev.home.banners.map((b) => (b.id === slide.id ? { ...b, goToLink: val } : b)),
+                                  banners: prev.home.banners.map((b) =>
+                                    b.id === slide.id
+                                      ? { ...b, goToLink: val }
+                                      : b,
+                                  ),
                                 },
                               }));
                             }}
                           />
                         </Box>
 
-                        <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
+                        <CardActions
+                          sx={{
+                            justifyContent: "space-between",
+                            px: 2,
+                            pb: 1.5,
+                            pt: 0,
+                          }}
+                        >
                           <input
                             type="file"
                             id={`replace-img-${slide.id}`}
@@ -280,8 +370,15 @@ export default function HomeTab({
                             onChange={(e) => onReplaceSlideImage(e, slide.id)}
                           />
                           <label htmlFor={`replace-img-${slide.id}`}>
-                            <Button component="span" size="small" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none", fontSize: 12 }}>
-                              {slideImageUploads[slide.id] ? "Image Pending Save" : "Replace Image"}
+                            <Button
+                              component="span"
+                              size="small"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{ textTransform: "none", fontSize: 12 }}
+                            >
+                              {slideImageUploads[slide.id]
+                                ? "Image Pending Save"
+                                : "Replace Image"}
                             </Button>
                           </label>
 
@@ -306,8 +403,14 @@ export default function HomeTab({
 
       {/* Quotas & Hero Section Features */}
       <Grid item xs={12}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", mb: 1 }}>
+        <Paper
+          sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+          elevation={0}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, color: "#0f172a", mb: 1 }}
+          >
             Storefront Quotas
           </Typography>
           <Grid container spacing={2}>
@@ -321,7 +424,10 @@ export default function HomeTab({
                 onChange={(e) =>
                   setSettings((prev) => ({
                     ...prev,
-                    home: { ...prev.home, topRatedCount: Number(e.target.value) || 4 },
+                    home: {
+                      ...prev.home,
+                      topRatedCount: Number(e.target.value) || 4,
+                    },
                   }))
                 }
                 inputProps={{ min: 1, max: 24 }}
@@ -337,7 +443,10 @@ export default function HomeTab({
                 onChange={(e) =>
                   setSettings((prev) => ({
                     ...prev,
-                    home: { ...prev.home, productsPerPage: Number(e.target.value) || 9 },
+                    home: {
+                      ...prev.home,
+                      productsPerPage: Number(e.target.value) || 9,
+                    },
                   }))
                 }
                 inputProps={{ min: 1, max: 48 }}
@@ -348,14 +457,30 @@ export default function HomeTab({
       </Grid>
 
       <Grid item xs={12}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }} elevation={0}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 2 }}>
+        <Paper
+          sx={{ p: 3, borderRadius: 3, border: "1px solid #e2e8f0" }}
+          elevation={0}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "#0f172a" }}
+              >
                 Hero Section Features
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Configure the feature cards displayed below the home banner. Use {"{storeName}"} for dynamic store name.
+                Configure the feature cards displayed below the home banner. Use{" "}
+                {"{storeName}"} for dynamic store name.
               </Typography>
             </Box>
             <FormControlLabel
@@ -368,7 +493,8 @@ export default function HomeTab({
                       home: {
                         ...prev.home,
                         heroSection: {
-                          ...(prev.home.heroSection || DEFAULT_PAGE_SETTINGS.home.heroSection!),
+                          ...(prev.home.heroSection ||
+                            DEFAULT_PAGE_SETTINGS.home.heroSection!),
                           enabled: e.target.checked,
                         },
                       },
@@ -377,17 +503,31 @@ export default function HomeTab({
                   color="primary"
                 />
               }
-              label={settings.home.heroSection?.enabled !== false ? "Enabled" : "Disabled"}
+              label={
+                settings.home.heroSection?.enabled !== false
+                  ? "Enabled"
+                  : "Disabled"
+              }
             />
           </Box>
 
           {settings.home.heroSection?.enabled !== false && (
             <Grid container spacing={2}>
-              {(settings.home.heroSection?.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features).map((feat, idx) => (
+              {(
+                settings.home.heroSection?.features ||
+                DEFAULT_PAGE_SETTINGS.home.heroSection!.features
+              ).map((feat, idx) => (
                 <Grid item xs={12} sm={6} md={3} key={feat.id || idx}>
-                  <Card sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0" }} elevation={0}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#3b82f6" }}>
-                      Feature #{idx + 1} ({feat.icon ? feat.icon.toUpperCase() : "FEATURE"})
+                  <Card
+                    sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0" }}
+                    elevation={0}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, mb: 1, color: "#3b82f6" }}
+                    >
+                      Feature #{idx + 1} (
+                      {feat.icon ? feat.icon.toUpperCase() : "FEATURE"})
                     </Typography>
                     <TextField
                       label="Title"
@@ -396,16 +536,23 @@ export default function HomeTab({
                       value={feat.title}
                       onChange={(e) => {
                         const newTitle = e.target.value;
+
                         setSettings((prev) => {
-                          const cur = prev.home.heroSection?.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+                          const cur =
+                            prev.home.heroSection?.features ||
+                            DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+
                           const updated = [...cur];
+
                           updated[idx] = { ...updated[idx], title: newTitle };
+
                           return {
                             ...prev,
                             home: {
                               ...prev.home,
                               heroSection: {
-                                ...(prev.home.heroSection || DEFAULT_PAGE_SETTINGS.home.heroSection!),
+                                ...(prev.home.heroSection ||
+                                  DEFAULT_PAGE_SETTINGS.home.heroSection!),
                                 features: updated,
                               },
                             },
@@ -423,16 +570,23 @@ export default function HomeTab({
                       value={feat.desc1}
                       onChange={(e) => {
                         const newDesc = e.target.value;
+
                         setSettings((prev) => {
-                          const cur = prev.home.heroSection?.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+                          const cur =
+                            prev.home.heroSection?.features ||
+                            DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+
                           const updated = [...cur];
+
                           updated[idx] = { ...updated[idx], desc1: newDesc };
+
                           return {
                             ...prev,
                             home: {
                               ...prev.home,
                               heroSection: {
-                                ...(prev.home.heroSection || DEFAULT_PAGE_SETTINGS.home.heroSection!),
+                                ...(prev.home.heroSection ||
+                                  DEFAULT_PAGE_SETTINGS.home.heroSection!),
                                 features: updated,
                               },
                             },
@@ -450,16 +604,23 @@ export default function HomeTab({
                       value={feat.desc2}
                       onChange={(e) => {
                         const newDesc = e.target.value;
+
                         setSettings((prev) => {
-                          const cur = prev.home.heroSection?.features || DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+                          const cur =
+                            prev.home.heroSection?.features ||
+                            DEFAULT_PAGE_SETTINGS.home.heroSection!.features;
+
                           const updated = [...cur];
+
                           updated[idx] = { ...updated[idx], desc2: newDesc };
+
                           return {
                             ...prev,
                             home: {
                               ...prev.home,
                               heroSection: {
-                                ...(prev.home.heroSection || DEFAULT_PAGE_SETTINGS.home.heroSection!),
+                                ...(prev.home.heroSection ||
+                                  DEFAULT_PAGE_SETTINGS.home.heroSection!),
                                 features: updated,
                               },
                             },

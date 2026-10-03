@@ -1,9 +1,17 @@
 import crypto from "crypto";
+
+import type { NextResponse } from "next/server";
+
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
-import type { NextResponse } from "next/server";
+
 import { getDb } from "@/lib/db";
-import { attachAuthCookie, clearAuthCookie, getJwtSecret, type JwtPayload } from "@/lib/auth";
+import {
+  attachAuthCookie,
+  clearAuthCookie,
+  getJwtSecret,
+  type JwtPayload,
+} from "@/lib/auth";
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_COOKIE,
@@ -39,13 +47,15 @@ function createRefreshToken(): string {
 }
 
 export function signAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: `${ACCESS_TOKEN_TTL_SECONDS}s` });
+  return jwt.sign(payload, getJwtSecret(), {
+    expiresIn: `${ACCESS_TOKEN_TTL_SECONDS}s`,
+  });
 }
 
 export function attachSessionCookies(
   response: NextResponse,
   accessToken: string,
-  refreshToken?: string | null
+  refreshToken?: string | null,
 ) {
   return attachAuthCookie(response, accessToken, refreshToken || undefined);
 }
@@ -56,18 +66,21 @@ export function clearSessionCookies(response: NextResponse) {
 
 export function getRefreshTokenFromRequest(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie") || "";
+
   const match = cookieHeader.match(
-    new RegExp(`(?:^|;\\s*)${REFRESH_TOKEN_COOKIE}=([^;]+)`)
+    new RegExp(`(?:^|;\\s*)${REFRESH_TOKEN_COOKIE}=([^;]+)`),
   );
+
   return match ? decodeURIComponent(match[1]) : null;
 }
 
 /** Issue access + refresh for a real Mongo user (not guest). */
 export async function issueSessionForUser(
   user: { _id: ObjectId | string; name: string; email: string; role: string },
-  options?: { userAgent?: string }
+  options?: { userAgent?: string },
 ): Promise<IssuedSession> {
   const userId = String(user._id);
+
   const accessToken = signAccessToken({
     userId,
     email: user.email,
@@ -89,6 +102,7 @@ export async function issueSessionForUser(
   };
 
   const db = await getDb();
+
   await db.collection("users").updateOne(
     { _id: typeof user._id === "string" ? new ObjectId(user._id) : user._id },
     {
@@ -96,7 +110,7 @@ export async function issueSessionForUser(
         refreshTokens: [record],
         updated_at: now,
       },
-    }
+    },
   );
 
   return {
@@ -107,14 +121,23 @@ export async function issueSessionForUser(
 }
 
 /** Guest: short-lived access only, no refresh. Unique id so this browser session owns its orders. */
-export function issueGuestAccessToken(): { accessToken: string; user: SessionUser } {
+export function issueGuestAccessToken(): {
+  accessToken: string;
+  user: SessionUser;
+} {
   const guestId = `guest_${crypto.randomBytes(12).toString("hex")}`;
-  const accessToken = jwt.sign({
-    userId: guestId,
-    email: "guest@guest.com",
-    userName: "Guest User",
-    role: "guest",
-  }, getJwtSecret(), { expiresIn: REFRESH_TOKEN_TTL_SECONDS });
+
+  const accessToken = jwt.sign(
+    {
+      userId: guestId,
+      email: "guest@guest.com",
+      userName: "Guest User",
+      role: "guest",
+    },
+    getJwtSecret(),
+    { expiresIn: REFRESH_TOKEN_TTL_SECONDS },
+  );
+
   return {
     accessToken,
     user: { name: "Guest User", email: "guest@guest.com", role: "guest" },
@@ -123,7 +146,7 @@ export function issueGuestAccessToken(): { accessToken: string; user: SessionUse
 
 export async function rotateRefreshToken(
   rawRefreshToken: string,
-  options?: { userAgent?: string }
+  options?: { userAgent?: string },
 ): Promise<IssuedSession | null> {
   if (!rawRefreshToken) return null;
 
@@ -150,14 +173,17 @@ export async function rotateRefreshToken(
       email: user.email,
       role: user.role,
     },
-    options
+    options,
   );
 }
 
-export async function revokeRefreshToken(rawRefreshToken: string | null): Promise<void> {
+export async function revokeRefreshToken(
+  rawRefreshToken: string | null,
+): Promise<void> {
   if (!rawRefreshToken) return;
   const tokenHash = hashRefreshToken(rawRefreshToken);
   const db = await getDb();
+
   await db.collection("users").updateOne(
     { "refreshTokens.tokenHash": tokenHash },
     {
@@ -166,18 +192,22 @@ export async function revokeRefreshToken(rawRefreshToken: string | null): Promis
         updated_at: new Date(),
       },
     },
-    { arrayFilters: [{ "t.tokenHash": tokenHash }] }
+    { arrayFilters: [{ "t.tokenHash": tokenHash }] },
   );
 }
 
 export async function revokeAllRefreshTokens(userId: string): Promise<void> {
   if (!userId || userId === "guest" || userId.startsWith("guest_")) return;
+
   try {
     const db = await getDb();
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: { refreshTokens: [], updated_at: new Date() } }
-    );
+
+    await db
+      .collection("users")
+      .updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { refreshTokens: [], updated_at: new Date() } },
+      );
   } catch {
     /* ignore invalid id */
   }

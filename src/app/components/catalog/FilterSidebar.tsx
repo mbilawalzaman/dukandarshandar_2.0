@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Box,
   Typography,
@@ -20,6 +21,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import TuneIcon from "@mui/icons-material/Tune";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+
 import { BRAND } from "@/lib/uiBrand";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
@@ -34,7 +36,10 @@ export interface FilterState {
 
 interface FilterSidebarProps {
   filters: FilterState;
-  onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  onFilterChange: <K extends keyof FilterState>(
+    key: K,
+    value: FilterState[K],
+  ) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
   categoryCounts: Record<string, number>;
@@ -52,10 +57,19 @@ export default function FilterSidebar({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header with Title and Reset */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TuneIcon sx={{ color: BRAND.navy, fontSize: 22 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND.navy, fontSize: "1.1rem" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, color: BRAND.navy, fontSize: "1.1rem" }}
+          >
             Filter Products
           </Typography>
         </Box>
@@ -80,7 +94,10 @@ export default function FilterSidebar({
 
       {/* Live Search */}
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}
+        >
           Search
         </Typography>
         <TextField
@@ -97,7 +114,10 @@ export default function FilterSidebar({
             ),
             endAdornment: searchInput ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => onFilterChange("searchInput", "")}>
+                <IconButton
+                  size="small"
+                  onClick={() => onFilterChange("searchInput", "")}
+                >
                   <ClearIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
@@ -108,7 +128,10 @@ export default function FilterSidebar({
 
       {/* Categories with Count Badges */}
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}
+        >
           Categories
         </Typography>
         <List dense disablePadding sx={{ borderRadius: 2, overflow: "hidden" }}>
@@ -129,18 +152,29 @@ export default function FilterSidebar({
           >
             <ListItemText
               primary="All Categories"
-              primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: category === "all" ? 700 : 500 }}
+              primaryTypographyProps={{
+                fontSize: "0.9rem",
+                fontWeight: category === "all" ? 700 : 500,
+              }}
             />
             <Chip
               label={categoryCounts.all || 0}
               size="small"
-              sx={{ height: 20, fontSize: "0.75rem", backgroundColor: category === "all" ? BRAND.gold : "var(--theme-bg-default, #f1f5f9)" }}
+              sx={{
+                height: 20,
+                fontSize: "0.75rem",
+                backgroundColor:
+                  category === "all"
+                    ? BRAND.gold
+                    : "var(--theme-bg-default, #f1f5f9)",
+              }}
             />
           </ListItemButton>
 
           {PRODUCT_CATEGORIES.map((cat) => {
             const isSelected = category.toLowerCase() === cat.toLowerCase();
             const count = categoryCounts[cat] || 0;
+
             return (
               <ListItemButton
                 key={cat}
@@ -160,12 +194,21 @@ export default function FilterSidebar({
               >
                 <ListItemText
                   primary={cat}
-                  primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isSelected ? 700 : 500 }}
+                  primaryTypographyProps={{
+                    fontSize: "0.9rem",
+                    fontWeight: isSelected ? 700 : 500,
+                  }}
                 />
                 <Chip
                   label={count}
                   size="small"
-                  sx={{ height: 20, fontSize: "0.75rem", backgroundColor: isSelected ? BRAND.gold : "var(--theme-bg-default, #f1f5f9)" }}
+                  sx={{
+                    height: 20,
+                    fontSize: "0.75rem",
+                    backgroundColor: isSelected
+                      ? BRAND.gold
+                      : "var(--theme-bg-default, #f1f5f9)",
+                  }}
                 />
               </ListItemButton>
             );
@@ -175,7 +218,10 @@ export default function FilterSidebar({
 
       {/* Price Range & Quick Presets */}
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: "#1e293b" }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, mb: 1.5, color: "#1e293b" }}
+        >
           Price Range (PKR)
         </Typography>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
@@ -214,7 +260,12 @@ export default function FilterSidebar({
               clickable
               variant={maxPrice === preset.max ? "filled" : "outlined"}
               color={maxPrice === preset.max ? "primary" : "default"}
-              onClick={() => onFilterChange("maxPrice", maxPrice === preset.max ? "" : preset.max)}
+              onClick={() =>
+                onFilterChange(
+                  "maxPrice",
+                  maxPrice === preset.max ? "" : preset.max,
+                )
+              }
               sx={{ fontSize: "0.75rem" }}
             />
           ))}
@@ -223,7 +274,10 @@ export default function FilterSidebar({
 
       {/* Availability */}
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, color: "#1e293b" }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, mb: 0.5, color: "#1e293b" }}
+        >
           Availability
         </Typography>
         <FormControlLabel

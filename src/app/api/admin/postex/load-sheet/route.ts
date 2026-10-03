@@ -1,19 +1,22 @@
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { requireAdmin } from "@/lib/auth";
 import PostExService from "@/services/postex.service.js";
 
 export async function POST(req: NextRequest) {
   try {
     const auth = requireAdmin(req);
+
     if (!auth.ok) return auth.response;
 
-    const { trackingNumbers, pickupAddress, pickupAddressCode } = await req.json();
+    const { trackingNumbers, pickupAddress, pickupAddressCode } =
+      await req.json();
 
     if (!Array.isArray(trackingNumbers) || trackingNumbers.length === 0) {
       return NextResponse.json(
         { success: false, error: "trackingNumbers array is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,9 +35,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const err = error as { message?: string; statusCode?: number };
+
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to generate Load Sheet PDF" },
-      { status: err.statusCode || 500 }
+      {
+        success: false,
+        error: err.message || "Failed to generate Load Sheet PDF",
+      },
+      { status: err.statusCode || 500 },
     );
   }
 }

@@ -1,5 +1,6 @@
 import type { Document } from "mongoose";
 import mongoose, { Schema } from "mongoose";
+
 import type { ProductImage } from "@/lib/productImages";
 
 export interface IProduct extends Document {
@@ -27,12 +28,14 @@ const ProductSchema: Schema = new Schema(
     quantity: { type: Number, required: true },
     ratings: [Number], // Store all user ratings
     rating: { type: Number, default: 0 },
-    description: {type: String, required: true},
+    description: { type: String, required: true },
     image: { type: String, required: true },
-    images: [{
-      url: { type: String, required: true },
-      publicId: { type: String, default: "" },
-    }],
+    images: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String, default: "" },
+      },
+    ],
     image_public_id: { type: String, default: "" },
 
     status: { type: String, default: "active" },
@@ -42,7 +45,8 @@ const ProductSchema: Schema = new Schema(
     created_by: { type: String, default: null },
     updated_by: { type: String, default: null },
   },
-  { timestamps: true } // Auto-manages createdAt and updatedAt
+  { timestamps: true }, // Auto-manages createdAt and updatedAt
 );
 
-export default mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
+export default mongoose.models.Product ||
+  mongoose.model<IProduct>("Product", ProductSchema);

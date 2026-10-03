@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
+
 import {
   Paper,
   Typography,
@@ -16,12 +18,16 @@ import {
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SaveIcon from "@mui/icons-material/Save";
+
 import UserAvatar from "@/app/components/ui/UserAvatar";
 import PakistanLocationFields from "@/app/components/checkout/PakistanLocationFields";
 import { authFetch, persistAccessToken } from "@/lib/authFetch";
 import { BRAND } from "@/lib/uiBrand";
 import { isValidCustomerEmail } from "@/lib/userDisplay";
-import type { ProfileData, ProfileEditorProps } from "@/types/apps/profileTypes";
+import type {
+  ProfileData,
+  ProfileEditorProps,
+} from "@/types/apps/profileTypes";
 
 export type { ProfileData };
 
@@ -35,6 +41,7 @@ export default function ProfileEditor({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [profile, setProfile] = useState<ProfileData | null>(null);
+
   const [form, setForm] = useState({
     name: "",
     storeName: "",
@@ -51,23 +58,40 @@ export default function ProfileEditor({
   const loadProfile = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
       const res = await authFetch("/api/profile");
       const data = await res.json();
+
       if (res.status === 401) {
         router.replace(`/login?next=${encodeURIComponent(loginNextPath)}`);
+
         return;
       }
+
       if (res.status === 403) {
-        setError(data.message || "Please sign in with a full account to manage your profile.");
+        setError(
+          data.message ||
+            "Please sign in with a full account to manage your profile.",
+        );
         setProfile(null);
+
         return;
       }
+
       if (!res.ok || !data.success) {
         setError(data.message || "Failed to load profile");
+
         return;
       }
-      const p = data.profile as ProfileData & { storeName?: string; province?: string; area?: string; storeLogo?: string };
+
+      const p = data.profile as ProfileData & {
+        storeName?: string;
+        province?: string;
+        area?: string;
+        storeLogo?: string;
+      };
+
       setProfile(p);
       setForm({
         name: p.name || "",
@@ -107,19 +131,24 @@ export default function ProfileEditor({
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
+
     if (file.size > 3 * 1024 * 1024) {
       setError("Image must be under 3MB");
+
       return;
     }
+
     const reader = new FileReader();
+
     reader.onload = () => {
       setForm((prev) => ({ ...prev, image: String(reader.result || "") }));
       setSuccess("");
     };
+
     reader.readAsDataURL(file);
   };
-
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,19 +157,29 @@ export default function ProfileEditor({
 
     if (!form.name.trim()) {
       setError("Name is required");
+
       return;
     }
+
     if (!isValidCustomerEmail(form.email)) {
       setError("Please enter a valid email address");
+
       return;
     }
 
     const normalizedEmail = form.email.trim().toLowerCase();
+
     const emailChangeRequested = Boolean(
-      profile && !profile.needsEmail && normalizedEmail !== String(profile.email || "").trim().toLowerCase()
+      profile &&
+      !profile.needsEmail &&
+      normalizedEmail !==
+        String(profile.email || "")
+          .trim()
+          .toLowerCase(),
     );
 
     setSaving(true);
+
     try {
       const res = await authFetch("/api/profile", {
         method: "PUT",
@@ -157,15 +196,26 @@ export default function ProfileEditor({
           ...(profile?.role === "admin" ? { storeLogo: form.storeLogo } : {}),
         }),
       });
+
       const data = await res.json();
+
       if (!res.ok || !data.success) {
         setError(data.message || "Failed to save profile");
+
         return;
       }
+
       if (data.token) {
         persistAccessToken(data.token);
       }
-      const p = data.profile as ProfileData & { storeName?: string; province?: string; area?: string; storeLogo?: string };
+
+      const p = data.profile as ProfileData & {
+        storeName?: string;
+        province?: string;
+        area?: string;
+        storeLogo?: string;
+      };
+
       setProfile(p);
       setForm({
         name: p.name || "",
@@ -182,18 +232,31 @@ export default function ProfileEditor({
       if (p.image) localStorage.setItem("userImage", p.image);
       else localStorage.removeItem("userImage");
       window.dispatchEvent(new Event("authChange"));
+
       if (emailChangeRequested) {
         const verification = await authFetch("/api/profile/verify-email", {
           method: "POST",
-          body: JSON.stringify({ action: "request", newEmail: normalizedEmail }),
+          body: JSON.stringify({
+            action: "request",
+            newEmail: normalizedEmail,
+          }),
         });
+
         const verificationData = await verification.json();
+
         if (!verification.ok || !verificationData.success) {
-          setError(verificationData.message || "Profile was saved, but we could not send the verification email.");
+          setError(
+            verificationData.message ||
+              "Profile was saved, but we could not send the verification email.",
+          );
+
           return;
         }
+
         setForm((prev) => ({ ...prev, email: p.email || "" }));
-        setSuccess("Profile saved. Check your new email address to confirm the change.");
+        setSuccess(
+          "Profile saved. Check your new email address to confirm the change.",
+        );
       } else {
         setSuccess("Profile saved");
       }
@@ -219,7 +282,9 @@ export default function ProfileEditor({
         <Box sx={{ mt: 2 }}>
           <Button
             variant="contained"
-            onClick={() => router.push(`/login?next=${encodeURIComponent(loginNextPath)}`)}
+            onClick={() =>
+              router.push(`/login?next=${encodeURIComponent(loginNextPath)}`)
+            }
             sx={{ backgroundColor: BRAND.gold, color: BRAND.navy }}
           >
             Log in
@@ -233,12 +298,21 @@ export default function ProfileEditor({
     <Paper
       component="form"
       onSubmit={handleSave}
-      sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3, border: "1px solid #e2e8f0" }}
+      sx={{
+        p: { xs: 2.5, sm: 4 },
+        borderRadius: 3,
+        border: "1px solid #e2e8f0",
+      }}
       elevation={0}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <UserAvatar
-          user={{ name: form.name, email: form.email, image: form.image, role: profile?.role }}
+          user={{
+            name: form.name,
+            email: form.email,
+            image: form.image,
+            role: profile?.role,
+          }}
           size={72}
         />
         <Box>
@@ -247,7 +321,11 @@ export default function ProfileEditor({
           </Typography>
           <Box sx={{ display: "flex", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
             <Chip size="small" label={profile?.role || "user"} />
-            <Chip size="small" variant="outlined" label={profile?.authProvider || "password"} />
+            <Chip
+              size="small"
+              variant="outlined"
+              label={profile?.authProvider || "password"}
+            />
           </Box>
         </Box>
       </Box>
@@ -270,7 +348,14 @@ export default function ProfileEditor({
       </Typography>
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth required name="name" label="Full name" value={form.name} onChange={handleChange} />
+          <TextField
+            fullWidth
+            required
+            name="name"
+            label="Full name"
+            value={form.name}
+            onChange={handleChange}
+          />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
@@ -289,9 +374,19 @@ export default function ProfileEditor({
           />
         </Grid>
         <Grid item xs={12}>
-          <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} sx={{ textTransform: "none" }}>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<CloudUploadIcon />}
+            sx={{ textTransform: "none" }}
+          >
             Upload profile photo
-            <input type="file" hidden accept="image/*" onChange={handleImageSelect} />
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={handleImageSelect}
+            />
           </Button>
           {form.image && (
             <Button
@@ -312,7 +407,13 @@ export default function ProfileEditor({
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12}>
-              <TextField fullWidth name="phone" label="Phone Number" value={form.phone} onChange={handleChange} />
+              <TextField
+                fullWidth
+                name="phone"
+                label="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+              />
             </Grid>
             <Grid item xs={12}>
               <PakistanLocationFields
@@ -333,7 +434,9 @@ export default function ProfileEditor({
       <Button
         type="submit"
         variant="contained"
-        startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+        startIcon={
+          saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />
+        }
         disabled={saving}
         sx={{
           textTransform: "none",

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, Suspense } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+
 import {
   Container,
   Card,
@@ -19,6 +21,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import KeyIcon from "@mui/icons-material/Key";
+
 import { BRAND } from "@/lib/uiBrand";
 
 function ResetPasswordForm() {
@@ -40,21 +43,25 @@ function ResetPasswordForm() {
 
     if (!token || !email) {
       setError("Invalid or missing password reset link parameters.");
+
       return;
     }
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters long.");
+
       return;
     }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+
       return;
     }
 
     try {
       setLoading(true);
+
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,6 +69,7 @@ function ResetPasswordForm() {
       });
 
       const data = await res.json();
+
       if (res.ok && data.success) {
         setSuccess(true);
         setTimeout(() => {
@@ -79,7 +87,15 @@ function ResetPasswordForm() {
 
   return (
     <Container maxWidth="xs" sx={{ mt: 10, mb: 10 }}>
-      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }} elevation={0}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+        }}
+        elevation={0}
+      >
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             <Box
@@ -87,7 +103,8 @@ function ResetPasswordForm() {
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                backgroundColor: "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
+                backgroundColor:
+                  "var(--theme-highlight-badge-bg, rgba(254,190,76,0.15))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -97,10 +114,19 @@ function ResetPasswordForm() {
             </Box>
           </Box>
 
-          <Typography variant="h5" align="center" sx={{ fontWeight: 700, mb: 1, color: BRAND.navy }}>
+          <Typography
+            variant="h5"
+            align="center"
+            sx={{ fontWeight: 700, mb: 1, color: BRAND.navy }}
+          >
             Set New Password
           </Typography>
-          <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            variant="body2"
+            align="center"
+            color="text.secondary"
+            sx={{ mb: 3 }}
+          >
             Enter a new password for account: <strong>{email}</strong>
           </Typography>
 
@@ -122,7 +148,10 @@ function ResetPasswordForm() {
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword((v) => !v)} edge="end">
+                        <IconButton
+                          onClick={() => setShowPassword((v) => !v)}
+                          edge="end"
+                        >
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
                       </InputAdornment>
@@ -161,14 +190,26 @@ function ResetPasswordForm() {
                     "&:hover": { backgroundColor: BRAND.goldHover },
                   }}
                 >
-                  {loading ? <CircularProgress size={22} color="inherit" /> : "Save New Password"}
+                  {loading ? (
+                    <CircularProgress size={22} color="inherit" />
+                  ) : (
+                    "Save New Password"
+                  )}
                 </Button>
               </Box>
             </form>
           )}
 
           <Box sx={{ mt: 3, textAlign: "center" }}>
-            <Link href="/login" style={{ color: BRAND.navy, fontWeight: 600, fontSize: "0.9rem", textDecoration: "none" }}>
+            <Link
+              href="/login"
+              style={{
+                color: BRAND.navy,
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                textDecoration: "none",
+              }}
+            >
               Return to Login
             </Link>
           </Box>

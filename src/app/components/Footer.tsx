@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
+import Link from "next/link";
+
 import {
   Box,
   Container,
@@ -14,7 +17,7 @@ import {
 import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import YouTubeIcon from "@mui/icons-material/YouTube";
-import Link from "next/link";
+
 import { useCart } from "@/app/providers/CartProvider";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
 
@@ -30,14 +33,18 @@ export default function Footer() {
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+
     try {
       setSubmitting(true);
+
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         toast("Thanks for subscribing!");
         setEmail("");
@@ -52,24 +59,59 @@ export default function Footer() {
   };
 
   return (
-    <Box component="footer" sx={{ mt: 8, backgroundColor: "var(--theme-bg-footer, #0f172a)", color: "var(--theme-footer-text, #fff)", transition: "background-color 0.3s ease" }}>
+    <Box
+      component="footer"
+      sx={{
+        mt: 8,
+        backgroundColor: "var(--theme-bg-footer, #0f172a)",
+        color: "var(--theme-footer-text, #fff)",
+        transition: "background-color 0.3s ease",
+      }}
+    >
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
               Visit our website and enjoy fast shipping
             </Typography>
-            <Typography variant="body2" sx={{ color: "var(--theme-footer-text, #fff)", mb: 2 }}>
-              Discover stationery, craft supplies, and hassle free shopping{storeName ? ` at ${storeName}` : ""}.
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--theme-footer-text, #fff)", mb: 2 }}
+            >
+              Discover stationery, craft supplies, and hassle free shopping
+              {storeName ? ` at ${storeName}` : ""}.
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center", mb: 1.5 }}>
-              <MuiLink component={Link} href="/shop" color="inherit" underline="hover">
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
+                mb: 1.5,
+              }}
+            >
+              <MuiLink
+                component={Link}
+                href="/shop"
+                color="inherit"
+                underline="hover"
+              >
                 Shop
               </MuiLink>
-              <MuiLink component={Link} href="/about" color="inherit" underline="hover">
+              <MuiLink
+                component={Link}
+                href="/about"
+                color="inherit"
+                underline="hover"
+              >
                 About
               </MuiLink>
-              <MuiLink component={Link} href="/contact" color="inherit" underline="hover">
+              <MuiLink
+                component={Link}
+                href="/contact"
+                color="inherit"
+                underline="hover"
+              >
                 Contact
               </MuiLink>
 
@@ -78,11 +120,21 @@ export default function Footer() {
                 {social.instagram && (
                   <IconButton
                     component="a"
-                    href={social.instagram.startsWith("http") ? social.instagram : `https://${social.instagram}`}
+                    href={
+                      social.instagram.startsWith("http")
+                        ? social.instagram
+                        : `https://${social.instagram}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{
+                      color: "var(--theme-footer-text, #fff)",
+                      "&:hover": {
+                        color: "var(--theme-footer-text, #fff)",
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                      },
+                    }}
                   >
                     <InstagramIcon fontSize="small" />
                   </IconButton>
@@ -90,11 +142,21 @@ export default function Footer() {
                 {social.facebook && (
                   <IconButton
                     component="a"
-                    href={social.facebook.startsWith("http") ? social.facebook : `https://${social.facebook}`}
+                    href={
+                      social.facebook.startsWith("http")
+                        ? social.facebook
+                        : `https://${social.facebook}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{
+                      color: "var(--theme-footer-text, #fff)",
+                      "&:hover": {
+                        color: "var(--theme-footer-text, #fff)",
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                      },
+                    }}
                   >
                     <FacebookIcon fontSize="small" />
                   </IconButton>
@@ -102,11 +164,21 @@ export default function Footer() {
                 {social.youtube && (
                   <IconButton
                     component="a"
-                    href={social.youtube.startsWith("http") ? social.youtube : `https://${social.youtube}`}
+                    href={
+                      social.youtube.startsWith("http")
+                        ? social.youtube
+                        : `https://${social.youtube}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
-                    sx={{ color: "var(--theme-footer-text, #fff)", "&:hover": { color: "var(--theme-footer-text, #fff)", backgroundColor: "rgba(255,255,255,0.1)" } }}
+                    sx={{
+                      color: "var(--theme-footer-text, #fff)",
+                      "&:hover": {
+                        color: "var(--theme-footer-text, #fff)",
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                      },
+                    }}
                   >
                     <YouTubeIcon fontSize="small" />
                   </IconButton>
@@ -115,23 +187,55 @@ export default function Footer() {
             </Box>
 
             {/* Customer Policy Pages */}
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", fontSize: "0.825rem", color: "var(--theme-footer-text, #fff)" }}>
-              <MuiLink component={Link} href="/privacy-policy" color="inherit" underline="hover">
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                fontSize: "0.825rem",
+                color: "var(--theme-footer-text, #fff)",
+              }}
+            >
+              <MuiLink
+                component={Link}
+                href="/privacy-policy"
+                color="inherit"
+                underline="hover"
+              >
                 Privacy Policy
               </MuiLink>
-              <MuiLink component={Link} href="/terms-of-service" color="inherit" underline="hover">
+              <MuiLink
+                component={Link}
+                href="/terms-of-service"
+                color="inherit"
+                underline="hover"
+              >
                 Terms of Service
               </MuiLink>
-              <MuiLink component={Link} href="/shipping-policy" color="inherit" underline="hover">
+              <MuiLink
+                component={Link}
+                href="/shipping-policy"
+                color="inherit"
+                underline="hover"
+              >
                 Shipping Policy
               </MuiLink>
-              <MuiLink component={Link} href="/returns-and-refunds" color="inherit" underline="hover">
+              <MuiLink
+                component={Link}
+                href="/returns-and-refunds"
+                color="inherit"
+                underline="hover"
+              >
                 Returns &amp; Refunds
               </MuiLink>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Box component="form" onSubmit={handleSubscribe} sx={{ display: "flex", width: "100%" }}>
+            <Box
+              component="form"
+              onSubmit={handleSubscribe}
+              sx={{ display: "flex", width: "100%" }}
+            >
               <TextField
                 fullWidth
                 type="email"
@@ -146,7 +250,10 @@ export default function Footer() {
                   borderBottomLeftRadius: "var(--theme-button-radius, 6px)",
                   "& fieldset": { border: "none" },
                   "& input": { color: "text.primary" },
-                  "& input::placeholder": { color: "text.secondary", opacity: 1 },
+                  "& input::placeholder": {
+                    color: "text.secondary",
+                    opacity: 1,
+                  },
                 }}
               />
               <Button
@@ -154,12 +261,16 @@ export default function Footer() {
                 variant="contained"
                 disabled={submitting}
                 sx={{
-                  borderRadius: "0 var(--theme-button-radius, 6px) var(--theme-button-radius, 6px) 0",
+                  borderRadius:
+                    "0 var(--theme-button-radius, 6px) var(--theme-button-radius, 6px) 0",
                   px: 3,
                   whiteSpace: "nowrap",
                   backgroundColor: "var(--theme-footer-text, #fff)",
                   color: "var(--theme-bg-footer, #0f172a)",
-                  "&:hover": { backgroundColor: "var(--theme-footer-text, #fff)", filter: "brightness(0.9)" },
+                  "&:hover": {
+                    backgroundColor: "var(--theme-footer-text, #fff)",
+                    filter: "brightness(0.9)",
+                  },
                 }}
               >
                 Subscribe
@@ -167,7 +278,14 @@ export default function Footer() {
             </Box>
           </Grid>
         </Grid>
-        <Typography variant="caption" sx={{ display: "block", mt: 4, color: "var(--theme-footer-text, #fff)" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mt: 4,
+            color: "var(--theme-footer-text, #fff)",
+          }}
+        >
           © {new Date().getFullYear()} {storeName}. All rights reserved.
         </Typography>
       </Container>

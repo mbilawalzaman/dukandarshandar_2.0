@@ -1,8 +1,12 @@
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { requireAdmin } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import type { AdminPaymentRecord, AdminPaymentStats } from "@/types/apps/adminDashboardTypes";
+import type {
+  AdminPaymentRecord,
+  AdminPaymentStats,
+} from "@/types/apps/adminDashboardTypes";
 
 type OrderDoc = {
   _id: { toString(): string };
@@ -19,6 +23,7 @@ type OrderDoc = {
 
 function toIso(value?: Date | string) {
   if (!value) return undefined;
+
   return new Date(value).toISOString();
 }
 
@@ -29,18 +34,33 @@ function isOnlineMethod(method?: string) {
 function computeStats(orders: OrderDoc[]): AdminPaymentStats {
   const onlineOrders = orders.filter((o) => isOnlineMethod(o.payment_method));
   const paidOnline = onlineOrders.filter((o) => o.payment_status === "paid");
+
   const failed = onlineOrders.filter(
-    (o) => o.status === "payment_failed" || o.payment_status === "failed"
-  );
-  const awaiting = onlineOrders.filter((o) => o.status === "pending_payment");
-  const codOrders = orders.filter(
-    (o) => (o.payment_method || "cod") === "cod" && o.status === "delivered"
+    (o) => o.status === "payment_failed" || o.payment_status === "failed",
   );
 
-  const onlineRevenue = paidOnline.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-  const codRevenue = codOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+  const awaiting = onlineOrders.filter((o) => o.status === "pending_payment");
+
+  const codOrders = orders.filter(
+    (o) => (o.payment_method || "cod") === "cod" && o.status === "delivered",
+  );
+
+  const onlineRevenue = paidOnline.reduce(
+    (sum, o) => sum + Number(o.total_amount || 0),
+    0,
+  );
+
+  const codRevenue = codOrders.reduce(
+    (sum, o) => sum + Number(o.total_amount || 0),
+    0,
+  );
+
   const onlineAttempts = paidOnline.length + failed.length + awaiting.length;
-  const successRate = onlineAttempts > 0 ? Math.round((paidOnline.length / onlineAttempts) * 100) : 0;
+
+  const successRate =
+    onlineAttempts > 0
+      ? Math.round((paidOnline.length / onlineAttempts) * 100)
+      : 0;
 
   return {
     onlineRevenue,
@@ -72,6 +92,7 @@ function mapToPaymentRecord(order: OrderDoc): AdminPaymentRecord {
 export async function GET(req: NextRequest) {
   try {
     const admin = requireAdmin(req);
+
     if (!admin.ok) return admin.response;
 
     const { searchParams } = new URL(req.url);
@@ -81,7 +102,12 @@ export async function GET(req: NextRequest) {
     const to = searchParams.get("to");
 
     const db = await getDb();
-    const allOrders = (await db.collection("orders").find({}).sort({ created_at: -1 }).toArray()) as OrderDoc[];
+
+    const allOrders = (await db
+      .collection("orders")
+      .find({})
+      .sort({ created_at: -1 })
+      .toArray()) as OrderDoc[];
 
     const stats = computeStats(allOrders);
 
@@ -90,7 +116,9 @@ export async function GET(req: NextRequest) {
     if (method === "card") {
       records = records.filter((r) => r.payment_method === "card");
     } else if (method === "cod") {
-      records = records.filter((r) => r.payment_method === "cod" || !r.payment_method);
+      records = records.filter(
+        (r) => r.payment_method === "cod" || !r.payment_method,
+      );
     } else if (method === "online") {
       records = records.filter((r) => isOnlineMethod(r.payment_method));
     }
@@ -99,27 +127,34 @@ export async function GET(req: NextRequest) {
       records = records.filter((r) => r.payment_status === "paid");
     } else if (status === "failed") {
       records = records.filter(
-        (r) => r.order_status === "payment_failed" || r.payment_status === "failed"
+        (r) =>
+          r.order_status === "payment_failed" || r.payment_status === "failed",
       );
     } else if (status === "awaiting") {
       records = records.filter((r) => r.order_status === "pending_payment");
     } else if (status === "cod") {
-      records = records.filter((r) => r.payment_method === "cod" || !r.payment_method);
+      records = records.filter(
+        (r) => r.payment_method === "cod" || !r.payment_method,
+      );
     }
 
     if (from) {
       const fromDate = new Date(from);
+
       records = records.filter((r) => {
         const date = r.paid_at || r.created_at;
+
         return date ? new Date(date) >= fromDate : false;
       });
     }
 
     if (to) {
       const toDate = new Date(to);
+
       toDate.setHours(23, 59, 59, 999);
       records = records.filter((r) => {
         const date = r.paid_at || r.created_at;
+
         return date ? new Date(date) <= toDate : false;
       });
     }
@@ -127,6 +162,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, stats, payments: records });
   } catch (error) {
     console.error("Error in admin payments API:", error);
-    return NextResponse.json({ success: false, message: "Failed to fetch payment records" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch payment records" },
+      { status: 500 },
+    );
   }
 }

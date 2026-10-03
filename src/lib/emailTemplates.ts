@@ -14,6 +14,7 @@ function escapeHtml(value: string) {
 
 function layout(title: string, body: string, shopName = "") {
   const store = escapeHtml(shopName);
+
   return `
   <div style="font-family: Poppins, Arial, sans-serif; background:#f8fafc; padding:24px;">
     <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden;">
@@ -31,33 +32,40 @@ function layout(title: string, body: string, shopName = "") {
   </div>`;
 }
 
-export function contactShopEmail(input: { name: string; email: string; subject?: string; message: string }) {
+export function contactShopEmail(input: {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+}) {
   return layout(
     "New contact message",
     `<p><strong>${escapeHtml(input.name)}</strong> (${escapeHtml(input.email)}) wrote:</p>
      <p><strong>Subject:</strong> ${escapeHtml(input.subject || "General enquiry")}</p>
-     <p>${escapeHtml(input.message).replace(/\n/g, "<br/>")}</p>`
+     <p>${escapeHtml(input.message).replace(/\n/g, "<br/>")}</p>`,
   );
 }
 
 export function contactCustomerEmail(name: string, shopName = "") {
   const store = escapeHtml(shopName);
+
   return layout(
     "We received your message",
     `<p>Hi ${escapeHtml(name)},</p>
      <p>Thanks for contacting ${store || "us"}. We have your message and will reply as soon as we can.</p>
      <p>Warm regards,<br/>The ${store || "Support"} team</p>`,
-    shopName
+    shopName,
   );
 }
 
 export function newsletterWelcomeEmail(shopName = "") {
   const store = escapeHtml(shopName);
+
   return layout(
     "Welcome to the list",
     `<p>You are subscribed to ${store || "our store"} updates and news.</p>
      <p>We will only send useful notes, never spam.</p>`,
-    shopName
+    shopName,
   );
 }
 
@@ -68,7 +76,11 @@ export function orderConfirmationEmail(input: {
   total: number;
   subtotal?: number;
   shipping?: number;
-  discounts?: Array<{ name?: string; code?: string | null; amount: number }> | null;
+  discounts?: Array<{
+    name?: string;
+    code?: string | null;
+    amount: number;
+  }> | null;
   province?: string;
   city?: string;
   area?: string;
@@ -76,17 +88,24 @@ export function orderConfirmationEmail(input: {
   shopName?: string;
 }) {
   const storeName = input.shopName || "";
+
   const rows = input.items
     .map(
       (item) =>
-          `<tr>
+        `<tr>
           <td style="padding:8px 0; border-bottom:1px solid #e2e8f0;">${escapeHtml(item.name)} × ${item.quantity}</td>
           <td style="padding:8px 0; border-bottom:1px solid #e2e8f0; text-align:right;">PKR ${(item.price * item.quantity).toLocaleString()}</td>
-        </tr>`
+        </tr>`,
     )
     .join("");
 
-  const locationParts = [input.address, input.area, input.city, input.province].filter(Boolean);
+  const locationParts = [
+    input.address,
+    input.area,
+    input.city,
+    input.province,
+  ].filter(Boolean);
+
   const fullLocation = locationParts.map((p) => escapeHtml(p!)).join(", ");
 
   return layout(
@@ -97,12 +116,15 @@ export function orderConfirmationEmail(input: {
      ${typeof input.shipping === "number" ? `<p style="margin:12px 0 0;">Delivery: PKR ${input.shipping.toLocaleString()}</p>` : ""}
      ${(input.discounts || [])
        .filter((d) => d.amount > 0)
-       .map((d) => `<p style="margin:4px 0 0; color:#166534;">${escapeHtml(d.code || d.name || "Promotion")}: -PKR ${d.amount.toLocaleString()}</p>`)
+       .map(
+         (d) =>
+           `<p style="margin:4px 0 0; color:#166534;">${escapeHtml(d.code || d.name || "Promotion")}: -PKR ${d.amount.toLocaleString()}</p>`,
+       )
        .join("")}
      <p style="margin-top:12px;"><strong>Total: PKR ${input.total.toLocaleString()}</strong></p>
      ${fullLocation ? `<p>Shipping to: ${fullLocation}</p>` : ""}
      <p>We will email you again when the status changes.</p>`,
-    storeName
+    storeName,
   );
 }
 
@@ -119,22 +141,29 @@ export function orderStatusEmail(input: {
   const statusLower = input.status.toLowerCase();
   const courier = input.courier || "PostEx";
   const trackingNumber = input.trackingNumber || "";
-  const trackingUrl = input.trackingUrl || (trackingNumber ? `https://postex.pk/tracking?cn=${trackingNumber}` : "");
+
+  const trackingUrl =
+    input.trackingUrl ||
+    (trackingNumber ? `https://postex.pk/tracking?cn=${trackingNumber}` : "");
 
   if (statusLower === "ready to ship" || statusLower === "ready_to_ship") {
     return layout(
       `Order #${input.orderId} Ready to Ship 📦`,
       `<p>Hi <strong>${escapeHtml(input.name)}</strong>,</p>
        <p>Great news! Your package for order <strong>#${escapeHtml(input.orderId)}</strong> has been packed and assigned to <strong>${escapeHtml(courier)}</strong>${trackingNumber ? ` with tracking number: <span style="font-family: monospace; font-weight: bold; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${escapeHtml(trackingNumber)}</span>` : ""}.</p>
-       ${trackingNumber ? `
+       ${
+         trackingNumber
+           ? `
        <div style="background: #f1f5f9; border-left: 4px solid ${gold}; border-radius: 6px; padding: 16px; margin: 20px 0;">
          <p style="margin: 0 0 8px;"><strong>Courier Service:</strong> ${escapeHtml(courier)}</p>
          <p style="margin: 0 0 8px;"><strong>Tracking Number:</strong> ${escapeHtml(trackingNumber)}</p>
          ${trackingUrl ? `<p style="margin: 12px 0 0;"><a href="${trackingUrl}" style="background: ${navy}; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;" target="_blank">Track Package Live &rarr;</a></p>` : ""}
-       </div>` : ""}
+       </div>`
+           : ""
+       }
        <p style="font-size: 14px; color: #64748b;">You will receive another update as soon as PostEx picks up your package for transit.</p>
        <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
-      storeName
+      storeName,
     );
   }
 
@@ -143,15 +172,19 @@ export function orderStatusEmail(input: {
       `Order #${input.orderId} Dispatched 🚚`,
       `<p>Hi <strong>${escapeHtml(input.name)}</strong>,</p>
        <p>Your parcel for order <strong>#${escapeHtml(input.orderId)}</strong> has been picked up by <strong>${escapeHtml(courier)}</strong> and is officially on its way to you!</p>
-       ${trackingNumber ? `
+       ${
+         trackingNumber
+           ? `
        <div style="background: #f1f5f9; border-left: 4px solid #10b981; border-radius: 6px; padding: 16px; margin: 20px 0;">
          <p style="margin: 0 0 8px;"><strong>Courier Service:</strong> ${escapeHtml(courier)}</p>
          <p style="margin: 0 0 8px;"><strong>Tracking Number:</strong> <span style="font-family: monospace; font-weight: bold; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${escapeHtml(trackingNumber)}</span></p>
          ${trackingUrl ? `<p style="margin: 12px 0 0;"><a href="${trackingUrl}" style="background: #10b981; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;" target="_blank">Track Live Shipment &rarr;</a></p>` : ""}
-       </div>` : ""}
+       </div>`
+           : ""
+       }
        <p style="font-size: 14px; color: #64748b;">Please ensure someone is available at the delivery address to receive the parcel.</p>
        <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
-      storeName
+      storeName,
     );
   }
 
@@ -169,11 +202,16 @@ export function orderStatusEmail(input: {
     `<p>Hi ${escapeHtml(input.name)},</p>
      <p>Your order <strong>#${escapeHtml(input.orderId)}</strong> is now <strong>${escapeHtml(input.status)}</strong>.</p>
      <p>Thank you for shopping with ${escapeHtml(storeName || "us")}.</p>`,
-    storeName
+    storeName,
   );
 }
 
-export function orderDeliveredEmail(input: { name: string; orderId: string; fullOrderId: string; shopName?: string }) {
+export function orderDeliveredEmail(input: {
+  name: string;
+  orderId: string;
+  fullOrderId: string;
+  shopName?: string;
+}) {
   const storeName = input.shopName || "";
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const reviewUrl = `${baseUrl}/orders?orderId=${encodeURIComponent(input.fullOrderId)}&action=review`;
@@ -191,7 +229,7 @@ export function orderDeliveredEmail(input: { name: string; orderId: string; full
      <p style="font-size:13px; color:#64748b;">If the button above does not work, copy and paste this link into your browser:<br/>
      <a href="${reviewUrl}" style="color:${navy};">${reviewUrl}</a></p>
      <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
-    storeName
+    storeName,
   );
 }
 
@@ -211,14 +249,23 @@ export function promoCodeEmailTemplate(input: {
   const storeName = input.shopName || "";
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const shopUrl = `${baseUrl}/checkout?promo=${encodeURIComponent(input.code)}`;
-  const discountValue = rewardValueLabel({ rewardType: input.type, rewardValue: input.value });
+
+  const discountValue = rewardValueLabel({
+    rewardType: input.type,
+    rewardValue: input.value,
+  });
+
   const validityText = input.endDate
     ? `valid until <strong>${escapeHtml(formatPromoDate(input.endDate))}</strong>`
     : `valid for <strong>${input.durationMonths === 1 || !input.durationMonths ? "1 month" : `${input.durationMonths} months`}</strong>`;
+
   const conditions = [
-    input.minOrderAmount ? `orders over Rs. ${Number(input.minOrderAmount).toLocaleString()}` : "",
+    input.minOrderAmount
+      ? `orders over Rs. ${Number(input.minOrderAmount).toLocaleString()}`
+      : "",
     input.minItemQuantity ? `${input.minItemQuantity}+ items` : "",
   ].filter(Boolean);
+
   const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
   const promoCode = escapeHtml(input.code);
 
@@ -240,11 +287,15 @@ export function promoCodeEmailTemplate(input: {
        </a>
      </div>
      <p>Warm regards,<br/>The ${escapeHtml(storeName || "Store")} Team</p>`,
-    storeName
+    storeName,
   );
 }
 
-export function passwordResetEmail(input: { name?: string; resetUrl: string; shopName?: string }) {
+export function passwordResetEmail(input: {
+  name?: string;
+  resetUrl: string;
+  shopName?: string;
+}) {
   const storeName = input.shopName || "Ecommerce Store";
   const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
 
@@ -260,11 +311,16 @@ export function passwordResetEmail(input: { name?: string; resetUrl: string; sho
      </div>
      <p style="font-size:13px; color:#64748b;">If you didn't request a password reset, you can safely ignore this email. Your password will not change.</p>
      <p style="font-size:12px; color:#94a3b8; word-break:break-all;">Direct link: ${input.resetUrl}</p>`,
-    storeName
+    storeName,
   );
 }
 
-export function emailVerificationEmail(input: { name?: string; verifyUrl: string; newEmail: string; shopName?: string }) {
+export function emailVerificationEmail(input: {
+  name?: string;
+  verifyUrl: string;
+  newEmail: string;
+  shopName?: string;
+}) {
   const storeName = input.shopName || "Ecommerce Store";
   const customerName = input.name ? escapeHtml(input.name) : "Valued Customer";
 
@@ -278,7 +334,6 @@ export function emailVerificationEmail(input: { name?: string; verifyUrl: string
          Verify Email Address
        </a>
       <p style="font-size:13px; color:#64748b;">If you did not request this email change, please secure your account immediately.</p>`,
-    storeName
+    storeName,
   );
 }
-

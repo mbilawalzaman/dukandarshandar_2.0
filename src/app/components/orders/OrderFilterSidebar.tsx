@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+
 import {
   Box,
   Typography,
@@ -23,6 +24,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+
 import { BRAND } from "@/lib/uiBrand";
 
 export interface OrderFilterState {
@@ -34,7 +36,10 @@ export interface OrderFilterState {
 
 interface OrderFilterSidebarProps {
   filters: OrderFilterState;
-  onFilterChange: <K extends keyof OrderFilterState>(key: K, value: OrderFilterState[K]) => void;
+  onFilterChange: <K extends keyof OrderFilterState>(
+    key: K,
+    value: OrderFilterState[K],
+  ) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
   statusCounts: Record<string, number>;
@@ -43,7 +48,11 @@ interface OrderFilterSidebarProps {
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Orders", color: "default" as const },
-  { value: "pending_payment", label: "Awaiting Payment", color: "warning" as const },
+  {
+    value: "pending_payment",
+    label: "Awaiting Payment",
+    color: "warning" as const,
+  },
   { value: "pending", label: "Confirmed", color: "success" as const },
   { value: "processing", label: "Processing", color: "info" as const },
   { value: "shipped", label: "Shipped", color: "primary" as const },
@@ -80,10 +89,19 @@ export default function OrderFilterSidebar({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TuneIcon sx={{ color: BRAND.navy, fontSize: 22 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND.navy, fontSize: "1.05rem" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, color: BRAND.navy, fontSize: "1.05rem" }}
+          >
             Filter Orders
           </Typography>
         </Box>
@@ -108,7 +126,17 @@ export default function OrderFilterSidebar({
 
       {/* Search Input */}
       <Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 700,
+            color: "#64748b",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            mb: 1,
+            display: "block",
+          }}
+        >
           Search Orders
         </Typography>
         <TextField
@@ -125,7 +153,10 @@ export default function OrderFilterSidebar({
             ),
             endAdornment: search ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => onFilterChange("search", "")}>
+                <IconButton
+                  size="small"
+                  onClick={() => onFilterChange("search", "")}
+                >
                   <ClearIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
@@ -143,13 +174,28 @@ export default function OrderFilterSidebar({
 
       {/* Status Filter */}
       <Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 700,
+            color: "#64748b",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            mb: 1,
+            display: "block",
+          }}
+        >
           Order Status
         </Typography>
-        <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <List
+          disablePadding
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
           {STATUS_OPTIONS.map((opt) => {
             const isSelected = status === opt.value;
-            const count = opt.value === "all" ? totalOrders : (statusCounts[opt.value] || 0);
+
+            const count =
+              opt.value === "all" ? totalOrders : statusCounts[opt.value] || 0;
 
             return (
               <ListItemButton
@@ -198,7 +244,15 @@ export default function OrderFilterSidebar({
       <Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
           <AccessTimeIcon sx={{ fontSize: 16, color: "#64748b" }} />
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: "#64748b",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
             Time Period
           </Typography>
         </Box>
@@ -211,7 +265,11 @@ export default function OrderFilterSidebar({
               key={opt.value}
               value={opt.value}
               control={<Radio size="small" sx={{ py: 0.5 }} />}
-              label={<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>{opt.label}</Typography>}
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+                  {opt.label}
+                </Typography>
+              }
             />
           ))}
         </RadioGroup>
@@ -223,7 +281,15 @@ export default function OrderFilterSidebar({
       <Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
           <FilterListIcon sx={{ fontSize: 16, color: "#64748b" }} />
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: "#64748b",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
             Sort By
           </Typography>
         </Box>
@@ -236,7 +302,11 @@ export default function OrderFilterSidebar({
               key={opt.value}
               value={opt.value}
               control={<Radio size="small" sx={{ py: 0.5 }} />}
-              label={<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>{opt.label}</Typography>}
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+                  {opt.label}
+                </Typography>
+              }
             />
           ))}
         </RadioGroup>
