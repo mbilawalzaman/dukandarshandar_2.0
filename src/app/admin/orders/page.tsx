@@ -238,14 +238,14 @@ export default function AdminOrdersPage() {
     {
       id: "_id",
       label: "Order ID",
-      minWidth: 100,
+      minWidth: 80,
       format: (val) => String(val).slice(-8).toUpperCase(),
     },
-    { id: "customer_name", label: "Customer", minWidth: 130 },
+    { id: "customer_name", label: "Customer", minWidth: 100 },
     {
       id: "address",
       label: "Shipping Address",
-      minWidth: 180,
+      minWidth: 160,
       format: (_val, row) => {
         const parts = [row.address, row.area, row.city, row.province].filter(Boolean);
         return parts.join(", ") || "—";
@@ -254,39 +254,40 @@ export default function AdminOrdersPage() {
     {
       id: "payment_method",
       label: "Payment",
-      minWidth: 130,
+      minWidth: 95,
       format: (_val, row) => (
         <Chip
           label={paymentMethodLabel(row.payment_method)}
           size="small"
           color={row.payment_method === "card" ? "primary" : "default"}
           variant={row.payment_method === "card" ? "filled" : "outlined"}
+          sx={{ fontSize: "0.75rem", height: 24 }}
         />
       ),
     },
     {
       id: "payment_status",
       label: "Payment Status",
-      minWidth: 140,
+      minWidth: 95,
       format: (_val, row) => paymentStatusChip(row),
     },
     {
       id: "total_amount",
       label: "Total",
-      minWidth: 110,
+      minWidth: 80,
       format: (val) => `PKR ${Number(val).toLocaleString()}`,
     },
     {
       id: "status",
       label: "Fulfillment",
-      minWidth: 200,
+      minWidth: 170,
       format: (val, row) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <FormControl size="small" variant="outlined" sx={{ minWidth: 140 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <FormControl size="small" variant="outlined" sx={{ minWidth: 115 }}>
             <Select
               value={val || "pending"}
               onChange={(e) => handleStatusChange(row._id as string, e.target.value as string, row)}
-              sx={{ fontSize: "0.85rem", height: 32 }}
+              sx={{ fontSize: "0.8rem", height: 30, px: 0.5 }}
               renderValue={(selected) => fulfillmentLabel(String(selected), row)}
             >
               <MenuItem value={row.status}>{fulfillmentLabel(row.status, row)}</MenuItem>
@@ -310,7 +311,7 @@ export default function AdminOrdersPage() {
                       backgroundColor: isShipped ? "#fffbe5" : "#ffffff",
                       color: isShipped ? "#d97706" : "#94a3b8",
                       borderRadius: "50%",
-                      p: 0.6,
+                      p: 0.4,
                       "&:hover": {
                         backgroundColor: isShipped ? "#fef3c7" : "#ffffff",
                       },
@@ -321,7 +322,7 @@ export default function AdminOrdersPage() {
                       },
                     }}
                   >
-                    <PrintIcon fontSize="small" />
+                    <PrintIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -336,13 +337,13 @@ export default function AdminOrdersPage() {
                 backgroundColor: row.postexDetails?.trackingNumber ? "#ecfdf5" : "#eff6ff",
                 color: row.postexDetails?.trackingNumber ? "#059669" : "#2563eb",
                 borderRadius: "50%",
-                p: 0.6,
+                p: 0.4,
                 "&:hover": {
                   backgroundColor: row.postexDetails?.trackingNumber ? "#d1fae5" : "#dbeafe",
                 },
               }}
             >
-              <LocalShippingIcon fontSize="small" />
+              <LocalShippingIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         </Box>
@@ -351,18 +352,18 @@ export default function AdminOrdersPage() {
     {
       id: "safepay_tracker",
       label: "Safepay Tracker",
-      minWidth: 160,
+      minWidth: 100,
       format: (val) => {
         const tracker = val ? String(val) : "";
         if (!tracker) return <Typography variant="body2" color="text.secondary">—</Typography>;
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-              {tracker.slice(0, 12)}…
+              {tracker.slice(0, 10)}…
             </Typography>
             <Tooltip title="Copy tracker ID">
-              <IconButton size="small" onClick={() => copyTracker(tracker)}>
-                <ContentCopyIcon sx={{ fontSize: 14 }} />
+              <IconButton size="small" onClick={() => copyTracker(tracker)} sx={{ p: 0.2 }}>
+                <ContentCopyIcon sx={{ fontSize: 13 }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -372,13 +373,13 @@ export default function AdminOrdersPage() {
     {
       id: "paid_at",
       label: "Paid At",
-      minWidth: 120,
+      minWidth: 90,
       format: (val) => (val ? new Date(String(val)).toLocaleString() : "—"),
     },
     {
       id: "created_at",
       label: "Order Date",
-      minWidth: 120,
+      minWidth: 85,
       format: (val) => (val ? new Date(String(val)).toLocaleDateString() : "N/A"),
     },
   ];

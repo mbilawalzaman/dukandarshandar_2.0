@@ -222,14 +222,15 @@ export default function AdminDataTable<T extends { _id?: string }>({
                   key={String(column.id)}
                   align={column.align || "left"}
                   sx={{
-                    minWidth: column.minWidth || 120,
+                    minWidth: column.minWidth ?? 80,
                     fontWeight: 700,
                     fontSize: "0.85rem",
                     backgroundColor: "var(--theme-bg-default, #f8fafc)",
                     color: "#334155",
                     borderBottom: "2px solid #e2e8f0",
                     whiteSpace: "nowrap",
-                    py: 1.75,
+                    py: 1.5,
+                    px: 1.25,
                   }}
                 >
                   {column.label}
@@ -263,7 +264,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     selected={isSelected}
                   >
                     {selectable && (
-                      <TableCell padding="checkbox" sx={{ py: 1.75, pl: 2 }}>
+                      <TableCell padding="checkbox" sx={{ py: 1.25, pl: 1.5, pr: 0.5 }}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -275,7 +276,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
                     {columns.map((column) => {
                       if (column.id === "actions") {
                         return (
-                          <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.5 }}>
+                          <TableCell key="actions" align={column.align || "right"} sx={{ py: 1.25, px: 1 }}>
                             <Box
                               sx={{
                                 display: "flex",
@@ -297,7 +298,7 @@ export default function AdminDataTable<T extends { _id?: string }>({
 
                       const value = row[column.id as keyof T];
                       return (
-                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.75 }}>
+                        <TableCell key={String(column.id)} align={column.align || "left"} sx={{ py: 1.25, px: 1.25 }}>
                           {column.format ? column.format(value, row) : String(value ?? "")}
                         </TableCell>
                       );
