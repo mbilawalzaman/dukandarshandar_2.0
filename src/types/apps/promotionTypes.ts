@@ -1,5 +1,5 @@
 /**
- * Promotions & discounts (Daraz-style seller-center model).
+ * Promotions & discounts.
  *
  * One `promotions` document per campaign. `kind` decides which rules apply and
  * where the storefront shows it. Vouchers are the only kind that needs a code.
