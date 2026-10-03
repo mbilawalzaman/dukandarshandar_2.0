@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   Box,
@@ -51,6 +51,7 @@ export default function AdminLayout({
   const [userImage, setUserImage] = useState<string | null>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     void (async () => {
@@ -59,7 +60,7 @@ export default function AdminLayout({
         const token = localStorage.getItem("token");
 
         if (!token) {
-          router.replace("/login?next=/admin");
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
 
           return;
         }
@@ -81,10 +82,10 @@ export default function AdminLayout({
         setUserImage(localStorage.getItem("userImage"));
         setAllowed(true);
       } catch {
-        router.replace("/login?next=/admin");
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       }
     })();
-  }, [router]);
+  }, [router, pathname]);
 
   const handleLogout = async () => {
     await unregisterWebPushToken().catch(() => undefined);

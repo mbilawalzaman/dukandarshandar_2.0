@@ -17,12 +17,14 @@ function base64UrlToBytes(input: string): Uint8Array {
   return bytes;
 }
 
+type VerifyResult = "ok" | "expired" | "forbidden" | "invalid";
+
 /** Edge-safe HS256 JWT verify (no jose / jsonwebtoken). */
-async function verifyAdminToken(token: string): Promise<boolean> {
+async function verifyAdminToken(token: string): Promise<VerifyResult> {
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
-    if (process.env.NODE_ENV === "production") return false;
+    if (process.env.NODE_ENV === "production") return "invalid";
   }
 
   const keyMaterial = secret || "supersecretkey";
@@ -30,10 +32,10 @@ async function verifyAdminToken(token: string): Promise<boolean> {
   try {
     const parts = token.split(".");
 
-    if (parts.length !== 3) return false;
+    if (parts.length !== 3) return "invalid";
     const [headerB64, payloadB64, signatureB64] = parts;
 
-    if (!headerB64 || !payloadB64 || !signatureB64) return false;
+    if (!headerB64 || !payloadB64 || !signatureB64) return "invalid";
 
     const key = await crypto.subtle.importKey(
       "raw",
@@ -53,7 +55,7 @@ async function verifyAdminToken(token: string): Promise<boolean> {
       data.buffer as ArrayBuffer,
     );
 
-    if (!valid) return false;
+    if (!valid) return "invalid";
 
     const payload = JSON.parse(
       new TextDecoder().decode(base64UrlToBytes(payloadB64)),
@@ -63,12 +65,16 @@ async function verifyAdminToken(token: string): Promise<boolean> {
     };
 
     if (typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) {
-      return false;
+      return "expired";
     }
 
-    return payload.role === "admin";
+    if (payload.role !== "admin") {
+      return "forbidden";
+    }
+
+    return "ok";
   } catch {
-    return false;
+    return "invalid";
   }
 }
 
@@ -89,9 +95,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isAdmin = await verifyAdminToken(token);
+  const authResult = await verifyAdminToken(token);
 
-  if (!isAdmin) {
+  if (authResult === "expired" || authResult === "invalid") {
+    const url = request.nextUrl.clone();
+
+    url.pathname = "/login";
+    url.searchParams.set("next", pathname);
+
+    return NextResponse.redirect(url);
+  }
+
+  if (authResult === "forbidden") {
     const url = request.nextUrl.clone();
 
     url.pathname = "/";
