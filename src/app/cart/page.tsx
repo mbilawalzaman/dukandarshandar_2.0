@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+
 import Link from "next/link";
-import { computeShippingBreakdown } from "@/lib/deliverySettings";
 
 import {
   Container,
@@ -21,14 +21,15 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import PageBanner from "../components/PageBanner";
-import { useCart } from "@/app/providers/CartProvider";
-import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import DeliveryShippingLine from "../components/DeliveryShippingLine";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
+import { useCart } from "@/app/providers/CartProvider";
 import { usePromotions } from "@/app/providers/PromotionProvider";
 import PriceTag from "@/app/components/promotions/PriceTag";
 import PromotionBadge from "@/app/components/promotions/PromotionBadge";
 import PromotionNudge from "@/app/components/promotions/PromotionNudge";
-import DeliveryShippingLine from "../components/DeliveryShippingLine";
+import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import { computeShippingBreakdown } from "@/lib/deliverySettings";
 
 export default function CartPage() {
   const { items, updateQuantity, remove } = useCart();
