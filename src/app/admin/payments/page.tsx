@@ -25,6 +25,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import { formatDate, formatDateTime } from "@/lib/dateUtils";
 import type {
   AdminPaymentRecord,
   AdminPaymentStats,
@@ -292,7 +293,7 @@ export default function AdminPaymentsPage() {
         label: "Paid At",
         minWidth: 150,
         format: (val, row) => {
-          if (val) return new Date(String(val)).toLocaleString();
+          if (val) return formatDateTime(String(val));
           if (row.payment_method === "cod") return "On delivery";
 
           return "—";
@@ -302,8 +303,7 @@ export default function AdminPaymentsPage() {
         id: "created_at",
         label: "Order Date",
         minWidth: 120,
-        format: (val) =>
-          val ? new Date(String(val)).toLocaleDateString() : "—",
+        format: (val) => (val ? formatDate(String(val)) : "—"),
       },
       {
         id: "actions",

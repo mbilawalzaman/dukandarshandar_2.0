@@ -49,6 +49,7 @@ import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
+import { formatDateTime } from "@/lib/dateUtils";
 import type { OrderType } from "@/types/apps/orderTypes";
 
 type Order = OrderType;
@@ -729,10 +730,6 @@ function OrdersContent() {
                   const displayId = String(order._id).slice(-8).toUpperCase();
                   const fullId = String(order._id);
 
-                  const orderDate = order.created_at
-                    ? new Date(order.created_at)
-                    : null;
-
                   return (
                     <Card
                       key={order._id}
@@ -812,22 +809,12 @@ function OrdersContent() {
                             </Tooltip>
                           </Box>
 
-                          {orderDate && (
+                          {order.created_at && (
                             <Typography
                               variant="caption"
                               sx={{ color: "text.secondary", fontWeight: 500 }}
                             >
-                              •{" "}
-                              {orderDate.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}{" "}
-                              at{" "}
-                              {orderDate.toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              • {formatDateTime(order.created_at)}
                             </Typography>
                           )}
                         </Box>

@@ -25,6 +25,12 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
 
 import { allowedOrderTransitions } from "@/lib/orderRules";
+import {
+  startOfDay,
+  endOfDay,
+  formatDate,
+  formatDateTime,
+} from "@/lib/dateUtils";
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
@@ -362,13 +368,13 @@ export default function AdminOrdersPage() {
         if (isNaN(orderDate.getTime())) return false;
 
         if (startDate) {
-          const start = new Date(`${startDate}T00:00:00.000`);
+          const start = startOfDay(startDate);
 
           if (orderDate < start) return false;
         }
 
         if (endDate) {
-          const end = new Date(`${endDate}T23:59:59.999`);
+          const end = endOfDay(endDate);
 
           if (orderDate > end) return false;
         }
@@ -589,14 +595,13 @@ export default function AdminOrdersPage() {
       id: "paid_at",
       label: "Paid At",
       minWidth: 90,
-      format: (val) => (val ? new Date(String(val)).toLocaleString() : "—"),
+      format: (val) => (val ? formatDateTime(String(val)) : "—"),
     },
     {
       id: "created_at",
       label: "Order Date",
       minWidth: 85,
-      format: (val) =>
-        val ? new Date(String(val)).toLocaleDateString() : "N/A",
+      format: (val) => (val ? formatDate(String(val)) : "N/A"),
     },
   ];
 

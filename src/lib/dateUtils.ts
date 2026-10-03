@@ -49,15 +49,61 @@ export function toDateInputValue(value?: string | Date | null): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-/** "13 Sep 2026" in store time. */
-export function formatDate(value?: string | Date | null): string {
+/** Dynamically detect the user's browser/device timezone, falling back to STORE_TIMEZONE. */
+export function getUserTimeZone(): string {
+  if (typeof window !== "undefined") {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || STORE_TIMEZONE;
+    } catch {
+      return STORE_TIMEZONE;
+    }
+  }
+
+  return STORE_TIMEZONE;
+}
+
+/** "13 Sep 2026" formatted in the user's local browser timezone. */
+export function formatDate(
+  value?: string | Date | null,
+  overrideTimeZone?: string,
+): string {
   if (!value) return "";
 
-  return new Date(value).toLocaleDateString("en-PK", {
+  const d = new Date(value);
+
+  if (isNaN(d.getTime())) return "";
+
+  const timeZone = overrideTimeZone || getUserTimeZone();
+
+  return d.toLocaleDateString("en-PK", {
     day: "numeric",
     month: "short",
     year: "numeric",
-    timeZone: STORE_TIMEZONE,
+    timeZone,
+  });
+}
+
+/** "13 Sep 2026, 01:47 AM" formatted in the user's local browser timezone. */
+export function formatDateTime(
+  value?: string | Date | null,
+  overrideTimeZone?: string,
+): string {
+  if (!value) return "";
+
+  const d = new Date(value);
+
+  if (isNaN(d.getTime())) return "";
+
+  const timeZone = overrideTimeZone || getUserTimeZone();
+
+  return d.toLocaleString("en-PK", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone,
   });
 }
 

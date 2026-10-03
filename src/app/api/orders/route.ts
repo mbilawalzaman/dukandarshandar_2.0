@@ -17,6 +17,7 @@ import { allowedOrderTransitions } from "@/lib/orderRules";
 import { cancelCustomerOrder } from "@/services/orderCancelService";
 import { throttleRequest } from "@/lib/rateLimit.server";
 import { escapeRegex } from "@/lib/escapeRegex";
+import { startOfDay, endOfDay } from "@/lib/dateUtils";
 
 import { getDb } from "@/lib/db";
 import { getAuthUser, requireAdmin } from "@/lib/auth";
@@ -206,8 +207,8 @@ function buildOrderFilter(
   }
 
   if (startDate || endDate) {
-    const startObj = startDate ? new Date(`${startDate}T00:00:00.000Z`) : null;
-    const endObj = endDate ? new Date(`${endDate}T23:59:59.999Z`) : null;
+    const startObj = startDate ? startOfDay(startDate) : null;
+    const endObj = endDate ? endOfDay(endDate) : null;
 
     const dateCond: Record<string, unknown> = {};
     const stringDateCond: Record<string, unknown> = {};
