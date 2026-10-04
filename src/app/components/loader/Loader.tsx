@@ -26,7 +26,7 @@ export default function Loader({
   const { settings } = useSafeStoreSettings();
 
   const displayInitials =
-    customInitials || getStoreInitials(settings.shopName, "");
+    customInitials || getStoreInitials(settings.shopName, "DS");
 
   const content = (
     <div className="loader" style={{ marginTop: overlay ? "0" : marginTop }}>

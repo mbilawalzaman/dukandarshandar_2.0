@@ -33,7 +33,7 @@ export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   feeEnabled: true,
   fee: SHIPPING_FEE,
   activeThemeKey: "default",
-  shopName: "",
+  shopName: "Dukandar Shandar",
   shopPhone: "",
   storeEmail: "",
   shopAddress: "",

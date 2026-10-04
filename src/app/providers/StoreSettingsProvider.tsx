@@ -33,9 +33,29 @@ export function StoreSettingsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [settings, setSettings] = useState<DeliverySettings>(
-    DEFAULT_DELIVERY_SETTINGS,
-  );
+  const [settings, setSettings] = useState<DeliverySettings>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("ds_store_settings");
+
+        if (cached) {
+          const parsed = JSON.parse(cached);
+
+          if (parsed && typeof parsed === "object") {
+            return {
+              ...DEFAULT_DELIVERY_SETTINGS,
+              ...parsed,
+              activeThemeKey: normalizeThemeKey(parsed.activeThemeKey),
+            };
+          }
+        }
+      } catch {
+        /* ignore storage read error */
+      }
+    }
+
+    return DEFAULT_DELIVERY_SETTINGS;
+  });
 
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
@@ -54,11 +74,11 @@ export function StoreSettingsProvider({
         data.success &&
         data.settings
       ) {
-        setSettings({
+        const newSettings: DeliverySettings = {
           feeEnabled: Boolean(data.settings.feeEnabled),
           fee: Number(data.settings.fee) || 0,
           activeThemeKey: normalizeThemeKey(data.settings.activeThemeKey),
-          shopName: data.settings.shopName || "",
+          shopName: data.settings.shopName || "Dukandar Shandar",
           shopPhone: data.settings.shopPhone || "",
           storeEmail: data.settings.storeEmail || "",
           shopAddress: data.settings.shopAddress || "",
@@ -74,10 +94,26 @@ export function StoreSettingsProvider({
             facebook: data.settings.socialLinks?.facebook || "",
             youtube: data.settings.socialLinks?.youtube || "",
           },
-        });
+        };
+
+        setSettings(newSettings);
+
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              "ds_store_settings",
+              JSON.stringify(newSettings),
+            );
+          } catch (error) {
+            console.error(
+              "Error while storing settings in local storage",
+              error,
+            );
+          }
+        }
       }
-    } catch {
-      // Keep default settings
+    } catch (error) {
+      console.error("Error while fetching settings from local storage", error);
     } finally {
       setLoading(false);
     }
@@ -156,7 +192,7 @@ export function useSafeStoreSettings() {
   return context ?? { settings: DEFAULT_DELIVERY_SETTINGS, loading: false };
 }
 
-export function getStoreInitials(shopName?: string, fallback = ""): string {
+export function getStoreInitials(shopName?: string, fallback = "DS"): string {
   const name = shopName?.trim();
 
   if (!name) return fallback;

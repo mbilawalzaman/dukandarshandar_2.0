@@ -120,7 +120,28 @@ export default function ProfileEditor({
   }, [loadProfile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+
+    if (name === "phone") {
+      let cleaned = value.replace(/\D/g, "");
+
+      if (cleaned.startsWith("923") && cleaned.length >= 11) {
+        cleaned = "0" + cleaned.substring(2);
+      } else if (cleaned.startsWith("3") && cleaned.length === 10) {
+        cleaned = "0" + cleaned;
+      }
+
+      if (cleaned.length > 11) {
+        cleaned = cleaned.slice(0, 11);
+      }
+
+      setForm((prev) => ({ ...prev, phone: cleaned }));
+      setSuccess("");
+
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
     setSuccess("");
   };
 
@@ -433,6 +454,11 @@ export default function ProfileEditor({
                 helperText="Must be 11 digits starting with 03 (e.g. 03234111111)"
                 value={form.phone}
                 onChange={handleChange}
+                inputProps={{
+                  maxLength: 11,
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
               />
             </Grid>
             <Grid item xs={12}>

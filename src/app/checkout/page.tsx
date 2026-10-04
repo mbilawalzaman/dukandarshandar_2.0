@@ -361,8 +361,57 @@ export default function CheckoutPage() {
   const itemSavings = quote.itemDiscount + quote.bundleDiscount;
   const grandTotal = quote.total;
 
+  const phoneError = useMemo(() => {
+    if (!form.phone) return "";
+    let digits = form.phone.replace(/\D/g, "");
+
+    if (digits.startsWith("923") && digits.length >= 11) {
+      digits = "0" + digits.substring(2);
+    } else if (digits.startsWith("3") && digits.length === 10) {
+      digits = "0" + digits;
+    }
+
+    if (digits.length >= 2 && !digits.startsWith("03")) {
+      return "Phone number must start with 03 (e.g. 03234111111)";
+    }
+
+    if (digits.length > 0 && digits.length !== 11) {
+      return `Must be 11 digits (currently ${digits.length}/11)`;
+    }
+
+    if (!/^03\d{9}$/.test(digits)) {
+      return "Phone number must be 11 digits starting with 03 (e.g. 03234111111)";
+    }
+
+    return "";
+  }, [form.phone]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    if (name === "phone") {
+      let cleaned = value.replace(/\D/g, "");
+
+      if (cleaned.startsWith("923") && cleaned.length >= 11) {
+        cleaned = "0" + cleaned.substring(2);
+      } else if (cleaned.startsWith("3") && cleaned.length === 10) {
+        cleaned = "0" + cleaned;
+      }
+
+      if (cleaned.length > 11) {
+        cleaned = cleaned.slice(0, 11);
+      }
+
+      setForm((prev) => {
+        const next = { ...prev, phone: cleaned };
+
+        persistGuestDraft(next);
+
+        return next;
+      });
+
+      return;
+    }
 
     setForm((prev) => {
       const next = { ...prev, [name]: value };
@@ -768,10 +817,19 @@ export default function CheckoutPage() {
                       name="phone"
                       label="Phone Number"
                       placeholder="03234111111"
-                      helperText="Must be 11 digits starting with 03 (e.g. 03234111111)"
+                      error={Boolean(phoneError)}
+                      helperText={
+                        phoneError ||
+                        "Must be 11 digits starting with 03 (e.g. 03234111111)"
+                      }
                       value={form.phone}
                       onChange={handleChange}
                       disabled={Boolean(paymentSession)}
+                      inputProps={{
+                        maxLength: 11,
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12}>
