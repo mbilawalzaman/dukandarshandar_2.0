@@ -192,6 +192,8 @@ export default function PostExPaymentsTab() {
       result = result.filter(
         (r) => r.order_status === "shipped" || r.order_status === "dispatched",
       );
+    } else if (statusFilter === "cancelled") {
+      result = result.filter((r) => r.order_status === "cancelled");
     } else if (statusFilter === "paid") {
       result = result.filter((r) => r.payment_status === "paid");
     }
@@ -270,14 +272,35 @@ export default function PostExPaymentsTab() {
         id: "estimated_courier_fee",
         label: "Courier Fee",
         minWidth: 110,
-        format: (val) => `- PKR ${Number(val).toLocaleString()}`,
+        format: (val, row) =>
+          row.order_status === "cancelled" || Number(val) === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              PKR 0
+            </Typography>
+          ) : (
+            <Typography variant="body2">
+              - PKR {Number(val).toLocaleString()}
+            </Typography>
+          ),
       },
       {
         id: "net_postex_effect",
         label: "Net Balance Effect",
         minWidth: 145,
-        format: (val) => {
+        format: (val, row) => {
           const num = Number(val || 0);
+
+          if (row.order_status === "cancelled" || num === 0) {
+            return (
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 700, color: "text.secondary" }}
+              >
+                PKR 0
+              </Typography>
+            );
+          }
+
           const isPos = num > 0;
 
           return (
@@ -306,8 +329,17 @@ export default function PostExPaymentsTab() {
             return <Chip label="Delivered" color="success" size="small" />;
           if (st === "shipped" || st === "dispatched")
             return <Chip label="In Transit" color="primary" size="small" />;
-          if (st === "cancelled" || st === "returned")
-            return <Chip label="Returned / RTO" color="error" size="small" />;
+          if (st === "returned" || st === "rto")
+            return <Chip label="Returned / RTO" color="warning" size="small" />;
+          if (st === "cancelled")
+            return (
+              <Chip
+                label="Cancelled"
+                color="error"
+                size="small"
+                variant="outlined"
+              />
+            );
 
           return (
             <Chip
@@ -543,6 +575,7 @@ export default function PostExPaymentsTab() {
             <MenuItem value="all">All Statuses</MenuItem>
             <MenuItem value="delivered">Delivered Only</MenuItem>
             <MenuItem value="in_transit">In-Transit Only</MenuItem>
+            <MenuItem value="cancelled">Cancelled Only</MenuItem>
             <MenuItem value="paid">Remitted Only</MenuItem>
           </Select>
         </FormControl>

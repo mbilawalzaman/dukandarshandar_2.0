@@ -1,0 +1,2393 @@
+Merchant API Integration Guide
+
+M- v4.1.9
+
+Merchant API Integration Guide
+
+Submitted by:
+Babar Razzaq
+Chief Technology Officer | PostEx. | Paid
+Head of Integration Services
+
+Custom APIs
+
+Contact: babar@postex.pk | 0300-0441793
+
+Page | 1
+
+Merchant API Integration Guide
+
+Table of Contents
+1. Paid – A Smart Payment Solution ....................................................................... 5
+2. Ecommerce Plugin ............................................................................................. 5
+3. Integration APIs ................................................................................................. 6
+3.1 Operational Cities API ...................................................................................... 6
+3.1.1 URL............................................................................................................... 6
+3.1.2 Request Parameters (GET) ............................................................................. 6
+3.1.3 Response Parameters .................................................................................... 6
+3.2 Pickup Address API .......................................................................................... 8
+3.2.1 URL............................................................................................................... 8
+3.2.2 Request Parameters (GET) ............................................................................. 8
+3.2.3 Response Parameters .................................................................................... 8
+3.3 Create Pickup Address API.............................................................................. 10
+3.3.1 URL............................................................................................................. 10
+3.3.2 Request Parameters (POST) ......................................................................... 10
+3.3.3 Response Parameters .................................................................................. 11
+3.4 Order Types API ............................................................................................. 11
+3.4.1 URL............................................................................................................. 11
+3.4.2 Request Parameters (GET) ........................................................................... 11
+3.4.3 Response Parameters .................................................................................. 11
+3.5 Order Creation API ......................................................................................... 12
+3.5.1 URL............................................................................................................. 12
+3.5.2 Request Parameters (POST) ......................................................................... 12
+3.5.3 Response Parameters .................................................................................. 13
+3.6 List Un-booked Orders.................................................................................... 14
+3.6.1 URL............................................................................................................. 14
+3.6.2 Request Parameters (GET) ........................................................................... 14
+3.6.3 Response Parameters .................................................................................. 14
+Page | 2
+
+Merchant API Integration Guide
+
+3.7 Generate Load Sheet.............................................. Error! Bookmark not defined.
+3.7.1 URL............................................................................................................. 16
+3.7.2 Request Parameters (POST) ......................................................................... 16
+3.7.3 Response Parameters .................................................................................. 17
+3.8 Order Tracking API ......................................................................................... 17
+3.8.1 URL............................................................................................................. 17
+3.8.2 Request Parameters (GET) ........................................................................... 17
+3.8.3 Response Parameters .................................................................................. 18
+3.9 Bulk Order Tracking API ................................................................................. 20
+3.9.1 URL............................................................................................................. 20
+3.9.2 Request Parameters (GET) ........................................................................... 20
+3.9.3 Response Parameters .................................................................................. 20
+3.10 Airway Bill API ............................................................................................. 23
+3.10.1 URL (GET).................................................................................................. 23
+3.10.2 Response Parameters ................................................................................ 23
+3.10.3 Note ......................................................................................................... 23
+3.11 Save Shipper Advice API ............................................................................... 24
+3.11.1 URL ........................................................................................................... 24
+3.11.2 Request Parameters (PUT) ......................................................................... 24
+3.11.3 Response Parameters ................................................................................ 24
+3.12 Get Shipper Advice API ................................................................................. 25
+3.12.1 URL ........................................................................................................... 25
+3.12.2 Request Parameters (GET) ......................................................................... 25
+3.12.3 Response Parameters ................................................................................ 25
+3.13 Order Cancel API .......................................................................................... 26
+3.13.1 URL ........................................................................................................... 26
+3.13.2 Request Parameters (PUT) ......................................................................... 26
+3.13.3 Response Parameters ................................................................................ 26
+Page | 3
+
+Merchant API Integration Guide
+
+3.14 Payment Status API...................................................................................... 26
+3.14.1 URL ........................................................................................................... 26
+3.14.2 Request Parameters (GET) ......................................................................... 26
+3.14.3 Response Parameters ................................................................................ 27
+3.15 Order Status API .......................................................................................... 28
+3.15.1 URL ........................................................................................................... 28
+3.15.2 Request Parameters (GET) ......................................................................... 28
+3.15.3 Response Parameters ................................................................................ 28
+3.16 List Orders API ............................................................................................. 29
+3.16.1 URL ........................................................................................................... 29
+3.16.2 Request Parameters (GET) ......................................................................... 29
+3.16.3 Response Parameters ................................................................................ 30
+
+Page | 4
+
+Merchant API Integration Guide
+
+1. Paid – A Smart Payment Solution
+Paid makes it very quick and easy for all-sized merchants, eCommerce sites and marketplaces
+to accept card payments. Paid pre-built integrations link seamlessly with your checkout page
+to ensure a quick and secure checkout flow for your customers.
+Our responsive design displays checkout page correctly on all the devices. And our secure
+checkout builds confidence and increases conversions saving you cost and time to accepting
+payments.
+The most reliable and secure payment gateway tailored to support your business accept online
+payments from your customers with one-click integration.
+Accept payments from your customers through Pakistan’s most secure and reliable Payment
+Gateway in Pakistan with simple one-click integration.
+
+2. Ecommerce Plugin
+Considering the market requirement and the technology revolution, Piad is significantly
+boosting its all merchants of major platforms like Shopify, Wordpress, Magento, OpenCart,
+ZenCart, PrestaShop, and even for the customized websites for Debit/Credit and Account
+transfers.
+
+Page | 5
+
+Merchant API Integration Guide
+
+3. Integration APIs
+3.1
+
+Operational Cities API
+
+3.1.1
+
+URL
+
+https://api.postex.pk/services/integration/api/order/v2/get-operational-city
+3.1.2
+
+Request Parameters (GET)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+A variable to filter Cities for pickup or Delivery
+operationalCityType can only have 3 values:
+1. Pickup
+2. Delivery
+3. Null
+
+Mandatory
+
+String
+
+Optional
+
+String
+
+Header
+token
+operationalCityType
+(query param)
+
+3.1.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+200 – Successfully Cancelled
+404 – Order Not Found
+City Name
+
+Mandatory
+
+Number
+
+Mandatory
+
+String
+
+Country Name
+Boolean variable to identify either PostEx offer
+pickups in this city or not
+Boolean variable to identify either PostEx offer
+deliveries in this city or not
+
+Mandatory
+Mandatory
+
+String
+Boolean
+
+Mandatory
+
+Boolean
+
+Response
+Http Status
+operationalCityName
+countryName
+isPickupCity
+isDeliveryCity
+
+Page | 6
+
+Merchant API Integration Guide
+
+Response Parameters (JSON
+Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+{
+"operationalCityName":
+"Lahore",
+"countryName": "Pakistan"
+"isPickupCity": "true"
+"isDeliveryCity": "true"
+
+},
+{
+"operationalCityName":
+"Islamabad",
+"countryName": "Pakistan"
+"isPickupCity": "true"
+"isDeliveryCity": "true"
+},
+{
+"operationalCityName":
+"Karachi",
+"countryName": "Pakistan"
+"isPickupCity": "true"
+"isDeliveryCity": "true"
+},
+{
+"operationalCityName":
+"Rawalpindi",
+"countryName": "Pakistan"
+"isPickupCity": "true"
+"isDeliveryCity": "true"
+}
+]
+}
+
+Page | 7
+
+Merchant API Integration Guide
+
+3.2
+
+Pickup Address API
+
+3.2.1
+
+URL
+
+https://api.postex.pk/services/integration/api/order/v1/get-merchant-address
+
+3.2.2
+
+Request Parameters (GET)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+Mandatory
+
+String
+
+Optional
+
+String
+
+Header
+token
+
+A Unique token Specific to identify the
+Merchant request Parameters
+cityName
+Pickup City
+3.2.3 Response Parameters
+Parameter
+Explanation
+
+Condition
+
+Data Type
+
+Response
+statusCode
+Parameter
+
+200 /400
+Explanation
+
+Mandatory
+Condition
+
+Number
+Data Type
+
+statusMessage
+phone1
+phone2
+contactPersonName
+cityName
+address
+addressCode
+
+Successfully Operated
+Merchant’s warehouse phone 1
+Merchant’s warehouse phone 2
+Merchant’s warehouse contact person name
+Warehouse city
+Warehouse physical address
+Merchant’s warehouse address Code
+
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+
+String
+String
+String
+String
+String
+String
+String
+
+Response
+Parameters
+(JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+{
+"phone1": "+923XXXXXXXXX",
+"phone2": "+923XXXXXXXXX",
+"contactPersonName": "string",
+
+Page | 8
+
+Merchant API Integration Guide
+
+"cityName": "String",
+"address": "string"
+"addressCode": "string"
+},
+{
+"phone1": "+923XXXXXXXXX",
+"phone2": "+923XXXXXXXXX",
+"contactPersonName": "string",
+"cityName": "string",
+"address": "string"
+"addressCode": "string"
+
+}
+]
+}
+
+Page | 9
+
+Merchant API Integration Guide
+
+3.3
+
+Create Pickup Address API
+
+3.3.1
+
+URL
+
+https://api.postex.pk/services/integration/api/order/v2/create-merchant-address
+3.3.2
+
+Request Parameters (POST)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Warehouse physical address
+
+Mandatory
+
+String
+
+Mandatory
+
+Number
+
+cityName
+
+Merchant Address Type
+1- Return
+2- Pickup
+Warehouse city
+
+Mandatory
+
+String
+
+contactPersonName
+phone1
+phone2
+phone3
+wareHouseManagerName
+
+Merchant’s warehouse contact person name
+Merchant’s warehouse phone 1
+Merchant’s warehouse phone 2
+Warehouse Manager Phone Number
+Warehouse Manager Name
+
+Mandatory
+Mandatory
+Mandatory
+Optional
+Optional
+
+String
+String
+String
+String
+String
+
+Header
+token
+Request
+address
+addressTypeId
+
+Request Parameters (JSON
+Format)
+{
+"address": "string",
+"addressTypeId": 0,
+"cityName": "string",
+"contactPersonName": "string",
+"phone1": "string",
+"phone2": "string",
+"phone3": "string",
+"wareHouseManagerName": "string"
+}
+
+Page | 10
+
+Merchant API Integration Guide
+
+3.3.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+200 /400
+Successfully Operated
+
+Mandatory
+Mandatory
+
+Number
+String
+
+Response
+statusCode
+statusMessage
+
+3.4
+
+Order Types API
+
+3.4.1
+
+URL
+
+https://api.postex.pk/services/integration/api/order/v1/get-order-types
+3.4.2
+
+Request Parameters (GET)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+Mandatory
+
+String
+
+Explanation
+
+Condition
+
+Data Type
+
+statusCode
+
+200 /400
+
+Mandatory
+
+Number
+
+statusMessage
+dist
+
+Successfully Operated
+String of Values as below
+
+Mandatory
+Mandatory
+
+String
+String
+
+Header
+token
+3.4.3
+
+A Unique token Specific to identify the
+Merchant request Parameters
+Response Parameters
+
+Parameter
+Response
+
+Normal
+Reversed
+Replacement
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+"Normal",
+"Reversed",
+"Replacement"
+]
+}
+
+Page | 11
+
+Merchant API Integration Guide
+
+3.5
+
+Order Creation API
+
+3.5.1
+
+URL
+https://api.postex.pk/services/integration/api/order/v3/create-order
+
+3.5.2
+
+Request Parameters (POST)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Order Reference Number shared by the
+Merchant.
+Transaction Amount
+
+Mandatory
+
+String
+
+Mandatory
+
+String
+
+Detail About Order or Product purchases,
+Quantity, SKU etc
+Customer complete name
+Format: 03xxxxxxxxx
+Customer’s email address
+Additional Notes for order
+
+Optional
+
+String
+
+Mandatory
+Mandatory
+Mandatory
+Optional
+
+String
+String
+String
+String
+
+Customer’s City Name
+Split Airway Bills for Larger orders that have
+multiple packaging envelops
+Number of Pieces in Order
+
+Mandatory
+Mandatory
+
+String
+Number
+
+Mandatory
+
+Number
+
+Address code to identify pickup address
+Address code to identify pickup address store
+wise
+A variable to identify order type orderType
+can only have 3 values:
+1. Normal
+2. Reverse
+3. Replacement
+
+Optional
+Optional
+
+String
+String
+
+Mandatory
+
+String
+
+Header
+token
+Request
+orderRefNumber
+invoicePayment
+orderDetail
+customerName
+customerPhone
+deliveryAddress
+transactionNotes
+cityName
+invoiceDivision
+items
+pickupAddressCode
+storeAddressCode
+orderType
+
+Request Parameters (JSON Format)
+{
+"cityName": "string",
+"customerName": "string",
+"customerPhone": "string",
+
+Page | 12
+
+Merchant API Integration Guide
+
+"deliveryAddress": "string",
+"invoiceDivision": 0,
+"invoicePayment": 0,
+"items": 0,
+"orderDetail": "string",
+"orderRefNumber": "string",
+"orderType": "string",
+"transactionNotes": "string",
+"pickupAddressCode": "string"
+"storeAddressCode": "string"
+}
+
+3.5.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+
+Mandatory
+
+String
+
+Response
+trackingNumber
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "ORDER HAS BEEN CREATED",
+"dist": {
+"trackingNumber": "CX-XXXXXXXXXXX",
+"orderStatus": "UnBooked",
+"orderDate": "yyyy-mm-dd hh:mm:ss"
+}
+}
+
+Page | 13
+
+Merchant API Integration Guide
+
+3.6
+
+List Un-booked Orders
+
+3.6.1
+
+URL
+https://api.postex.pk/services/integration/api/order/v2/get-unbooked-orders
+
+3.6.2 Request Parameters (GET)
+Parameter
+Explanation
+
+Condition
+
+Data Type
+
+Mandatory
+
+String
+
+Mandatory
+Mandatory
+Optional
+
+String
+String
+String
+
+Header
+token
+startDate
+endDate
+cityName
+
+A Unique token Specific to identify the Super
+Merchant request Parameters
+Start date of orders with status Un-booked
+End date of orders with status Un-booked
+Pickup City
+
+Request Parameters (JSON Format)
+{
+"startDate": "yyyy-mm-dd",
+"endDate": "yyyy-mm-dd",
+"cityName": "String",
+}
+
+3.6.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+customerName
+customerPhone
+
+Customer complete name
+Format: 03xxxxxxxxx
+
+Mandatory
+Mandatory
+
+String
+String
+
+deliveryAddress
+invoicePayment
+orderDetail
+
+Customer’s email address
+Transaction Amount
+Detail About Order or Product purchases,
+Quantity, SKU etc
+Order Pickup Date
+Order Delivery Date
+Order Reference Number provided by the
+Merchant at time of posting order
+Transaction Tax
+Transaction Fee
+
+Mandatory
+Mandatory
+Optional
+
+String
+Decimal
+String
+
+Optional
+Optional
+Mandatory
+
+Date
+Date
+String
+
+Optional
+Optional
+
+Decimal
+Decimal
+
+Response
+
+orderPickupDate
+orderDeliveryDate
+orderRefNumber
+transactionTax
+transactionFee
+
+Page | 14
+
+Merchant API Integration Guide
+
+trackingNumber
+
+Mandatory
+
+transactionDate
+
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+Order Creation Date
+
+upfrontPayment
+upfrontPaymentDate
+merchantName
+transactionStatus
+reversalTax
+reversalFee
+
+Upfront Payment Amount
+Upfront Payment Date
+Merchant Registered Name at PostEx
+Order’s current status
+Transaction Fee in case of Reversal
+Transaction Tax in case of Reversal
+
+Optional
+Optional
+Mandatory
+Optional
+Optional
+Optional
+
+Decimal
+Date
+String
+String
+Decimal
+Decimal
+
+cityName
+transactionNotes
+
+City Name
+Additional Notes provided by the Merchant at
+time of posting order
+Order’s Reserve Amount
+Order’s Date when the Reserve Payment is
+made
+Order’s Balance Amount in case of reversal
+
+Mandatory
+Optional
+
+String
+String
+
+Optional
+Optional
+
+Decimal
+Date
+
+Optional
+
+Decimal
+
+reservePayment
+reservePaymentDate
+balancePayment
+
+String
+
+Mandatory
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+{
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "CX-XXXXXXXXXXX ",
+"transactionDate": "YYYY-MM-DD",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+},
+
+Page | 15
+
+Merchant API Integration Guide
+
+{
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "CX-XXXXXXXXXXX ",
+"transactionDate": "YYYY-MM-DD",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+}
+]
+}
+
+3.7
+
+Generate Load Sheet
+
+3.7.1
+
+URL
+https://api.postex.pk/services/integration/api/order/v2/generate-load-sheet
+
+3.7.2
+
+Request Parameters (POST)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the Super
+Merchant request Parameters
+
+Mandatory
+
+String
+
+trackingNumbers
+
+PostEx provided tracking numbers of orders
+
+Mandatory
+
+List of String
+
+pickupAddress
+
+Pickup address from where parcel will be picked Optional
+
+Header
+token
+Request
+String
+
+Request Parameters (JSON Format)
+{
+"pickupAddress": "Pickup Address",
+"trackingNumbers": [
+
+Page | 16
+
+Merchant API Integration Guide
+
+"TrackingNumber1",
+" TrackingNumber2",
+" TrackingNumber3"
+]
+}
+
+3.7.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+PDF File
+
+Mandatory
+
+PDF
+
+Response
+PDF
+
+3.8
+
+Order Tracking API
+
+3.8.1
+
+URL
+
+https://api.postex.pk/services/integration/api/order/v1/track-order/{trackingNumber}
+3.8.2 Request Parameters (GET)
+Parameter
+Explanation
+Condition
+Data Type
+Header
+token A Unique token
+Specific to identify the
+Merchant request Parameters
+Mandatory
+String
+Request
+trackingNumber
+A unique tracking number to track the order
+Mandatory
+String
+over PostEx website as well as Merchant
+Application
+
+Page | 17
+
+Merchant API Integration Guide
+
+3.8.3
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+customerName
+customerPhone
+
+Customer complete name
+Format: 03xxxxxxxxx
+
+Mandatory
+Mandatory
+
+String
+String
+
+deliveryAddress
+invoicePayment
+orderDetail
+
+Customer’s email address
+Transaction Amount
+Detail About Order or Product purchases,
+Quantity, SKU etc
+Order Pickup Date
+Order Delivery Date
+
+Mandatory
+Mandatory
+Optional
+
+String
+Decimal
+String
+
+Optional
+Optional
+
+Date
+Date
+
+Order Reference Number provided by the
+Merchant at time of posting order
+Transaction Tax
+Transaction Fee
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+Order Creation Date
+Upfront Payment Amount
+Upfront Payment Date
+Merchant Registered Name at PostEx
+Order’s current status
+Transaction Fee in case of Reversal
+Transaction Tax in case of Reversal
+City Name
+Additional Notes provided by the Merchant at
+time of posting order
+Order’s Reserve Amount
+Order’s Date when the Reserve Payment is
+made
+Order’s Balance Amount in case of reversal
+
+Mandatory
+
+String
+
+Optional
+Optional
+Mandatory
+
+Decimal
+Decimal
+String
+
+Mandatory
+Optional
+Optional
+Mandatory
+Optional
+Optional
+Optional
+Mandatory
+Optional
+
+Decimal
+Date
+String
+String
+Decimal
+Decimal
+String
+String
+
+Optional
+Optional
+
+Decimal
+Date
+
+Optional
+
+Decimal
+
+Response
+
+orderPickupDate
+orderDeliveryDate
+orderRefNumber
+transactionTax
+transactionFee
+trackingNumber
+
+transactionDate
+upfrontPayment
+upfrontPaymentDate
+merchantName
+transactionStatus
+reversalTax
+reversalFee
+cityName
+transactionNotes
+reservePayment
+reservePaymentDate
+balancePayment
+
+Page | 18
+
+Merchant API Integration Guide
+
+transactionStatusHistory
+
+The Complete Track of Order Journey. Below
+are the possible Values against MessageCodes
+0001
+0002
+0003
+0004
+0005
+0006
+0007
+0008
+0013
+
+Optional
+
+String
+
+At Merchant’s Warehouse
+Returned
+At PostEx Warehouse
+Package on Root
+Delivered
+Returned
+Returned
+Delivery Under Review
+Attempt Made: Reason Here
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": {
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "",
+"transactionDate": "",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"reservePayment": 0,
+"reservePaymentDate": "",
+"balancePayment": 0,
+"cityName": "",
+"transactionNotes": "",
+"transactionStatusHistory": [
+{
+"transactionStatusMessage": "At Merchant's Warehouse",
+"transactionStatusMessageCode": "0001"
+}
+]
+}
+}
+
+Page | 19
+
+Merchant API Integration Guide
+
+3.9
+
+Bulk Order Tracking API
+
+3.9.1
+
+URL
+https://api.postex.pk/services/integration/api/order/v1/track-bulk-order
+
+3.9.2
+
+Request Parameters (GET)
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+List of commas separated unique tracking
+numbers
+
+Mandatory
+
+Array of
+Strings
+
+Header
+token
+Request
+trackingNumber
+
+Request Parameters (JSON Format)
+{
+"trackingNumber": [
+"TrackingNumber1",
+" TrackingNumber2",
+" TrackingNumber3"
+]
+}
+
+3.9.3 Response Parameters
+Parameter
+Explanation
+Response
+customerName
+Customer complete name
+customerPhone
+Format: 03xxxxxxxxx
+deliveryAddress
+Customer’s email address
+invoicePayment
+Transaction Amount
+orderDetail
+Detail About Order or Product purchases,
+Quantity, SKU etc
+orderPickupDate
+Order Pickup Date
+orderDeliveryDate
+Order Delivery Date
+orderRefNumber
+Order Reference Number provided by the
+Merchant at time of posting order
+transactionTax
+Transaction Tax
+transactionFee
+Transaction Fee
+
+Condition
+
+Data Type
+
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+Optional
+
+String
+String
+String
+Decimal
+String
+
+Optional
+Optional
+Mandatory
+
+Date
+Date
+String
+
+Optional
+Optional
+
+Decimal
+Decimal
+Page | 20
+
+Merchant API Integration Guide
+
+trackingNumber
+
+transactionDate
+upfrontPayment
+upfrontPaymentDate
+merchantName
+transactionStatus
+reversalTax
+reversalFee
+cityName
+transactionNotes
+reservePayment
+reservePaymentDate
+balancePayment
+transactionStatusHistory
+
+Parameter
+
+A unique tracking number to track the order
+Mandatory
+over PostEx website as well as Merchant
+Application
+Order Creation Date
+Mandatory
+Upfront Payment Amount
+Optional
+Upfront Payment Date
+Optional
+Merchant Registered Name at PostEx
+Mandatory
+Order’s current status
+Optional
+Transaction Fee in case of Reversal
+Optional
+Transaction Tax in case of Reversal
+Optional
+City Name
+Mandatory
+Additional Notes provided by the Merchant at Optional
+time of posting order
+Order’s Reserve Amount
+Optional
+Order’s Date when the Reserve Payment is
+Optional
+made
+Order’s Balance Amount in case of reversal
+Optional
+The Complete Track of Order Journey. Below
+Optional
+are the possible Values against MessageCodes
+
+String
+
+Explanation
+0001
+0002
+0003
+0004
+0005
+0006
+0007
+0008
+0013
+
+Data Type
+
+Condition
+
+Decimal
+Date
+String
+String
+Decimal
+Decimal
+String
+String
+Decimal
+Date
+Decimal
+String
+
+At Merchant’s Warehouse
+Returned
+At PostEx Warehouse
+Package on Root
+Delivered
+Returned
+Returned
+Delivery Under Review
+Attempt Made: Reason Here
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+{
+"trackingResponse": {
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+
+Page | 21
+
+Merchant API Integration Guide
+
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "TrackingNumber1",
+"transactionDate": "yyyy-mm-dd",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+},
+"trackingNumber": "TrackingNumber1",
+"message": "SUCCESSFULLY RETRIEVE ORDER"
+},
+{
+"trackingResponse": {
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"trackingNumber": "TrackingNumber2",
+"transactionDate": "yyyy-mm-dd",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+},
+"trackingNumber": "TrackingNumber2",
+"message": "SUCCESSFULLY RETRIEVE ORDER"
+}
+]
+}
+
+"transactionFee": 0,
+
+Page | 22
+
+Merchant API Integration Guide
+
+3.10 Airway Bill API
+3.10.1 URL (GET)
+
+https://api.postex.pk/services/integration/api/order/v1/getinvoice?trackingNumbers=CXXXXXXXXXXX1,CX-XXXXXXXXXX2
+
+3.10.2
+
+Response Parameters
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+PDF File
+
+Mandatory
+
+PDF
+
+Response
+PDF
+3.10.3
+
+Note
+
+PDF will be generated for a maximum of 10 tracking numbers.
+
+Page | 23
+
+Merchant API Integration Guide
+
+3.11 Save Shipper Advice API
+3.11.1 URL
+
+https://api.postex.pk/service/integration/api/order/v2/save-shipper-advice
+
+3.11.2 Request Parameters (PUT)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+trackingNumber
+
+A unique tracking number to track the
+order over PostEx website as well as
+Merchant
+Application
+
+Mandatory
+
+String
+
+statusId
+
+A unique status ID to give shipper advice on
+any attempted parcel.
+1 – Mark Return Requested
+2 – Mark Retry Attempt
+
+Mandatory
+
+Decimal
+
+remarks
+
+Remarks against tracking Number
+
+Mandatory
+
+String
+
+Header
+token
+Request
+
+Request Parameters (JSON Format)
+{
+"trackingNumber": "CX-XXXXXXXXXXX",
+"statusId": 0,
+"remarks": ""
+}
+
+3.11.3 Response Parameters
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+200 if success
+400 if bad request
+
+Mandatory
+
+Number
+
+Response
+HTTP Status
+
+Page | 24
+
+Merchant API Integration Guide
+
+3.12 Get Shipper Advice API
+3.12.1 URL
+
+https://api.postex.pk/service/integration/api/order/v1/get-shipper-advice/{trackingNumber}
+
+3.12.2 Request Parameters (GET)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+Header
+token
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Mandatory
+
+String
+
+Request
+trackingNumber
+
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+3.12.3 Response Parameters
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+remarks
+Saved remarks against shipper advice
+remarksDate
+Date and Time of remarks entered
+Username
+User who saved the remarks
+Response Parameters (JSON Format)
+
+Mandatory
+
+String
+
+Mandatory
+Mandatory
+Mandatory
+
+String
+String
+String
+
+Response
+trackingNumber
+
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+{
+"trackingNumber": "CX-XXXXXXXXXXX",
+"message": "SUCCESSFULLY Operated",
+"trackingResponse": [
+{
+"remarks": "",
+"remarksDate": "yyyy-mm-dd",
+"username": ""
+},
+{
+"remarks": "",
+
+Page | 25
+
+Merchant API Integration Guide
+
+"remarksDate": "yyyy-mm-dd",
+"username": ""
+}
+]
+}
+]
+}
+
+3.13 Order Cancel API
+3.13.1 URL
+
+https://api.postex.pk/services/integration/api/order/v1/cancel-order
+
+3.13.2 Request Parameters (PUT)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Mandatory
+
+String
+
+Header
+Token
+Request
+trackingNumber
+
+A provided tracking number to cancel the
+order
+3.13.3 Response Parameters
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+200 – Successfully Cancelled
+404 – Order Not Found
+
+Mandatory
+
+Number
+
+Response
+Http Status
+
+3.14 Payment Status API
+3.14.1 URL
+
+https://api.postex.pk/services/integration/api/order/v1/payment-status/{trackingNumber}
+
+3.14.2 Request Parameters (GET)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Header
+token
+
+Page | 26
+
+Merchant API Integration Guide
+
+trackingNumber
+
+A provided tracking number to unbook order
+from cancel state
+3.14.3 Response Parameters
+Parameter
+
+Mandatory
+
+String
+
+Explanation
+
+Condition
+
+Data Type
+
+404 – Order Not Found
+
+Mandatory
+
+Number
+
+Mandatory
+
+String
+
+Mandatory
+
+String
+
+Mandatory
+
+Boolean
+
+Response
+Http Status
+
+200 – SUCCESSFULLY OPERATED
+orderRefNumber
+
+trackingNumber
+
+settle
+
+Order Reference Number shared by the
+Merchant.
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+A flag to indicate either the payment is made
+or not.
+
+settlementDate
+
+Date for which the final settlement was made.
+
+Optional
+
+Date
+
+upfrontPaymentDate
+
+Date for which the upfront payment was made Optional
+
+Date
+
+cprNumber_1
+
+Cash Payment Receipt number for upfront
+Optional
+payment
+Date for which the reserve payment was made Optional
+
+String
+
+Cash Payment Receipt number for reserve
+payment
+
+String
+
+reservePaymentDate
+cprNumber_2
+
+Optional
+
+Date
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": {
+"orderRefNumber": "",
+"trackingNumber": "CX-XXXXXXXXXXX",
+"settle": true,
+"settlementDate": "",
+"upfrontPaymentDate": "",
+"cprNumber_1": "",
+"reservePaymentDate": "",
+"cprNumber_2": ""
+}
+
+Page | 27
+
+Merchant API Integration Guide
+
+}
+
+3.15 Order Status API
+3.15.1 URL
+
+https://api.postex.pk/services/integration/api/order/v1/get-order-status
+
+3.15.2 Request Parameters (GET)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+3.15.3 Response Parameters
+
+Mandatory
+
+String
+
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+200 /400
+Successfully Operated
+String of Values as below
+
+Mandatory
+Mandatory
+Mandatory
+
+Number
+String
+String
+
+Header
+token
+
+Response
+statusCode
+statusMessage
+dist
+
+1. Unbooked
+2. Booked
+3. PostEx WareHouse
+4. Out For Delivery
+5. Delivered
+6. Returned
+7. Un-Assigned By Me
+8. Expired
+9. Delivery Under Review
+15 Picked By PostEx
+16 Out For Return
+17 Attempted
+18 En-Route to PostEx warehouse
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+"dist": [
+
+Page | 28
+
+Merchant API Integration Guide
+
+"Unbooked",
+"Booked",
+"PostEx WareHouse",
+"Out For Delivery",
+"Delivered",
+"Returned",
+"Un-Assigned By Me",
+"Expired",
+"Delivery Under Review",
+"Picked By PostEx",
+"Out For Return",
+"Attempted",
+"En-Route to PostEx warehouse"
+]
+}
+
+3.16 List Orders API
+3.16.1 URL
+
+https://api.postex.pk/services/integration/api/order/v1/get-all-order
+
+3.16.2 Request Parameters (GET)
+Parameter
+
+Explanation
+
+Condition
+
+Data Type
+
+A Unique token Specific to identify the
+Merchant request Parameters
+
+Mandatory
+
+String
+
+Header
+token
+Request
+
+Page | 29
+
+Merchant API Integration Guide
+
+orderStatusID
+
+Order Status ID. Possible Values are
+
+Mandatory
+
+Number
+
+Mandatory
+Mandatory
+
+Date
+Date
+
+1. Unbooked
+2. Booked
+3. PostEx WareHouse
+4. Out For Delivery
+5. Delivered
+6. Returned
+7. Un-Assigned By Me
+8. Expired
+9. Delivery Under Review
+15 Picked By PostEx
+16. Out For Return
+17 Attempted
+18. En-Route to PostEx warehouse
+
+fromDate
+toDate
+
+Note: Use Zero (0) to list All Orders
+Order Creation Start Date
+Order Creation End Date
+
+Request Parameters (JSON Format)
+{
+"orderStatusID": 0,
+"fromDate": "yyyy-mm-dd",
+"toDate": "yyyy-mm-dd"
+}
+
+3.16.3 Response Parameters
+Parameter
+Explanation
+Response
+customerName
+Customer complete name
+customerPhone
+Format: 03xxxxxxxxx
+deliveryAddress
+Customer’s email address
+invoicePayment
+Transaction Amount
+orderDetail
+Detail About Order or Product purchases,
+Quantity, SKU etc
+orderPickupDate
+Order Pickup Date
+
+Condition
+
+Data Type
+
+Mandatory
+Mandatory
+Mandatory
+Mandatory
+Optional
+
+String
+String
+String
+Decimal
+String
+
+Optional
+
+Date
+Page | 30
+
+Merchant API Integration Guide
+
+orderDeliveryDate
+orderRefNumber
+transactionTax
+transactionFee
+trackingNumber
+
+transactionDate
+upfrontPayment
+upfrontPaymentDate
+merchantName
+transactionStatus
+reversalTax
+reversalFee
+cityName
+transactionNotes
+reservePayment
+reservePaymentDate
+balancePayment
+transactionStatusHistory
+
+Parameter
+
+Order Delivery Date
+Order Reference Number provided by the
+Merchant at time of posting order
+Transaction Tax
+Transaction Fee
+A unique tracking number to track the order
+over PostEx website as well as Merchant
+Application
+Order Creation Date
+Upfront Payment Amount
+Upfront Payment Date
+Merchant Registered Name at PostEx
+Order’s current status
+Transaction Fee in case of Reversal
+Transaction Tax in case of Reversal
+City Name
+Additional Notes provided by the Merchant at
+time of posting order
+Order’s Reserve Amount
+Order’s Date when the Reserve Payment is
+made
+Order’s Balance Amount in case of reversal
+The Complete Track of Order Journey. Below
+are the possible Values against MessageCodes
+0001
+0002
+0003
+Explanation
+0004
+0005
+0006
+0007
+0008
+0013
+
+Optional
+Mandatory
+
+Date
+String
+
+Optional
+Optional
+Mandatory
+
+Decimal
+Decimal
+String
+
+Mandatory
+Optional
+Optional
+Mandatory
+Optional
+Optional
+Optional
+Mandatory
+Optional
+
+Decimal
+Date
+String
+String
+Decimal
+Decimal
+String
+String
+
+Optional
+Optional
+
+Decimal
+Date
+
+Optional
+Optional
+
+Decimal
+String
+
+Condition
+
+Data Type
+
+At Merchant’s Warehouse
+Returned
+At PostEx Warehouse
+Package on Root
+Delivered
+Returned
+Returned
+Delivery Under Review
+Attempt Made: Reason Here
+
+Response Parameters (JSON Format)
+{
+"statusCode": "200",
+"statusMessage": "SUCCESSFULLY OPERATED",
+
+Page | 31
+
+Merchant API Integration Guide
+
+"dist": [
+{
+"trackingResponse": {
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "TrackingNumber1",
+"transactionDate": "yyyy-mm-dd",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+},
+"trackingNumber": "TrackingNumber1",
+"message": "SUCCESSFULLY RETRIEVE ORDER"
+},
+{
+"trackingResponse": {
+"customerName": "",
+"customerPhone": "",
+"deliveryAddress": "",
+"invoicePayment": 0,
+
+Page | 32
+
+Merchant API Integration Guide
+
+"orderDetail": "",
+"orderRefNumber": "",
+"transactionTax": 0,
+"transactionFee": 0,
+"trackingNumber": "TrackingNumber2",
+"transactionDate": "yyyy-mm-dd",
+"upfrontPayment": 0,
+"merchantName": "",
+"transactionStatus": "",
+"reversalTax": 0,
+"reversalFee": 0,
+"cityName": "",
+"transactionNotes": "",
+"balancePayment": 0,
+"items": 0,
+"invoiceDivision": 0
+},
+"trackingNumber": "TrackingNumber2",
+"message": "SUCCESSFULLY RETRIEVE ORDER"
+}
+]
+}
+
+Note: Please feel free to write at support@postex.pk in case of any query(s).
+
+Page | 33
+
+

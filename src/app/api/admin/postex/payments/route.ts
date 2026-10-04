@@ -72,27 +72,64 @@ export async function GET(req: NextRequest) {
     const records = orders.map((o) => {
       const amount = Number(o.total_amount || 0);
       const isCod = (o.payment_method || "cod").toLowerCase() === "cod";
-      const isDelivered = o.status === "delivered";
-      const isInTransit = o.status === "shipped" || o.status === "dispatched";
+      const st = (o.status || "").toLowerCase();
+      const postexSt = (o.postexDetails?.orderStatus || "").toLowerCase();
+
+      const isCancelled =
+        st === "cancelled" ||
+        postexSt === "cancelled" ||
+        postexSt === "unbooked";
+
+      const isReturned =
+        st === "returned" ||
+        st === "rto" ||
+        postexSt === "returned" ||
+        postexSt === "rto";
+
+      const isDelivered = st === "delivered" || postexSt === "delivered";
+
+      const isInTransit =
+        st === "shipped" ||
+        st === "dispatched" ||
+        postexSt === "shipped" ||
+        postexSt === "dispatched";
+
       const isPaid = o.payment_status === "paid";
 
-      const courierFee = estimateCourierFee(o.city || "", o.province || "");
+      let courierFee = 0;
+      let netEffect = 0;
+
+      if (isCancelled) {
+        // Order cancelled before pickup/dispatch: PostEx charges PKR 0 courier fee!
+        courierFee = 0;
+        netEffect = 0;
+      } else if (isDelivered) {
+        courierFee = estimateCourierFee(o.city || "", o.province || "");
+
+        if (isCod) {
+          deliveredCOD += amount;
+          netEffect = amount - courierFee;
+        } else {
+          netEffect = -courierFee;
+        }
+      } else if (isReturned || isInTransit) {
+        // Dispatched or returned parcel: Courier fee applies
+        courierFee = estimateCourierFee(o.city || "", o.province || "");
+        netEffect = -courierFee;
+      } else {
+        // Pending / unbooked: No courier fee charged yet
+        courierFee = 0;
+        netEffect = 0;
+      }
 
       totalCourierFees += courierFee;
+      netPostExBalance += netEffect;
 
       if (isCod) {
         codShipments += 1;
         totalBookedCOD += amount;
-
-        if (isDelivered) {
-          deliveredCOD += amount;
-          netPostExBalance += amount - courierFee;
-        } else {
-          netPostExBalance -= courierFee;
-        }
       } else {
         cardShipments += 1;
-        netPostExBalance -= courierFee; // Prepaid: PostEx collects 0 cash, store owes delivery fee to PostEx
       }
 
       if (isInTransit && isCod) inTransitCOD += amount;
@@ -105,13 +142,9 @@ export async function GET(req: NextRequest) {
         city: o.city || "—",
         total_amount: amount,
         payment_method: isCod ? "cod" : "card",
-        cod_invoice_amount: isCod ? amount : 0,
+        cod_invoice_amount: isCod ? (isCancelled ? 0 : amount) : 0,
         estimated_courier_fee: courierFee,
-        net_postex_effect: isCod
-          ? isDelivered
-            ? amount - courierFee
-            : -courierFee
-          : -courierFee,
+        net_postex_effect: netEffect,
         order_status: o.status || "pending",
         payment_status: o.payment_status || "unpaid",
         trackingNumber: o.postexDetails?.trackingNumber || "",
