@@ -18,6 +18,8 @@ import {
   Snackbar,
   Paper,
   TextField,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -25,6 +27,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import PostExPaymentsTab from "@/app/components/admin/payments/PostExPaymentsTab";
 import { formatDate, formatDateTime } from "@/lib/dateUtils";
 import type {
   AdminPaymentRecord,
@@ -327,6 +330,8 @@ export default function AdminPaymentsPage() {
     [],
   );
 
+  const [activeTab, setActiveTab] = useState<"safepay" | "postex">("safepay");
+
   const hasActiveFilters =
     methodFilter !== "online" || statusFilter !== "all" || dateFrom || dateTo;
 
@@ -337,160 +342,190 @@ export default function AdminPaymentsPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          mb: 4,
+          mb: 3,
           flexWrap: "wrap",
           gap: 2,
         }}
       >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            Payments
+            Payments & Remittances
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 1.5 }}>
-            Online collections, failed attempts, and COD totals — separate from
-            order fulfillment.
+            Online collection records, failed attempts, and PostEx courier COD
+            remittances.
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={fetchPayments}
-          sx={{ borderRadius: 2 }}
-        >
-          Refresh
-        </Button>
-      </Box>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "1fr 1fr",
-            md: "repeat(3, 1fr)",
-            lg: "repeat(5, 1fr)",
-          },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <StatCard
-          label="Online Revenue"
-          value={`PKR ${stats.onlineRevenue.toLocaleString()}`}
-          sub="Card payments collected"
-        />
-        <StatCard
-          label="Paid Online"
-          value={String(stats.paidOnlineCount)}
-          sub="Successful card payments"
-        />
-        <StatCard
-          label="Success Rate"
-          value={`${stats.successRate}%`}
-          sub={`${stats.onlineAttempts} online attempts`}
-        />
-        <StatCard
-          label="Failed / Awaiting"
-          value={`${stats.failedCount} / ${stats.awaitingCount}`}
-          sub="Needs follow-up"
-        />
-        <StatCard
-          label="Delivered COD Sales"
-          value={`PKR ${stats.codRevenue.toLocaleString()}`}
-          sub={`${stats.codCount} delivered orders; collection unverified`}
-        />
-      </Box>
-
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          mb: 2,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel id="method-filter-label">Method</InputLabel>
-          <Select
-            labelId="method-filter-label"
-            label="Method"
-            value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value as MethodFilter)}
-          >
-            <MenuItem value="all">All methods</MenuItem>
-            <MenuItem value="online">Online</MenuItem>
-            <MenuItem value="card">Card only</MenuItem>
-            <MenuItem value="cod">COD only</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel id="status-filter-label">Status</InputLabel>
-          <Select
-            labelId="status-filter-label"
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          >
-            <MenuItem value="all">All statuses</MenuItem>
-            <MenuItem value="paid">Paid</MenuItem>
-            <MenuItem value="failed">Failed</MenuItem>
-            <MenuItem value="awaiting">Awaiting payment</MenuItem>
-          </Select>
-        </FormControl>
-
-        <TextField
-          size="small"
-          label="From"
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 160 }}
-        />
-        <TextField
-          size="small"
-          label="To"
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 160 }}
-        />
-
-        {hasActiveFilters && (
-          <Chip
-            label={`${payments.length} records`}
-            onDelete={() => {
-              setMethodFilter("online");
-              setStatusFilter("all");
-              setDateFrom("");
-              setDateTo("");
-            }}
-            size="small"
-            color="primary"
+        {activeTab === "safepay" && (
+          <Button
             variant="outlined"
-          />
+            startIcon={<RefreshIcon />}
+            onClick={fetchPayments}
+            sx={{ borderRadius: 2 }}
+          >
+            Refresh
+          </Button>
         )}
       </Box>
 
-      <AdminDataTable
-        title="Payment Records"
-        columns={columns}
-        data={payments}
-        searchField="customer_name"
-        searchPlaceholder="Search by customer name..."
-        loading={loading}
-      />
+      {/* TABS SWITCHER FOR SAFEPAY VS POSTEX PAYMENTS */}
+      <Tabs
+        value={activeTab}
+        onChange={(_, val) => setActiveTab(val)}
+        sx={{
+          mb: 3,
+          borderBottom: "1px solid #e2e8f0",
+          "& .MuiTab-root": {
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+          },
+        }}
+      >
+        <Tab label="Safepay & Storefront Payments" value="safepay" />
+        <Tab label="PostEx Courier Remittances" value="postex" />
+      </Tabs>
 
-      <Snackbar
-        open={Boolean(copiedTracker)}
-        autoHideDuration={2000}
-        onClose={() => setCopiedTracker(null)}
-        message="Safepay tracker copied"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
+      {activeTab === "postex" ? (
+        <PostExPaymentsTab />
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+                md: "repeat(3, 1fr)",
+                lg: "repeat(5, 1fr)",
+              },
+              gap: 2,
+              mb: 3,
+            }}
+          >
+            <StatCard
+              label="Online Revenue"
+              value={`PKR ${stats.onlineRevenue.toLocaleString()}`}
+              sub="Card payments collected"
+            />
+            <StatCard
+              label="Paid Online"
+              value={String(stats.paidOnlineCount)}
+              sub="Successful card payments"
+            />
+            <StatCard
+              label="Success Rate"
+              value={`${stats.successRate}%`}
+              sub={`${stats.onlineAttempts} online attempts`}
+            />
+            <StatCard
+              label="Failed / Awaiting"
+              value={`${stats.failedCount} / ${stats.awaitingCount}`}
+              sub="Needs follow-up"
+            />
+            <StatCard
+              label="Delivered COD Sales"
+              value={`PKR ${stats.codRevenue.toLocaleString()}`}
+              sub={`${stats.codCount} delivered orders; collection unverified`}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              mb: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="method-filter-label">Method</InputLabel>
+              <Select
+                labelId="method-filter-label"
+                label="Method"
+                value={methodFilter}
+                onChange={(e) =>
+                  setMethodFilter(e.target.value as MethodFilter)
+                }
+              >
+                <MenuItem value="all">All methods</MenuItem>
+                <MenuItem value="online">Online</MenuItem>
+                <MenuItem value="card">Card only</MenuItem>
+                <MenuItem value="cod">COD only</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="status-filter-label">Status</InputLabel>
+              <Select
+                labelId="status-filter-label"
+                label="Status"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as StatusFilter)
+                }
+              >
+                <MenuItem value="all">All statuses</MenuItem>
+                <MenuItem value="paid">Paid</MenuItem>
+                <MenuItem value="failed">Failed</MenuItem>
+                <MenuItem value="awaiting">Awaiting payment</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              size="small"
+              label="From"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ width: 160 }}
+            />
+            <TextField
+              size="small"
+              label="To"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ width: 160 }}
+            />
+
+            {hasActiveFilters && (
+              <Chip
+                label={`${payments.length} records`}
+                onDelete={() => {
+                  setMethodFilter("online");
+                  setStatusFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+          </Box>
+
+          <AdminDataTable
+            title="Payment Records"
+            columns={columns}
+            data={payments}
+            searchField="customer_name"
+            searchPlaceholder="Search by customer name..."
+            loading={loading}
+          />
+
+          <Snackbar
+            open={Boolean(copiedTracker)}
+            autoHideDuration={2000}
+            onClose={() => setCopiedTracker(null)}
+            message="Safepay tracker copied"
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          />
+        </>
+      )}
     </Box>
   );
 }
