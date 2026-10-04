@@ -26,8 +26,6 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PendingActionsIcon from "@mui/icons-material/PendingActions";
 
 import type { ColumnDef } from "../AdminDataTable";
 import AdminDataTable from "../AdminDataTable";
@@ -40,6 +38,10 @@ interface PostExPaymentRecord {
   phone: string;
   city: string;
   total_amount: number;
+  payment_method: "cod" | "card";
+  cod_invoice_amount: number;
+  estimated_courier_fee: number;
+  net_postex_effect: number;
   order_status: string;
   payment_status: string;
   trackingNumber: string;
@@ -51,7 +53,11 @@ interface PostExPaymentStats {
   deliveredCOD: number;
   inTransitCOD: number;
   totalShipments: number;
+  codShipments: number;
+  cardShipments: number;
   remittedCount: number;
+  totalCourierFees: number;
+  netPostExBalance: number;
 }
 
 export default function PostExPaymentsTab() {
@@ -62,11 +68,16 @@ export default function PostExPaymentsTab() {
     deliveredCOD: 0,
     inTransitCOD: 0,
     totalShipments: 0,
+    codShipments: 0,
+    cardShipments: 0,
     remittedCount: 0,
+    totalCourierFees: 0,
+    netPostExBalance: 0,
   });
 
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
 
   // Live Status Check Dialog
@@ -107,7 +118,11 @@ export default function PostExPaymentsTab() {
             deliveredCOD: 0,
             inTransitCOD: 0,
             totalShipments: 0,
+            codShipments: 0,
+            cardShipments: 0,
             remittedCount: 0,
+            totalCourierFees: 0,
+            netPostExBalance: 0,
           },
         );
       }
@@ -163,18 +178,26 @@ export default function PostExPaymentsTab() {
   );
 
   const filteredRecords = useMemo(() => {
-    if (statusFilter === "all") return records;
-    if (statusFilter === "delivered")
-      return records.filter((r) => r.order_status === "delivered");
-    if (statusFilter === "in_transit")
-      return records.filter(
+    let result = records;
+
+    if (methodFilter === "cod") {
+      result = result.filter((r) => r.payment_method === "cod");
+    } else if (methodFilter === "card") {
+      result = result.filter((r) => r.payment_method === "card");
+    }
+
+    if (statusFilter === "delivered") {
+      result = result.filter((r) => r.order_status === "delivered");
+    } else if (statusFilter === "in_transit") {
+      result = result.filter(
         (r) => r.order_status === "shipped" || r.order_status === "dispatched",
       );
-    if (statusFilter === "paid")
-      return records.filter((r) => r.payment_status === "paid");
+    } else if (statusFilter === "paid") {
+      result = result.filter((r) => r.payment_status === "paid");
+    }
 
-    return records;
-  }, [records, statusFilter]);
+    return result;
+  }, [records, methodFilter, statusFilter]);
 
   const columns: ColumnDef<PostExPaymentRecord>[] = useMemo(
     () => [
@@ -214,17 +237,68 @@ export default function PostExPaymentsTab() {
         format: (val) => String(val).slice(-8).toUpperCase(),
       },
       { id: "customer_name", label: "Customer", minWidth: 130 },
-      { id: "city", label: "City", minWidth: 100 },
       {
-        id: "total_amount",
-        label: "COD Amount",
-        minWidth: 120,
-        format: (val) => `PKR ${Number(val).toLocaleString()}`,
+        id: "payment_method",
+        label: "Method",
+        minWidth: 110,
+        format: (val) => (
+          <Chip
+            label={val === "card" ? "Card (Prepaid)" : "COD"}
+            color={val === "card" ? "primary" : "default"}
+            size="small"
+            variant={val === "card" ? "filled" : "outlined"}
+            sx={{ fontWeight: 700 }}
+          />
+        ),
+      },
+      {
+        id: "cod_invoice_amount",
+        label: "Rider Collection",
+        minWidth: 135,
+        format: (val, row) =>
+          row.payment_method === "card" ? (
+            <Typography variant="body2" color="text.secondary">
+              PKR 0 (Prepaid)
+            </Typography>
+          ) : (
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              PKR {Number(val).toLocaleString()}
+            </Typography>
+          ),
+      },
+      {
+        id: "estimated_courier_fee",
+        label: "Courier Fee",
+        minWidth: 110,
+        format: (val) => `- PKR ${Number(val).toLocaleString()}`,
+      },
+      {
+        id: "net_postex_effect",
+        label: "Net Balance Effect",
+        minWidth: 145,
+        format: (val) => {
+          const num = Number(val || 0);
+          const isPos = num > 0;
+
+          return (
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 800,
+                color: isPos ? "#047857" : "#dc2626",
+              }}
+            >
+              {isPos
+                ? `+ PKR ${num.toLocaleString()}`
+                : `- PKR ${Math.abs(num).toLocaleString()}`}
+            </Typography>
+          );
+        },
       },
       {
         id: "order_status",
         label: "Parcel Status",
-        minWidth: 130,
+        minWidth: 120,
         format: (val) => {
           const st = String(val || "").toLowerCase();
 
@@ -233,53 +307,12 @@ export default function PostExPaymentsTab() {
           if (st === "shipped" || st === "dispatched")
             return <Chip label="In Transit" color="primary" size="small" />;
           if (st === "cancelled" || st === "returned")
-            return (
-              <Chip label="Returned / Cancelled" color="error" size="small" />
-            );
+            return <Chip label="Returned / RTO" color="error" size="small" />;
 
           return (
             <Chip
               label={st ? st.charAt(0).toUpperCase() + st.slice(1) : "Pending"}
               color="warning"
-              size="small"
-              variant="outlined"
-            />
-          );
-        },
-      },
-      {
-        id: "payment_status",
-        label: "COD Status",
-        minWidth: 140,
-        format: (val, row) => {
-          const isPaid = row.payment_status === "paid";
-
-          if (isPaid) {
-            return (
-              <Chip
-                icon={<CheckCircleIcon fontSize="small" />}
-                label="Remitted to Bank"
-                color="success"
-                size="small"
-              />
-            );
-          }
-
-          if (row.order_status === "delivered") {
-            return (
-              <Chip
-                icon={<PendingActionsIcon fontSize="small" />}
-                label="Cash Collected"
-                color="info"
-                size="small"
-              />
-            );
-          }
-
-          return (
-            <Chip
-              label="Pending Delivery"
-              color="default"
               size="small"
               variant="outlined"
             />
@@ -295,7 +328,7 @@ export default function PostExPaymentsTab() {
       {
         id: "actions",
         label: "Live Status",
-        minWidth: 120,
+        minWidth: 110,
         align: "center",
         format: (_val, row) => (
           <Button
@@ -332,11 +365,11 @@ export default function PostExPaymentsTab() {
               variant="h5"
               sx={{ fontWeight: 800, color: BRAND.navy }}
             >
-              PostEx Courier Remittance & COD Payments
+              PostEx Courier Remittance & Net Balance
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Track Cash on Delivery collections, delivered parcel totals, and
-              PostEx bank remittances.
+              Reconcile COD cash collected by PostEx riders vs courier fees for
+              both COD and Card (Prepaid) orders.
             </Typography>
           </Box>
         </Box>
@@ -354,6 +387,45 @@ export default function PostExPaymentsTab() {
 
       {/* Stats Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
+        {/* Net PostEx Balance Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              border: "1px solid #e2e8f0",
+              backgroundColor:
+                stats.netPostExBalance >= 0 ? "#ecfdf5" : "#fff1f2",
+              borderColor: stats.netPostExBalance >= 0 ? "#a7f3d0" : "#fecdd3",
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 600, mb: 0.5 }}
+            >
+              Net PostEx Remittance Balance
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 800,
+                color: stats.netPostExBalance >= 0 ? "#047857" : "#e11d48",
+              }}
+            >
+              {stats.netPostExBalance >= 0
+                ? `+ PKR ${stats.netPostExBalance.toLocaleString()}`
+                : `- PKR ${Math.abs(stats.netPostExBalance).toLocaleString()}`}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {stats.netPostExBalance >= 0
+                ? "PostEx owes your bank account"
+                : "Store owes PostEx courier fees"}
+            </Typography>
+          </Paper>
+        </Grid>
+
         <Grid item xs={12} sm={6} md={3}>
           <Paper
             elevation={0}
@@ -369,43 +441,16 @@ export default function PostExPaymentsTab() {
               color="text.secondary"
               sx={{ fontWeight: 600, mb: 0.5 }}
             >
-              Total Booked COD
+              Total COD Cash Collected
             </Typography>
             <Typography
               variant="h5"
               sx={{ fontWeight: 800, color: BRAND.navy }}
             >
-              PKR {stats.totalBookedCOD.toLocaleString()}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {stats.totalShipments} PostEx shipments
-            </Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 2.5,
-              borderRadius: 3,
-              border: "1px solid #e2e8f0",
-              backgroundColor: "#ecfdf5",
-              borderColor: "#a7f3d0",
-            }}
-          >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600, mb: 0.5 }}
-            >
-              Delivered Sales COD
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: "#047857" }}>
               PKR {stats.deliveredCOD.toLocaleString()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Delivered parcels awaiting/paid
+              Rider doorstep cash collected
             </Typography>
           </Paper>
         </Grid>
@@ -426,13 +471,13 @@ export default function PostExPaymentsTab() {
               color="text.secondary"
               sx={{ fontWeight: 600, mb: 0.5 }}
             >
-              In-Transit COD Volume
+              COD vs Card (Prepaid)
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 800, color: "#1d4ed8" }}>
-              PKR {stats.inTransitCOD.toLocaleString()}
+              {stats.codShipments} COD / {stats.cardShipments} Card
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Out for delivery / dispatched
+              Total {stats.totalShipments} PostEx shipments
             </Typography>
           </Paper>
         </Grid>
@@ -453,31 +498,52 @@ export default function PostExPaymentsTab() {
               color="text.secondary"
               sx={{ fontWeight: 600, mb: 0.5 }}
             >
-              Bank Remittance Verified
+              Est. PostEx Courier Fees
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 800, color: "#b45309" }}>
-              {stats.remittedCount} / {stats.totalShipments}
+              PKR {stats.totalCourierFees.toLocaleString()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Marked as paid in system
+              Deducted across all shipments
             </Typography>
           </Paper>
         </Grid>
       </Grid>
 
       {/* Filter Bar */}
-      <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Filter Status</InputLabel>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 2,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <FormControl size="small" sx={{ minWidth: 170 }}>
+          <InputLabel>Payment Method</InputLabel>
+          <Select
+            value={methodFilter}
+            label="Payment Method"
+            onChange={(e) => setMethodFilter(e.target.value)}
+          >
+            <MenuItem value="all">All Methods</MenuItem>
+            <MenuItem value="cod">COD Only</MenuItem>
+            <MenuItem value="card">Card (Prepaid) Only</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl size="small" sx={{ minWidth: 170 }}>
+          <InputLabel>Parcel Status</InputLabel>
           <Select
             value={statusFilter}
-            label="Filter Status"
+            label="Parcel Status"
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <MenuItem value="all">All PostEx Shipments</MenuItem>
+            <MenuItem value="all">All Statuses</MenuItem>
             <MenuItem value="delivered">Delivered Only</MenuItem>
             <MenuItem value="in_transit">In-Transit Only</MenuItem>
-            <MenuItem value="paid">Remitted to Bank Only</MenuItem>
+            <MenuItem value="paid">Remitted Only</MenuItem>
           </Select>
         </FormControl>
 

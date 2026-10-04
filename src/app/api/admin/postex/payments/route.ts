@@ -11,6 +11,7 @@ type PostExOrderDoc = {
   customer_email?: string;
   phone?: string;
   city?: string;
+  province?: string;
   total_amount?: number;
   payment_method?: string;
   payment_status?: string;
@@ -22,6 +23,25 @@ type PostExOrderDoc = {
     orderRefNumber?: string;
   };
 };
+
+function estimateCourierFee(city = "", province = ""): number {
+  const c = city.toLowerCase();
+  const p = province.toLowerCase();
+
+  if (c.includes("lahore")) return 157;
+
+  if (
+    p.includes("punjab") ||
+    c.includes("rawalpindi") ||
+    c.includes("islamabad") ||
+    c.includes("faisalabad") ||
+    c.includes("multan")
+  ) {
+    return 258;
+  }
+
+  return 274;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -44,15 +64,38 @@ export async function GET(req: NextRequest) {
     let inTransitCOD = 0;
     let remittedCount = 0;
 
+    let codShipments = 0;
+    let cardShipments = 0;
+    let totalCourierFees = 0;
+    let netPostExBalance = 0;
+
     const records = orders.map((o) => {
       const amount = Number(o.total_amount || 0);
+      const isCod = (o.payment_method || "cod").toLowerCase() === "cod";
       const isDelivered = o.status === "delivered";
       const isInTransit = o.status === "shipped" || o.status === "dispatched";
       const isPaid = o.payment_status === "paid";
 
-      totalBookedCOD += amount;
-      if (isDelivered) deliveredCOD += amount;
-      if (isInTransit) inTransitCOD += amount;
+      const courierFee = estimateCourierFee(o.city || "", o.province || "");
+
+      totalCourierFees += courierFee;
+
+      if (isCod) {
+        codShipments += 1;
+        totalBookedCOD += amount;
+
+        if (isDelivered) {
+          deliveredCOD += amount;
+          netPostExBalance += amount - courierFee;
+        } else {
+          netPostExBalance -= courierFee;
+        }
+      } else {
+        cardShipments += 1;
+        netPostExBalance -= courierFee; // Prepaid: PostEx collects 0 cash, store owes delivery fee to PostEx
+      }
+
+      if (isInTransit && isCod) inTransitCOD += amount;
       if (isPaid) remittedCount += 1;
 
       return {
@@ -61,6 +104,14 @@ export async function GET(req: NextRequest) {
         phone: o.phone || "—",
         city: o.city || "—",
         total_amount: amount,
+        payment_method: isCod ? "cod" : "card",
+        cod_invoice_amount: isCod ? amount : 0,
+        estimated_courier_fee: courierFee,
+        net_postex_effect: isCod
+          ? isDelivered
+            ? amount - courierFee
+            : -courierFee
+          : -courierFee,
         order_status: o.status || "pending",
         payment_status: o.payment_status || "unpaid",
         trackingNumber: o.postexDetails?.trackingNumber || "",
@@ -77,7 +128,11 @@ export async function GET(req: NextRequest) {
         deliveredCOD,
         inTransitCOD,
         totalShipments: records.length,
+        codShipments,
+        cardShipments,
         remittedCount,
+        totalCourierFees,
+        netPostExBalance,
       },
       records,
     });
