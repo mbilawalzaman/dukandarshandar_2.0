@@ -21,6 +21,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import PrintIcon from "@mui/icons-material/Print";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
 
@@ -36,6 +37,7 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
 import PostExBookingModal from "@/components/admin/orders/PostExBookingModal";
 import BulkPostExBookingModal from "@/components/admin/orders/BulkPostExBookingModal";
+import PostExShipperAdviceModal from "@/components/admin/orders/PostExShipperAdviceModal";
 
 interface OrderItem {
   name: string;
@@ -174,6 +176,11 @@ export default function AdminOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [bulkPostexModalOpen, setBulkPostexModalOpen] = useState(false);
 
+  const [selectedOrderForShipperAdvice, setSelectedOrderForShipperAdvice] =
+    useState<Order | null>(null);
+
+  const [shipperAdviceModalOpen, setShipperAdviceModalOpen] = useState(false);
+
   const [toast, setToast] = useState<{
     open: boolean;
     message: string;
@@ -192,6 +199,11 @@ export default function AdminOrdersPage() {
   const handleOpenPostexModal = (order: Order) => {
     setSelectedOrderForPostex(order);
     setPostexModalOpen(true);
+  };
+
+  const handleOpenShipperAdviceModal = (order: Order) => {
+    setSelectedOrderForShipperAdvice(order);
+    setShipperAdviceModalOpen(true);
   };
 
   useEffect(() => {
@@ -553,6 +565,28 @@ export default function AdminOrdersPage() {
               <LocalShippingIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
+          {Boolean(row.postexDetails?.trackingNumber) && (
+            <Tooltip
+              title={`PostEx Shipper Advice (${row.postexDetails?.trackingNumber})`}
+            >
+              <IconButton
+                size="small"
+                onClick={() => handleOpenShipperAdviceModal(row)}
+                sx={{
+                  border: "1px solid #d97706",
+                  backgroundColor: "#fffbeb",
+                  color: "#d97706",
+                  borderRadius: "50%",
+                  p: 0.4,
+                  "&:hover": {
+                    backgroundColor: "#fef3c7",
+                  },
+                }}
+              >
+                <SupportAgentIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       ),
     },
@@ -932,6 +966,13 @@ export default function AdminOrdersPage() {
         open={bulkPostexModalOpen}
         onClose={() => setBulkPostexModalOpen(false)}
         orders={orders.filter((o) => selectedOrderIds.includes(o._id))}
+        onSuccess={fetchOrders}
+      />
+
+      <PostExShipperAdviceModal
+        open={shipperAdviceModalOpen}
+        onClose={() => setShipperAdviceModalOpen(false)}
+        order={selectedOrderForShipperAdvice}
         onSuccess={fetchOrders}
       />
 
