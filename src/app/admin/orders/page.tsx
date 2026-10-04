@@ -534,8 +534,8 @@ export default function AdminOrdersPage() {
             const isCancelled = st === "cancelled" || st === "payment_failed";
             const hasTracking = Boolean(row.postexDetails?.trackingNumber);
 
-            // Hide booking icon for cancelled unbooked orders
-            if (isCancelled && !hasTracking) return null;
+            // Hide booking/tracking icon completely for cancelled orders
+            if (isCancelled) return null;
 
             return (
               <Tooltip
@@ -909,22 +909,28 @@ export default function AdminOrdersPage() {
             Bulk PostEx Actions ({selectedOrderIds.length})
           </Button>
         }
-        extraActions={(row) => [
-          {
-            label: "Print Shipping Label",
-            icon: <LocalShippingIcon fontSize="small" />,
-            disabled: row.status !== "shipped",
-            onClick: () => {
-              if (row.status === "shipped") {
-                handleOpenLabelModal(row);
-              }
+        extraActions={(row) => {
+          const st = (row.status || "").toLowerCase();
+
+          if (st === "cancelled" || st === "payment_failed") return [];
+
+          return [
+            {
+              label: "Print Shipping Label",
+              icon: <LocalShippingIcon fontSize="small" />,
+              disabled: row.status !== "shipped",
+              onClick: () => {
+                if (row.status === "shipped") {
+                  handleOpenLabelModal(row);
+                }
+              },
+              color:
+                row.status === "shipped"
+                  ? "var(--theme-primary-main, #0284c7)"
+                  : "#94a3b8",
             },
-            color:
-              row.status === "shipped"
-                ? "var(--theme-primary-main, #0284c7)"
-                : "#94a3b8",
-          },
-        ]}
+          ];
+        }}
         serverPagination={{
           total: total,
           page,
