@@ -21,6 +21,7 @@ import DeliveryFeeSection from "@/app/components/admin/settings/DeliveryFeeSecti
 import WhatsAppSupportSection from "@/app/components/admin/settings/WhatsAppSupportSection";
 import LogoAndQRUploadSection from "@/app/components/admin/settings/LogoAndQRUploadSection";
 import SocialProfilesSection from "@/app/components/admin/settings/SocialProfilesSection";
+import PostExWarehouseSection from "@/app/components/admin/settings/PostExWarehouseSection";
 
 type SettingsForm = {
   feeEnabled: boolean;
@@ -298,6 +299,10 @@ export default function AdminSettingsPage() {
                 setForm((prev) => ({ ...prev, whatsAppNumber: cleaned }))
               }
             />
+          </Grid>
+
+          <Grid item xs={12}>
+            <PostExWarehouseSection onError={setError} />
           </Grid>
 
           <Grid item xs={12}>
