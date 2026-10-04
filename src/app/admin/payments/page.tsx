@@ -360,140 +360,136 @@ export default function AdminPaymentsPage() {
           Refresh
         </Button>
       </Box>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "1fr 1fr",
-                md: "repeat(3, 1fr)",
-                lg: "repeat(5, 1fr)",
-              },
-              gap: 2,
-              mb: 3,
-            }}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "1fr 1fr",
+            md: "repeat(3, 1fr)",
+            lg: "repeat(5, 1fr)",
+          },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <StatCard
+          label="Online Revenue"
+          value={`PKR ${stats.onlineRevenue.toLocaleString()}`}
+          sub="Card payments collected"
+        />
+        <StatCard
+          label="Paid Online"
+          value={String(stats.paidOnlineCount)}
+          sub="Successful card payments"
+        />
+        <StatCard
+          label="Success Rate"
+          value={`${stats.successRate}%`}
+          sub={`${stats.onlineAttempts} online attempts`}
+        />
+        <StatCard
+          label="Failed / Awaiting"
+          value={`${stats.failedCount} / ${stats.awaitingCount}`}
+          sub="Needs follow-up"
+        />
+        <StatCard
+          label="Delivered COD Sales"
+          value={`PKR ${stats.codRevenue.toLocaleString()}`}
+          sub={`${stats.codCount} delivered orders; collection unverified`}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 2,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="method-filter-label">Method</InputLabel>
+          <Select
+            labelId="method-filter-label"
+            label="Method"
+            value={methodFilter}
+            onChange={(e) => setMethodFilter(e.target.value as MethodFilter)}
           >
-            <StatCard
-              label="Online Revenue"
-              value={`PKR ${stats.onlineRevenue.toLocaleString()}`}
-              sub="Card payments collected"
-            />
-            <StatCard
-              label="Paid Online"
-              value={String(stats.paidOnlineCount)}
-              sub="Successful card payments"
-            />
-            <StatCard
-              label="Success Rate"
-              value={`${stats.successRate}%`}
-              sub={`${stats.onlineAttempts} online attempts`}
-            />
-            <StatCard
-              label="Failed / Awaiting"
-              value={`${stats.failedCount} / ${stats.awaitingCount}`}
-              sub="Needs follow-up"
-            />
-            <StatCard
-              label="Delivered COD Sales"
-              value={`PKR ${stats.codRevenue.toLocaleString()}`}
-              sub={`${stats.codCount} delivered orders; collection unverified`}
-            />
-          </Box>
+            <MenuItem value="all">All methods</MenuItem>
+            <MenuItem value="online">Online</MenuItem>
+            <MenuItem value="card">Card only</MenuItem>
+            <MenuItem value="cod">COD only</MenuItem>
+          </Select>
+        </FormControl>
 
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              mb: 2,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="status-filter-label">Status</InputLabel>
+          <Select
+            labelId="status-filter-label"
+            label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           >
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel id="method-filter-label">Method</InputLabel>
-              <Select
-                labelId="method-filter-label"
-                label="Method"
-                value={methodFilter}
-                onChange={(e) =>
-                  setMethodFilter(e.target.value as MethodFilter)
-                }
-              >
-                <MenuItem value="all">All methods</MenuItem>
-                <MenuItem value="online">Online</MenuItem>
-                <MenuItem value="card">Card only</MenuItem>
-                <MenuItem value="cod">COD only</MenuItem>
-              </Select>
-            </FormControl>
+            <MenuItem value="all">All statuses</MenuItem>
+            <MenuItem value="paid">Paid</MenuItem>
+            <MenuItem value="failed">Failed</MenuItem>
+            <MenuItem value="awaiting">Awaiting payment</MenuItem>
+          </Select>
+        </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel id="status-filter-label">Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                label="Status"
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as StatusFilter)
-                }
-              >
-                <MenuItem value="all">All statuses</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-                <MenuItem value="failed">Failed</MenuItem>
-                <MenuItem value="awaiting">Awaiting payment</MenuItem>
-              </Select>
-            </FormControl>
+        <TextField
+          size="small"
+          label="From"
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ width: 160 }}
+        />
+        <TextField
+          size="small"
+          label="To"
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ width: 160 }}
+        />
 
-            <TextField
-              size="small"
-              label="From"
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ width: 160 }}
-            />
-            <TextField
-              size="small"
-              label="To"
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ width: 160 }}
-            />
-
-            {hasActiveFilters && (
-              <Chip
-                label={`${payments.length} records`}
-                onDelete={() => {
-                  setMethodFilter("online");
-                  setStatusFilter("all");
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            )}
-          </Box>
-
-          <AdminDataTable
-            title="Payment Records"
-            columns={columns}
-            data={payments}
-            searchField="customer_name"
-            searchPlaceholder="Search by customer name..."
-            loading={loading}
+        {hasActiveFilters && (
+          <Chip
+            label={`${payments.length} records`}
+            onDelete={() => {
+              setMethodFilter("online");
+              setStatusFilter("all");
+              setDateFrom("");
+              setDateTo("");
+            }}
+            size="small"
+            color="primary"
+            variant="outlined"
           />
+        )}
+      </Box>
 
-          <Snackbar
-            open={Boolean(copiedTracker)}
-            autoHideDuration={2000}
-            onClose={() => setCopiedTracker(null)}
-            message="Safepay tracker copied"
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-          />
-        </Box>
+      <AdminDataTable
+        title="Payment Records"
+        columns={columns}
+        data={payments}
+        searchField="customer_name"
+        searchPlaceholder="Search by customer name..."
+        loading={loading}
+      />
+
+      <Snackbar
+        open={Boolean(copiedTracker)}
+        autoHideDuration={2000}
+        onClose={() => setCopiedTracker(null)}
+        message="Safepay tracker copied"
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
+    </Box>
   );
 }
