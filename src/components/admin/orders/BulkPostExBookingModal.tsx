@@ -29,6 +29,7 @@ export interface OrderForBulkBooking {
   orderNumber?: string;
   customer_name?: string;
   total_amount?: number;
+  status?: string;
   postexDetails?: {
     trackingNumber?: string;
     orderStatus?: string;
@@ -62,7 +63,12 @@ export default function BulkPostExBookingModal({
   const [loadSheetLoading, setLoadSheetLoading] = useState<boolean>(false);
   const [airwayBillLoading, setAirwayBillLoading] = useState<boolean>(false);
 
-  const unbookedOrders = orders.filter((o) => !o.postexDetails?.trackingNumber);
+  const unbookedOrders = orders.filter((o) => {
+    const st = (o.status || "").toLowerCase();
+    const isCancelled = st === "cancelled" || st === "payment_failed";
+
+    return !o.postexDetails?.trackingNumber && !isCancelled;
+  });
 
   const bookedOrders = orders.filter((o) =>
     Boolean(o.postexDetails?.trackingNumber),

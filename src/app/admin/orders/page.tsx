@@ -498,34 +498,28 @@ export default function AdminOrdersPage() {
             </Select>
           </FormControl>
           {(() => {
-            const isShipped = row.status === "shipped";
+            const st = (row.status || "").toLowerCase();
+            const isCancelled = st === "cancelled" || st === "payment_failed";
+
+            const canPrint =
+              st === "ready_to_ship" || st === "shipped" || st === "delivered";
+
+            if (isCancelled || !canPrint) return null;
 
             return (
-              <Tooltip
-                title={
-                  isShipped
-                    ? "Print Shipping Label (DS)"
-                    : "Available when order is Shipped"
-                }
-              >
+              <Tooltip title="Print Shipping Label (DS)">
                 <span>
                   <IconButton
                     size="small"
-                    disabled={!isShipped}
                     onClick={() => handleOpenLabelModal(row)}
                     sx={{
-                      border: `1px solid ${isShipped ? "#f59e0b" : "#cbd5e1"}`,
-                      backgroundColor: isShipped ? "#fffbe5" : "#ffffff",
-                      color: isShipped ? "#d97706" : "#94a3b8",
+                      border: "1px solid #f59e0b",
+                      backgroundColor: "#fffbe5",
+                      color: "#d97706",
                       borderRadius: "50%",
                       p: 0.4,
                       "&:hover": {
-                        backgroundColor: isShipped ? "#fef3c7" : "#ffffff",
-                      },
-                      "&.Mui-disabled": {
-                        borderColor: "#e2e8f0",
-                        backgroundColor: "var(--theme-bg-default, #f8fafc)",
-                        color: "#94a3b8",
+                        backgroundColor: "#fef3c7",
                       },
                     }}
                   >
@@ -535,58 +529,65 @@ export default function AdminOrdersPage() {
               </Tooltip>
             );
           })()}
-          <Tooltip
-            title={
-              row.postexDetails?.trackingNumber
-                ? `PostEx: ${row.postexDetails.trackingNumber}`
-                : "Book with PostEx Courier"
-            }
-          >
-            <IconButton
-              size="small"
-              onClick={() => handleOpenPostexModal(row)}
-              sx={{
-                border: `1px solid ${row.postexDetails?.trackingNumber ? "#10b981" : "#3b82f6"}`,
-                backgroundColor: row.postexDetails?.trackingNumber
-                  ? "#ecfdf5"
-                  : "#eff6ff",
-                color: row.postexDetails?.trackingNumber
-                  ? "#059669"
-                  : "#2563eb",
-                borderRadius: "50%",
-                p: 0.4,
-                "&:hover": {
-                  backgroundColor: row.postexDetails?.trackingNumber
-                    ? "#d1fae5"
-                    : "#dbeafe",
-                },
-              }}
-            >
-              <LocalShippingIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-          {Boolean(row.postexDetails?.trackingNumber) && (
-            <Tooltip
-              title={`PostEx Shipper Advice (${row.postexDetails?.trackingNumber})`}
-            >
-              <IconButton
-                size="small"
-                onClick={() => handleOpenShipperAdviceModal(row)}
-                sx={{
-                  border: "1px solid #d97706",
-                  backgroundColor: "#fffbeb",
-                  color: "#d97706",
-                  borderRadius: "50%",
-                  p: 0.4,
-                  "&:hover": {
-                    backgroundColor: "#fef3c7",
-                  },
-                }}
+          {(() => {
+            const st = (row.status || "").toLowerCase();
+            const isCancelled = st === "cancelled" || st === "payment_failed";
+            const hasTracking = Boolean(row.postexDetails?.trackingNumber);
+
+            // Hide booking icon for cancelled unbooked orders
+            if (isCancelled && !hasTracking) return null;
+
+            return (
+              <Tooltip
+                title={
+                  hasTracking
+                    ? `PostEx: ${row.postexDetails?.trackingNumber}`
+                    : "Book with PostEx Courier"
+                }
               >
-                <SupportAgentIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenPostexModal(row)}
+                  sx={{
+                    border: `1px solid ${hasTracking ? "#10b981" : "#3b82f6"}`,
+                    backgroundColor: hasTracking ? "#ecfdf5" : "#eff6ff",
+                    color: hasTracking ? "#059669" : "#2563eb",
+                    borderRadius: "50%",
+                    p: 0.4,
+                    "&:hover": {
+                      backgroundColor: hasTracking ? "#d1fae5" : "#dbeafe",
+                    },
+                  }}
+                >
+                  <LocalShippingIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            );
+          })()}
+          {Boolean(row.postexDetails?.trackingNumber) &&
+            row.status !== "cancelled" &&
+            row.status !== "delivered" && (
+              <Tooltip
+                title={`PostEx Shipper Advice (${row.postexDetails?.trackingNumber})`}
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenShipperAdviceModal(row)}
+                  sx={{
+                    border: "1px solid #d97706",
+                    backgroundColor: "#fffbeb",
+                    color: "#d97706",
+                    borderRadius: "50%",
+                    p: 0.4,
+                    "&:hover": {
+                      backgroundColor: "#fef3c7",
+                    },
+                  }}
+                >
+                  <SupportAgentIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
         </Box>
       ),
     },
