@@ -36,6 +36,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+
 const drawerWidth = 240;
 
 interface AdminSidebarProps {
@@ -92,6 +94,11 @@ const navItems: NavItem[] = [
   },
   { label: "Support", path: "/admin/support", icon: <SupportAgentIcon /> },
   { label: "Payments", path: "/admin/payments", icon: <PaymentsIcon /> },
+  {
+    label: "PostEx Payments",
+    path: "/admin/postex-payments",
+    icon: <AccountBalanceWalletIcon />,
+  },
   { label: "Profile", path: "/admin/profile", icon: <PersonIcon /> },
   { label: "Settings", path: "/admin/settings", icon: <SettingsIcon /> },
 ];

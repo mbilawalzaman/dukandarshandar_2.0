@@ -18,8 +18,6 @@ import {
   Snackbar,
   Paper,
   TextField,
-  Tabs,
-  Tab,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -27,7 +25,6 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
-import PostExPaymentsTab from "@/app/components/admin/payments/PostExPaymentsTab";
 import { formatDate, formatDateTime } from "@/lib/dateUtils";
 import type {
   AdminPaymentRecord,
@@ -330,8 +327,6 @@ export default function AdminPaymentsPage() {
     [],
   );
 
-  const [activeTab, setActiveTab] = useState<"safepay" | "postex">("safepay");
-
   const hasActiveFilters =
     methodFilter !== "online" || statusFilter !== "all" || dateFrom || dateTo;
 
@@ -342,54 +337,29 @@ export default function AdminPaymentsPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          mb: 3,
+          mb: 4,
           flexWrap: "wrap",
           gap: 2,
         }}
       >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            Payments & Remittances
+            Payments
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 1.5 }}>
-            Online collection records, failed attempts, and PostEx courier COD
-            remittances.
+            Online collections, failed attempts, and COD totals — separate from
+            order fulfillment.
           </Typography>
         </Box>
-        {activeTab === "safepay" && (
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchPayments}
-            sx={{ borderRadius: 2 }}
-          >
-            Refresh
-          </Button>
-        )}
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={fetchPayments}
+          sx={{ borderRadius: 2 }}
+        >
+          Refresh
+        </Button>
       </Box>
-
-      {/* TABS SWITCHER FOR SAFEPAY VS POSTEX PAYMENTS */}
-      <Tabs
-        value={activeTab}
-        onChange={(_, val) => setActiveTab(val)}
-        sx={{
-          mb: 3,
-          borderBottom: "1px solid #e2e8f0",
-          "& .MuiTab-root": {
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-          },
-        }}
-      >
-        <Tab label="Safepay & Storefront Payments" value="safepay" />
-        <Tab label="PostEx Courier Remittances" value="postex" />
-      </Tabs>
-
-      {activeTab === "postex" ? (
-        <PostExPaymentsTab />
-      ) : (
-        <>
           <Box
             sx={{
               display: "grid",
@@ -524,8 +494,6 @@ export default function AdminPaymentsPage() {
             message="Safepay tracker copied"
             anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
           />
-        </>
-      )}
-    </Box>
+        </Box>
   );
 }
