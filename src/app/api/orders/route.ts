@@ -606,12 +606,23 @@ export async function POST(req: NextRequest) {
       });
     newOrder.promotions_recorded = quote.applied.length > 0;
     await safeNotify(async () => {
-      for (const item of enrichedItems) {
-        const product = await db
-          .collection("products")
-          .findOne({ _id: new ObjectId(item._id) });
+      const itemIds = enrichedItems
+        .map((item) =>
+          item._id && ObjectId.isValid(item._id)
+            ? new ObjectId(item._id)
+            : null,
+        )
+        .filter((id): id is ObjectId => id !== null);
 
-        if (product && Number(product.quantity) <= 5)
+      if (itemIds.length === 0) return;
+
+      const products = await db
+        .collection("products")
+        .find({ _id: { $in: itemIds } })
+        .toArray();
+
+      for (const product of products) {
+        if (Number(product.quantity) <= 5) {
           await notifyAdmins({
             type: "low_stock",
             title: "Low stock alert",
@@ -622,6 +633,7 @@ export async function POST(req: NextRequest) {
             sendPush: true,
             route: "/admin/products",
           });
+        }
       }
     });
     const result = { insertedId: newOrder._id };

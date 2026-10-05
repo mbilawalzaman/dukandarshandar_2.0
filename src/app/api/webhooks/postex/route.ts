@@ -41,6 +41,38 @@ export async function POST(req: NextRequest) {
 
     const db = await getDb();
 
+    const trackingNumbers = payloadArray
+      .map(
+        (event) =>
+          event.trackingNumber ||
+          event.tracking_number ||
+          event.dist?.trackingNumber ||
+          body.trackingNumber,
+      )
+      .filter(Boolean) as string[];
+
+    const matchedOrders = trackingNumbers.length
+      ? await db
+          .collection("orders")
+          .find({
+            $or: [
+              { trackingNumber: { $in: trackingNumbers } },
+              { "postexDetails.trackingNumber": { $in: trackingNumbers } },
+            ],
+          })
+          .toArray()
+      : [];
+
+    const orderMap: Record<string, (typeof matchedOrders)[0]> = {};
+
+    matchedOrders.forEach((o) => {
+      const topTracking = o.trackingNumber as string | undefined;
+      const subTracking = o.postexDetails?.trackingNumber as string | undefined;
+
+      if (topTracking) orderMap[topTracking] = o;
+      if (subTracking) orderMap[subTracking] = o;
+    });
+
     const updatePromises = payloadArray.map(async (event) => {
       const trackingNumber =
         event.trackingNumber ||
@@ -68,13 +100,7 @@ export async function POST(req: NextRequest) {
       const remarks =
         event.message || event.remarks || event.transactionNotes || "";
 
-      // Find Order by PostEx Tracking Number (top-level or inside postexDetails)
-      const order = await db.collection("orders").findOne({
-        $or: [
-          { trackingNumber: trackingNumber },
-          { "postexDetails.trackingNumber": trackingNumber },
-        ],
-      });
+      const order = orderMap[trackingNumber];
 
       if (!order) {
         console.warn(
