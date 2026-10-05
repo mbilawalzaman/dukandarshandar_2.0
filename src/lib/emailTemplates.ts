@@ -12,21 +12,37 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
+function getBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 function layout(title: string, body: string, shopName = "") {
-  const store = escapeHtml(shopName);
+  const store = escapeHtml(shopName || "Dukandar Shandar");
+  const baseUrl = getBaseUrl();
 
   return `
   <div style="font-family: Poppins, Arial, sans-serif; background:#f8fafc; padding:24px;">
-    <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden;">
+    <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
       <div style="background:${navy}; color:#fff; padding:20px 24px;">
-        <h1 style="margin:0; font-size:20px;">${store || "Store Notification"}</h1>
-        <p style="margin:6px 0 0; color:${gold}; font-size:13px;">${title}</p>
+        <h1 style="margin:0; font-size:20px;">
+          <a href="${baseUrl}" style="color:#ffffff; text-decoration:none; font-weight:700;">${store}</a>
+        </h1>
+        <p style="margin:6px 0 0; color:${gold}; font-size:13px; font-weight:600;">${title}</p>
       </div>
       <div style="padding:24px; color:${navy}; font-size:15px; line-height:1.6;">
         ${body}
       </div>
-      <div style="padding:16px 24px; font-size:12px; color:#64748b; border-top:1px solid #e2e8f0;">
-        Store updates and notifications
+      <div style="padding:16px 24px; font-size:12px; color:#64748b; border-top:1px solid #e2e8f0; text-align:center;">
+        <p style="margin:0 0 6px;">${store} updates and notifications</p>
+        <a href="${baseUrl}" style="color:${navy}; text-decoration:none; font-weight:600; display:inline-block;">Visit Web App &rarr;</a>
       </div>
     </div>
   </div>`;
@@ -47,24 +63,38 @@ export function contactShopEmail(input: {
 }
 
 export function contactCustomerEmail(name: string, shopName = "") {
-  const store = escapeHtml(shopName);
+  const store = escapeHtml(shopName || "Dukandar Shandar");
+  const baseUrl = getBaseUrl();
+  const shopUrl = `${baseUrl}/shop`;
 
   return layout(
     "We received your message",
     `<p>Hi ${escapeHtml(name)},</p>
-     <p>Thanks for contacting ${store || "us"}. We have your message and will reply as soon as we can.</p>
-     <p>Warm regards,<br/>The ${store || "Support"} team</p>`,
+     <p>Thanks for contacting ${store}. We have your message and will reply as soon as we can.</p>
+     <div style="margin:24px 0; text-align:center;">
+       <a href="${shopUrl}" style="background:${gold}; color:${navy}; font-size:14px; font-weight:bold; padding:12px 24px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         Visit Web App Store &rarr;
+       </a>
+     </div>
+     <p>Warm regards,<br/>The ${store} team</p>`,
     shopName,
   );
 }
 
 export function newsletterWelcomeEmail(shopName = "") {
-  const store = escapeHtml(shopName);
+  const store = escapeHtml(shopName || "Dukandar Shandar");
+  const baseUrl = getBaseUrl();
+  const shopUrl = `${baseUrl}/shop`;
 
   return layout(
     "Welcome to the list",
-    `<p>You are subscribed to ${store || "our store"} updates and news.</p>
-     <p>We will only send useful notes, never spam.</p>`,
+    `<p>You are subscribed to ${store} updates and news.</p>
+     <p>We will only send useful notes, never spam.</p>
+     <div style="margin:24px 0; text-align:center;">
+       <a href="${shopUrl}" style="background:${gold}; color:${navy}; font-size:14px; font-weight:bold; padding:12px 24px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         Explore Web App Store &rarr;
+       </a>
+     </div>`,
     shopName,
   );
 }
@@ -87,7 +117,9 @@ export function orderConfirmationEmail(input: {
   address?: string;
   shopName?: string;
 }) {
-  const storeName = input.shopName || "";
+  const storeName = input.shopName || "Dukandar Shandar";
+  const baseUrl = getBaseUrl();
+  const orderUrl = `${baseUrl}/orders?orderId=${encodeURIComponent(input.orderId)}`;
 
   const rows = input.items
     .map(
@@ -123,6 +155,14 @@ export function orderConfirmationEmail(input: {
        .join("")}
      <p style="margin-top:12px;"><strong>Total: PKR ${input.total.toLocaleString()}</strong></p>
      ${fullLocation ? `<p>Shipping to: ${fullLocation}</p>` : ""}
+     <div style="margin:28px 0; text-align:center;">
+       <a href="${orderUrl}" style="background:${gold}; color:${navy}; font-size:15px; font-weight:bold; padding:14px 28px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         View Order &amp; Track Status &rarr;
+       </a>
+     </div>
+     <p style="font-size:13px; color:#64748b; text-align:center; margin-top:-16px;">
+       Or view anytime on our Web App: <a href="${orderUrl}" style="color:${navy}; font-weight:600;">${orderUrl}</a>
+     </p>
      <p>We will email you again when the status changes.</p>`,
     storeName,
   );
@@ -137,7 +177,9 @@ export function orderStatusEmail(input: {
   trackingUrl?: string;
   shopName?: string;
 }) {
-  const storeName = input.shopName || "";
+  const storeName = input.shopName || "Dukandar Shandar";
+  const baseUrl = getBaseUrl();
+  const orderUrl = `${baseUrl}/orders?orderId=${encodeURIComponent(input.orderId)}`;
   const statusLower = input.status.toLowerCase();
   const courier = input.courier || "PostEx";
   const trackingNumber = input.trackingNumber || "";
@@ -161,6 +203,11 @@ export function orderStatusEmail(input: {
        </div>`
            : ""
        }
+       <div style="margin:24px 0; text-align:center;">
+         <a href="${orderUrl}" style="background:${gold}; color:${navy}; font-size:14px; font-weight:bold; padding:12px 24px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+           View Web App Order &rarr;
+         </a>
+       </div>
        <p style="font-size: 14px; color: #64748b;">You will receive another update as soon as PostEx picks up your package for transit.</p>
        <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
       storeName,
@@ -182,6 +229,11 @@ export function orderStatusEmail(input: {
        </div>`
            : ""
        }
+       <div style="margin:24px 0; text-align:center;">
+         <a href="${orderUrl}" style="background:${gold}; color:${navy}; font-size:14px; font-weight:bold; padding:12px 24px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+           View Web App Order &rarr;
+         </a>
+       </div>
        <p style="font-size: 14px; color: #64748b;">Please ensure someone is available at the delivery address to receive the parcel.</p>
        <p>Thank you for shopping with ${escapeHtml(storeName || "us")}!</p>`,
       storeName,
@@ -201,6 +253,11 @@ export function orderStatusEmail(input: {
     `Order ${input.status}`,
     `<p>Hi ${escapeHtml(input.name)},</p>
      <p>Your order <strong>#${escapeHtml(input.orderId)}</strong> is now <strong>${escapeHtml(input.status)}</strong>.</p>
+     <div style="margin:24px 0; text-align:center;">
+       <a href="${orderUrl}" style="background:${gold}; color:${navy}; font-size:14px; font-weight:bold; padding:12px 24px; text-decoration:none; border-radius:8px; display:inline-block; box-shadow:0 4px 12px rgba(254,190,76,0.3);">
+         View Web App Order Details &rarr;
+       </a>
+     </div>
      <p>Thank you for shopping with ${escapeHtml(storeName || "us")}.</p>`,
     storeName,
   );
