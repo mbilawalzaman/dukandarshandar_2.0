@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { TOKEN_COOKIE } from "@/lib/constants";
+import { REFRESH_TOKEN_COOKIE, TOKEN_COOKIE } from "@/lib/constants";
 
 function base64UrlToBytes(input: string): Uint8Array {
   const padded = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -82,11 +82,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
 
+  const hasRefreshToken = Boolean(
+    request.cookies.get(REFRESH_TOKEN_COOKIE)?.value,
+  );
+
   if (!pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
 
-  if (!token) {
+  if (!token && !hasRefreshToken) {
     const url = request.nextUrl.clone();
 
     url.pathname = "/login";
@@ -95,9 +99,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (!token) return NextResponse.next();
+
   const authResult = await verifyAdminToken(token);
 
-  if (authResult === "expired" || authResult === "invalid") {
+  // Let AdminLayout renew an expired access token using the valid refresh
+  // cookie. Redirecting here prevents the client refresh flow from running.
+  if (authResult === "expired" && hasRefreshToken) {
+    return NextResponse.next();
+  }
+
+  if (authResult === "invalid") {
     const url = request.nextUrl.clone();
 
     url.pathname = "/login";
