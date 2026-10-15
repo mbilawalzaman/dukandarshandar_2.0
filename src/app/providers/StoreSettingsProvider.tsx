@@ -33,33 +33,35 @@ export function StoreSettingsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [settings, setSettings] = useState<DeliverySettings>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("ds_store_settings");
-
-        if (cached) {
-          const parsed = JSON.parse(cached);
-
-          if (parsed && typeof parsed === "object") {
-            return {
-              ...DEFAULT_DELIVERY_SETTINGS,
-              ...parsed,
-              activeThemeKey: normalizeThemeKey(parsed.activeThemeKey),
-            };
-          }
-        }
-      } catch {
-        /* ignore storage read error */
-      }
-    }
-
-    return DEFAULT_DELIVERY_SETTINGS;
-  });
+  // Keep the first client render identical to the server render. Browser
+  // storage is loaded after hydration in the effect below.
+  const [settings, setSettings] = useState<DeliverySettings>(
+    DEFAULT_DELIVERY_SETTINGS,
+  );
 
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const revision = useRef(0);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("ds_store_settings");
+
+      if (cached) {
+        const parsed = JSON.parse(cached);
+
+        if (parsed && typeof parsed === "object") {
+          setSettings({
+            ...DEFAULT_DELIVERY_SETTINGS,
+            ...parsed,
+            activeThemeKey: normalizeThemeKey(parsed.activeThemeKey),
+          });
+        }
+      }
+    } catch {
+      /* ignore storage read error */
+    }
+  }, []);
 
   const fetchSettings = useCallback(async () => {
     const request = ++revision.current;
