@@ -1,7 +1,3 @@
-import dotenv from "dotenv";
-
-dotenv.config();
-
 export const POSTEX_CONFIG = {
   BASE_URL: process.env.POSTEX_BASE_URL || "https://api.postex.pk",
   API_TOKEN: process.env.POSTEX_API_TOKEN || "",
