@@ -16,6 +16,7 @@ import {
   Snackbar,
   Alert,
   TextField,
+  CircularProgress,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -163,6 +164,7 @@ export default function AdminOrdersPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const [selectedOrderForLabel, setSelectedOrderForLabel] =
     useState<Order | null>(null);
@@ -265,6 +267,10 @@ export default function AdminOrdersPage() {
     newStatus: string,
     targetOrder?: Order,
   ) => {
+    if (updatingOrderId) return;
+
+    setUpdatingOrderId(orderId);
+
     try {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -281,7 +287,7 @@ export default function AdminOrdersPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        fetchOrders();
+        await fetchOrders();
 
         if (newStatus === "shipped" && targetOrder) {
           handleOpenLabelModal(targetOrder);
@@ -300,6 +306,8 @@ export default function AdminOrdersPage() {
         message: "Network error updating order status",
         severity: "error",
       });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -472,6 +480,7 @@ export default function AdminOrdersPage() {
           <FormControl size="small" variant="outlined" sx={{ minWidth: 115 }}>
             <Select
               value={val || "pending"}
+              disabled={updatingOrderId === row._id}
               onChange={(e) =>
                 handleStatusChange(
                   row._id as string,
@@ -481,7 +490,9 @@ export default function AdminOrdersPage() {
               }
               sx={{ fontSize: "0.8rem", height: 30, px: 0.5 }}
               renderValue={(selected) =>
-                fulfillmentLabel(String(selected), row)
+                updatingOrderId === row._id
+                  ? "Updating..."
+                  : fulfillmentLabel(String(selected), row)
               }
             >
               <MenuItem value={row.status}>
@@ -497,6 +508,9 @@ export default function AdminOrdersPage() {
               )}
             </Select>
           </FormControl>
+          {updatingOrderId === row._id && (
+            <CircularProgress size={18} aria-label="Updating order status" />
+          )}
           {(() => {
             const st = (row.status || "").toLowerCase();
             const isCancelled = st === "cancelled" || st === "payment_failed";
