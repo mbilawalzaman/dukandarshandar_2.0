@@ -4,7 +4,7 @@ import React from "react";
 
 import { Box, Paper, Typography } from "@mui/material";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
+// import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 
 // import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 // import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -27,12 +27,13 @@ const PAYMENT_METHODS: PaymentMethodOption[] = [
     description: "Pay when your order arrives",
     icon: <LocalShippingOutlinedIcon />,
   },
-  {
-    id: "card",
-    label: "Debit / Credit Card",
-    description: "Pay securely on this page",
-    icon: <CreditCardOutlinedIcon />,
-  },
+  // Re-enable when the Safepay merchant account is ready:
+  // {
+  //   id: "card",
+  //   label: "Debit / Credit Card",
+  //   description: "Pay securely on this page",
+  //   icon: <CreditCardOutlinedIcon />,
+  // },
   // Raast & wallet require additional Safepay merchant authentication enable when configured.
   // {
   //   id: "raast",
