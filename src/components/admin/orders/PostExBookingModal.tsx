@@ -20,6 +20,8 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PrintIcon from "@mui/icons-material/Print";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
+import { authFetch } from "@/lib/authFetch";
+
 import PostExTrackingTimeline from "@/app/components/orders/PostExTrackingTimeline";
 
 interface PostExBookingModalProps {
@@ -93,7 +95,7 @@ export default function PostExBookingModal({
     setSuccessMsg(null);
 
     try {
-      const res = await fetch("/api/admin/postex/orders/create", {
+      const res = await authFetch("/api/admin/postex/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,7 +143,7 @@ export default function PostExBookingModal({
     setError(null);
 
     try {
-      const res = await fetch("/api/admin/postex/load-sheet", {
+      const res = await authFetch("/api/admin/postex/load-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,7 +182,7 @@ export default function PostExBookingModal({
     }
 
     try {
-      const res = await fetch("/api/admin/postex/airway-bill", {
+      const res = await authFetch("/api/admin/postex/airway-bill", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,7 +216,7 @@ export default function PostExBookingModal({
     setTrackingLoading(true);
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/admin/postex/track?trackingNumber=${encodeURIComponent(trackingNumber)}`,
       );
 

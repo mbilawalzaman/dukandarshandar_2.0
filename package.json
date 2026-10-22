@@ -15,9 +15,11 @@
     "import:areas": "node --env-file=.env scripts/importDarazAreas.mjs",
     "scrape:areas": "node --env-file=.env scripts/scrapeDarazBatched.mjs",
     "test:promotions": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "test:auth": "node tests/authFetch.test.mjs",
     "test:postex": "node --experimental-strip-types --test tests/postex.test.ts",
     "test:postex-live": "node --env-file=.env scripts/testPostExApi.mjs",
     "test:postex-webhook": "node --env-file=.env --experimental-strip-types scripts/testPostExWebhook.mjs",
+    "seed:categories": "node --env-file=.env scripts/seedProductCategories.mjs",
     "seed:promotion-types": "node --env-file=.env scripts/seedPromotionTypes.mjs",
     "migrate:promotions": "node --env-file=.env scripts/migrateDiscountsToPromotions.mjs"
   },

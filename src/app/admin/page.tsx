@@ -5,6 +5,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Typography, Box, Button, CircularProgress } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
+import { authFetch } from "@/lib/authFetch";
+
 import type { ProductFormData } from "@/app/components/admin/ProductFormModal";
 import ProductFormModal from "@/app/components/admin/ProductFormModal";
 import DashboardMetricsGrid from "@/app/components/admin/DashboardMetricsGrid";
@@ -49,7 +51,7 @@ export default function AdminDashboardPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/stats");
+      const res = await authFetch("/api/admin/stats");
       const data = await res.json();
 
       if (data.success) {

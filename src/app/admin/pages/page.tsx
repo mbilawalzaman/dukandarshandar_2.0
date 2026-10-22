@@ -21,6 +21,8 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ContactMailIcon from "@mui/icons-material/ContactMail";
 
+import { authFetch } from "@/lib/authFetch";
+
 import type {
   BannerItem,
   MediaAsset,
@@ -88,7 +90,7 @@ export default function AdminManagePages() {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      const res = await fetch(`/api/admin/page-settings?t=${Date.now()}`, {
+      const res = await authFetch(`/api/admin/page-settings?t=${Date.now()}`, {
         cache: "no-store",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -182,7 +184,7 @@ export default function AdminManagePages() {
         };
       }
 
-      const res = await fetch("/api/admin/page-settings", {
+      const res = await authFetch("/api/admin/page-settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

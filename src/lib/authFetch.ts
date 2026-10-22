@@ -14,7 +14,7 @@ const LOGOUT_GUARD_KEY = "ds_skip_refresh";
 
 let refreshPromise: Promise<string | null> | null = null;
 
-function expireCookie(name: string) {
+function expireCookie(name: string): void {
   // Match path used when setting cookies; cover common host-only cookies.
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
 
@@ -23,14 +23,14 @@ function expireCookie(name: string) {
   }
 }
 
-export function persistAccessToken(token: string) {
+export function persistAccessToken(token: string): void {
   sessionStorage.removeItem(LOGOUT_GUARD_KEY);
   localStorage.setItem("token", token);
   window.dispatchEvent(new Event("authChange"));
 }
 
 /** Clear access token + both auth cookies on the client. Blocks refresh until next login. */
-export function clearClientAuth() {
+export function clearClientAuth(): void {
   sessionStorage.setItem(LOGOUT_GUARD_KEY, "1");
   localStorage.removeItem("token");
   expireCookie(TOKEN_COOKIE);
@@ -151,8 +151,12 @@ export async function authFetch(
 
   const headers = new Headers(init.headers || {});
 
-  if (token && !headers.has("Authorization")) {
+  // Callers may have built headers before ensureFreshAccessToken renewed the JWT.
+  // Always use the current session token rather than a captured bearer token.
+  if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    headers.delete("Authorization");
   }
 
   if (

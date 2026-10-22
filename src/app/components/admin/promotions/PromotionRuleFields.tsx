@@ -27,7 +27,8 @@ import SearchIcon from "@mui/icons-material/Search";
 
 import { InputAdornment } from "@mui/material";
 
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
+import CategoryLoadStatus from "@/app/components/catalog/CategoryLoadStatus";
+import { useProductCategories } from "@/hooks/useProductCategories";
 import type {
   PromotionBadge,
   PromotionConditions,
@@ -53,7 +54,7 @@ export function RewardFields({
   kind: PromotionKind;
   reward: PromotionReward;
   onChange: (next: PromotionReward) => void;
-}) {
+}): React.JSX.Element {
   const patch = (p: Partial<PromotionReward>) => onChange({ ...reward, ...p });
 
   if (kind === "free_shipping") {
@@ -177,7 +178,7 @@ export function ConditionsFields({
 }: {
   conditions: PromotionConditions;
   onChange: (next: PromotionConditions) => void;
-}) {
+}): React.JSX.Element {
   const patch = (p: Partial<PromotionConditions>) =>
     onChange({ ...conditions, ...p });
 
@@ -237,7 +238,7 @@ export function LimitsFields({
     stackable: boolean;
     priority: number;
   }) => void;
-}) {
+}): React.JSX.Element {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={3}>
@@ -315,19 +316,21 @@ export function SearchableCategorySelect({
 }: {
   selected: string[];
   onChange: (next: string[]) => void;
-}) {
+}): React.JSX.Element {
+  const { categories } = useProductCategories();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return PRODUCT_CATEGORIES;
+    if (!search.trim()) return categories;
 
-    return PRODUCT_CATEGORIES.filter((c) =>
+    return categories.filter((c) =>
       c.toLowerCase().includes(search.trim().toLowerCase()),
     );
-  }, [search]);
+  }, [search, categories]);
 
   return (
     <FormControl fullWidth>
+      <CategoryLoadStatus />
       <InputLabel>Categories</InputLabel>
       <Select
         multiple
@@ -404,7 +407,7 @@ export function ScopeFields({
   onPerProductChange?: (next: PromotionProductDeal[]) => void;
   withPricing?: boolean;
   rewardPercent?: number;
-}) {
+}): React.JSX.Element {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={scope.type === "categories" ? 4 : 12}>
@@ -459,7 +462,7 @@ export function BadgeFields({
 }: {
   badge: PromotionBadge;
   onChange: (next: PromotionBadge) => void;
-}) {
+}): React.JSX.Element {
   return (
     <Grid container spacing={2} alignItems="center">
       <Grid item xs={12} sm={5}>

@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { useNotifications } from "@/app/providers/NotificationProvider";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
@@ -84,7 +86,7 @@ export default function NotificationBell() {
               component={Link}
               href={viewAllHref}
               onClick={async () => {
-                await fetch(`/api/notifications/${n.id}/read`, {
+                await authFetch(`/api/notifications/${n.id}/read`, {
                   method: "PATCH",
                   headers: {
                     ...authHeaders(),
@@ -167,7 +169,7 @@ export default function NotificationBell() {
             variant="text"
             fullWidth
             onClick={async () => {
-              await fetch("/api/notifications/read-all", {
+              await authFetch("/api/notifications/read-all", {
                 method: "PATCH",
                 headers: authHeaders(),
               });

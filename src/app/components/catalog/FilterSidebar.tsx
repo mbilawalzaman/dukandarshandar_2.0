@@ -23,7 +23,8 @@ import TuneIcon from "@mui/icons-material/Tune";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 import { BRAND } from "@/lib/uiBrand";
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
+import CategoryLoadStatus from "@/app/components/catalog/CategoryLoadStatus";
+import { useProductCategories } from "@/hooks/useProductCategories";
 
 export interface FilterState {
   searchInput: string;
@@ -51,11 +52,13 @@ export default function FilterSidebar({
   onReset,
   hasActiveFilters,
   categoryCounts,
-}: FilterSidebarProps) {
+}: FilterSidebarProps): React.JSX.Element {
+  const { categories } = useProductCategories();
   const { searchInput, category, minPrice, maxPrice, inStockOnly } = filters;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <CategoryLoadStatus />
       {/* Header with Title and Reset */}
       <Box
         sx={{
@@ -171,7 +174,7 @@ export default function FilterSidebar({
             />
           </ListItemButton>
 
-          {PRODUCT_CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isSelected = category.toLowerCase() === cat.toLowerCase();
             const count = categoryCounts[cat] || 0;
 

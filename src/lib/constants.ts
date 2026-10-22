@@ -8,16 +8,6 @@ export const BRAND = {
   footer: "#111111",
 } as const;
 
-export const PRODUCT_CATEGORIES = [
-  "Stationery",
-  "Craft",
-  "Clock",
-  "Pen",
-  "Diary",
-  "Bags",
-  "Other",
-] as const;
-
 export const PRICE_FILTERS = [0, 100, 200, 300, 500, 1000] as const;
 
 export const SHIPPING_FEE = 250;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { ObjectId } from "mongodb";
 
-import { verifyToken, requireAdmin } from "@/lib/auth";
+import { requireAuth, requireAdmin } from "@/lib/auth";
 import {
   createUser,
   getUsers,
@@ -11,25 +11,12 @@ import {
 import { UserRole } from "@/models/User";
 import { getDb } from "@/lib/db";
 
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
-    const token = req.headers.get("authorization")?.split(" ")[1];
+    const auth = requireAuth(req);
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { success: false, error: "Invalid Token" },
-        { status: 403 },
-      );
-    }
+    if (!auth.ok) return auth.response;
+    const decoded = auth.user;
 
     const url = new URL(req.url);
     const userId = url.searchParams.get("id");

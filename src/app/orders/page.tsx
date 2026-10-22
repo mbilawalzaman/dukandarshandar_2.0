@@ -39,6 +39,8 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import CloseIcon from "@mui/icons-material/Close";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 
+import { authFetch } from "@/lib/authFetch";
+
 import PageBanner from "../components/PageBanner";
 import ConfirmModal from "../components/ConfirmModal";
 import OrderFilterSidebar from "../components/orders/OrderFilterSidebar";
@@ -243,7 +245,7 @@ function OrdersContent() {
           query.set("timeframe", filters.timeframe);
         if (filters.sortBy !== "newest") query.set("sortBy", filters.sortBy);
 
-        const res = await fetch(`/api/orders?${query.toString()}`, {
+        const res = await authFetch(`/api/orders?${query.toString()}`, {
           headers: authHeaders(),
         });
 
@@ -341,7 +343,7 @@ function OrdersContent() {
     try {
       setCancellingId(order._id);
 
-      const res = await fetch(`/api/orders/${order._id}/cancel`, {
+      const res = await authFetch(`/api/orders/${order._id}/cancel`, {
         method: "POST",
         headers: authHeaders(),
       });

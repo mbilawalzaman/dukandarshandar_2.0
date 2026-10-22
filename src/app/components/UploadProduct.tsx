@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import Image from "next/image";
 
+import { authFetch } from "@/lib/authFetch";
+
 interface Product {
   _id: string;
   name: string;
@@ -72,7 +74,7 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("token");
 
-        const response = await fetch("/api/products/upload", {
+        const response = await authFetch("/api/products/upload", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

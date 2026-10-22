@@ -233,7 +233,7 @@ export default function CheckoutPage() {
       setQuoting(true);
 
       try {
-        const res = await fetch("/api/promotions/quote", {
+        const res = await authFetch("/api/promotions/quote", {
           method: "POST",
           headers: authHeaders(),
           credentials: "include",
@@ -614,7 +614,7 @@ export default function CheckoutPage() {
       await syncShippingToProfile();
       persistGuestInfoIfApplicable();
 
-      const res = await fetch("/api/orders", {
+      const res = await authFetch("/api/orders", {
         method: "POST",
         headers: { ...authHeaders(), "Idempotency-Key": checkoutRequestKey() },
         credentials: "include",
@@ -668,7 +668,7 @@ export default function CheckoutPage() {
       await syncShippingToProfile();
       persistGuestInfoIfApplicable();
 
-      const res = await fetch("/api/payments/safepay/session", {
+      const res = await authFetch("/api/payments/safepay/session", {
         method: "POST",
         headers: { ...authHeaders(), "Idempotency-Key": checkoutRequestKey() },
         credentials: "include",

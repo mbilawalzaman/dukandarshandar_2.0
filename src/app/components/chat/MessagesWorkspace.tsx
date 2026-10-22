@@ -34,6 +34,8 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import { jwtDecode } from "jwt-decode";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
@@ -228,7 +230,7 @@ export default function MessagesWorkspace({
     setLocalError(null);
 
     try {
-      const res = await fetch("/api/conversations", {
+      const res = await authFetch("/api/conversations", {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({}),

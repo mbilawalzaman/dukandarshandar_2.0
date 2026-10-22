@@ -11,6 +11,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { useMarketplaceTheme } from "@/app/providers/MarketplaceThemeProvider";
 import { useStoreSettings } from "@/app/providers/StoreSettingsProvider";
 import type { ThemeKey } from "@/lib/themePresets";
@@ -154,7 +156,7 @@ export default function AdminSettingsPage() {
     try {
       setSaving(true);
 
-      const res = await fetch("/api/settings/delivery", {
+      const res = await authFetch("/api/settings/delivery", {
         method: "PUT",
         headers: authHeaders(),
         body: JSON.stringify({

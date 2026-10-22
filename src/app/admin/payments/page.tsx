@@ -23,6 +23,8 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
+import { authFetch } from "@/lib/authFetch";
+
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import { formatDate, formatDateTime } from "@/lib/dateUtils";
@@ -187,7 +189,7 @@ export default function AdminPaymentsPage() {
 
       const qs = params.toString();
 
-      const res = await fetch(`/api/admin/payments${qs ? `?${qs}` : ""}`, {
+      const res = await authFetch(`/api/admin/payments${qs ? `?${qs}` : ""}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 

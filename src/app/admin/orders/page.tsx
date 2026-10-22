@@ -26,6 +26,8 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { allowedOrderTransitions } from "@/lib/orderRules";
 import {
   startOfDay,
@@ -232,7 +234,7 @@ export default function AdminOrdersPage() {
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
 
-      const res = await fetch(`/api/orders?${params.toString()}`, {
+      const res = await authFetch(`/api/orders?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -275,7 +277,7 @@ export default function AdminOrdersPage() {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      const res = await fetch("/api/orders", {
+      const res = await authFetch("/api/orders", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

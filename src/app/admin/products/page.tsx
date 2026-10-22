@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import {
   Box,
@@ -15,6 +16,11 @@ import {
   Paper,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -27,28 +33,20 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import type { ProductFormData } from "../../components/admin/ProductFormModal";
 import ProductFormModal from "../../components/admin/ProductFormModal";
 import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
+import { authFetch } from "@/lib/authFetch";
+import { BRAND } from "@/lib/uiBrand";
 import { getProductThumbnail } from "@/lib/productImages";
 
-interface Product {
-  _id: string;
-  name: string;
-  category: string;
-  price: number;
-  quantity: number;
-  rating: number;
-  description: string;
-  image: string;
-  images?: { url: string; publicId?: string }[];
-  featured?: boolean;
-}
+import type { Product, StockCounts } from "@/types/apps/productTypes";
+import { refreshProductCategories } from "@/lib/productCategoryStore";
 
-interface StockCounts {
-  inStock: number;
-  lowStock: number;
-  outOfStock: number;
-}
+export default function AdminProductsPage(): React.JSX.Element {
+  const router = useRouter();
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryError, setCategoryError] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
-export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,13 +85,68 @@ export default function AdminProductsPage() {
     severity: "info",
   });
 
+  const handleAddCategory = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+      event.preventDefault();
+      setSavingCategory(true);
+      setCategoryError("");
+
+      try {
+        const response = await authFetch("/api/categories", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: categoryName }),
+        });
+
+        const data: unknown = await response.json();
+
+        if (
+          !response.ok ||
+          typeof data !== "object" ||
+          data === null ||
+          !("success" in data) ||
+          data.success !== true
+        ) {
+          const message =
+            typeof data === "object" &&
+            data !== null &&
+            "message" in data &&
+            typeof data.message === "string"
+              ? data.message
+              : "Unable to create category";
+
+          throw new Error(message);
+        }
+
+        void refreshProductCategories();
+        setCategoryOpen(false);
+        setCategoryName("");
+        setToast({
+          open: true,
+          message: "Category added successfully",
+          severity: "success",
+        });
+      } catch (error) {
+        console.error("Failed to add category:", error);
+        setCategoryError(
+          error instanceof Error ? error.message : "Unable to create category",
+        );
+      } finally {
+        setSavingCategory(false);
+      }
+    },
+    [categoryName],
+  );
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
 
@@ -105,7 +158,7 @@ export default function AdminProductsPage() {
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
       if (stockFilter !== "all") params.set("stock", stockFilter);
 
-      const res = await fetch(`/api/products?${params.toString()}`);
+      const res = await authFetch(`/api/products?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
@@ -124,41 +177,37 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleStockFilterChange = (
-    _: React.SyntheticEvent,
-    val: typeof stockFilter,
-  ) => {
-    setStockFilter(val);
-    setPage(0);
-  };
+  const handleStockFilterChange = useCallback(
+    (_: React.SyntheticEvent, val: typeof stockFilter): void => {
+      setStockFilter(val);
+      setPage(0);
+    },
+    [],
+  );
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = useCallback((): void => {
     setSelectedProduct(null);
     setIsFormModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenEditModal = (product: Product) => {
+  const handleOpenEditModal = useCallback((product: Product): void => {
     setSelectedProduct(product);
     setIsFormModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenDeleteModal = (product: Product) => {
+  const handleOpenDeleteModal = useCallback((product: Product): void => {
     setProductToDelete(product);
     setIsDeleteModalOpen(true);
-  };
+  }, []);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
     if (!productToDelete) return;
 
     try {
       setDeleting(true);
 
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-      const res = await fetch(`/api/products/${productToDelete._id}`, {
+      const res = await authFetch(`/api/products/${productToDelete._id}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       const data = await res.json();
@@ -183,97 +232,145 @@ export default function AdminProductsPage() {
     } finally {
       setDeleting(false);
     }
-  };
+  }, [productToDelete, fetchProducts]);
 
-  const columns: ColumnDef<Product>[] = [
-    {
-      id: "image",
-      label: "Image",
-      minWidth: 80,
-      format: (_val, row) => (
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            position: "relative",
-            borderRadius: 1,
-            overflow: "hidden",
-          }}
-        >
-          <Image
-            src={getProductThumbnail(row)}
-            alt="Product"
-            fill
-            style={{ objectFit: "cover" }}
-            unoptimized
-          />
-        </Box>
-      ),
-    },
-    { id: "name", label: "Product Name", minWidth: 160 },
-    {
-      id: "category",
-      label: "Category",
-      minWidth: 120,
-      format: (val) => (
-        <Chip
-          label={String(val || "General")}
-          size="small"
-          color="primary"
-          variant="outlined"
-        />
-      ),
-    },
-    {
-      id: "price",
-      label: "Price",
-      minWidth: 100,
-      format: (val) => `PKR ${Number(val).toLocaleString()}`,
-    },
-    {
-      id: "quantity",
-      label: "Stock Qty",
-      minWidth: 90,
-      align: "center",
-      format: (val) => {
-        const qty = Number(val) || 0;
-
-        return (
-          <Chip
-            label={
-              qty <= 0
-                ? "0 (Out of stock)"
-                : qty <= 5
-                  ? `${qty} (Low stock)`
-                  : String(qty)
-            }
-            size="small"
-            color={qty > 5 ? "success" : qty > 0 ? "warning" : "error"}
-            sx={{ fontWeight: 600 }}
-          />
-        );
+  const columns = useMemo<ColumnDef<Product>[]>(
+    () => [
+      {
+        id: "image",
+        label: "Image",
+        minWidth: 80,
+        format: (_val, row) => (
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              position: "relative",
+              borderRadius: 1,
+              overflow: "hidden",
+            }}
+          >
+            <Image
+              src={getProductThumbnail(row)}
+              alt="Product"
+              fill
+              style={{ objectFit: "cover" }}
+              unoptimized
+            />
+          </Box>
+        ),
       },
+      { id: "name", label: "Product Name", minWidth: 160 },
+      {
+        id: "category",
+        label: "Category",
+        minWidth: 120,
+        format: (val) => (
+          <Chip
+            label={String(val || "General")}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
+        ),
+      },
+      {
+        id: "price",
+        label: "Price",
+        minWidth: 100,
+        format: (val) => `PKR ${Number(val).toLocaleString()}`,
+      },
+      {
+        id: "quantity",
+        label: "Stock Qty",
+        minWidth: 90,
+        align: "center",
+        format: (val) => {
+          const qty = Number(val) || 0;
+
+          return (
+            <Chip
+              label={
+                qty <= 0
+                  ? "0 (Out of stock)"
+                  : qty <= 5
+                    ? `${qty} (Low stock)`
+                    : String(qty)
+              }
+              size="small"
+              color={qty > 5 ? "success" : qty > 0 ? "warning" : "error"}
+              sx={{ fontWeight: 600 }}
+            />
+          );
+        },
+      },
+      {
+        id: "rating",
+        label: "Rating",
+        minWidth: 120,
+        format: (val) => (
+          <Rating
+            value={Number(val) || 0}
+            precision={0.5}
+            size="small"
+            readOnly
+          />
+        ),
+      },
+      {
+        id: "actions",
+        label: "Actions",
+        minWidth: 120,
+        align: "center",
+      },
+    ],
+    [],
+  );
+
+  const handleViewProduct = useCallback(
+    (product: Product): void => {
+      router.push(`/products/${product._id}`);
     },
-    {
-      id: "rating",
-      label: "Rating",
-      minWidth: 120,
-      format: (val) => (
-        <Rating
-          value={Number(val) || 0}
-          precision={0.5}
-          size="small"
-          readOnly
-        />
-      ),
+    [router],
+  );
+
+  const handleRowsPerPageChange = useCallback((next: number): void => {
+    setRowsPerPage(next);
+    setPage(0);
+  }, []);
+
+  const handleSearchChange = useCallback((term: string): void => {
+    setSearchTerm(term);
+    setPage(0);
+  }, []);
+
+  const handleOpenCategory = useCallback((): void => {
+    setCategoryError("");
+    setCategoryOpen(true);
+  }, []);
+
+  const handleCloseCategory = useCallback((): void => {
+    if (!savingCategory) setCategoryOpen(false);
+  }, [savingCategory]);
+
+  const handleCategoryNameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      setCategoryName(event.target.value);
     },
-    {
-      id: "actions",
-      label: "Actions",
-      minWidth: 120,
-      align: "center",
-    },
-  ];
+    [],
+  );
+
+  const handleCloseProductForm = useCallback((): void => {
+    setIsFormModalOpen(false);
+  }, []);
+
+  const handleCloseDelete = useCallback((): void => {
+    setIsDeleteModalOpen(false);
+  }, []);
+
+  const handleCloseToast = useCallback((): void => {
+    setToast((previous) => ({ ...previous, open: false }));
+  }, []);
 
   const totalAll =
     stockCounts.inStock + stockCounts.lowStock + stockCounts.outOfStock;
@@ -291,7 +388,7 @@ export default function AdminProductsPage() {
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: BRAND.navy }}>
             Products Inventory Management
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -299,20 +396,30 @@ export default function AdminProductsPage() {
             catalog items.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddModal}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1.2,
-            fontWeight: 600,
-            backgroundColor: "var(--theme-primary-main, #0284c7)",
-          }}
-        >
-          Add Product
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleOpenCategory}
+            sx={{ borderRadius: 2, color: BRAND.navy, borderColor: BRAND.gold }}
+          >
+            Add Category
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddModal}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1.2,
+              fontWeight: 600,
+              backgroundColor: BRAND.gold,
+            }}
+          >
+            Add Product
+          </Button>
+        </Box>
       </Box>
 
       <Paper
@@ -374,6 +481,7 @@ export default function AdminProductsPage() {
         columns={columns}
         data={products}
         searchPlaceholder="Search product by name..."
+        onView={handleViewProduct}
         onEdit={handleOpenEditModal}
         onDelete={handleOpenDeleteModal}
         loading={loading}
@@ -383,20 +491,55 @@ export default function AdminProductsPage() {
           rowsPerPage,
           searchTerm,
           onPageChange: setPage,
-          onRowsPerPageChange: (next) => {
-            setRowsPerPage(next);
-            setPage(0);
-          },
-          onSearchChange: (term) => {
-            setSearchTerm(term);
-            setPage(0);
-          },
+          onRowsPerPageChange: handleRowsPerPageChange,
+          onSearchChange: handleSearchChange,
         }}
       />
 
+      <Dialog
+        open={categoryOpen}
+        onClose={handleCloseCategory}
+        fullWidth
+        maxWidth="xs"
+      >
+        <form onSubmit={handleAddCategory}>
+          <DialogTitle>Add Category</DialogTitle>
+          <DialogContent>
+            {categoryError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {categoryError}
+              </Alert>
+            )}
+            <TextField
+              autoFocus
+              fullWidth
+              required
+              label="Category name"
+              value={categoryName}
+              onChange={handleCategoryNameChange}
+              inputProps={{ maxLength: 80 }}
+              disabled={savingCategory}
+              sx={{ mt: 1 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button disabled={savingCategory} onClick={handleCloseCategory}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={savingCategory || !categoryName.trim()}
+            >
+              {savingCategory ? "Saving…" : "Add Category"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
       <ProductFormModal
         open={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
+        onClose={handleCloseProductForm}
         onSuccess={fetchProducts}
         productToEdit={selectedProduct}
       />
@@ -405,7 +548,7 @@ export default function AdminProductsPage() {
         open={isDeleteModalOpen}
         title="Delete Product"
         message={`Are you sure you want to delete "${productToDelete?.name}"?`}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={handleCloseDelete}
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />
@@ -413,11 +556,11 @@ export default function AdminProductsPage() {
       <Snackbar
         open={toast.open}
         autoHideDuration={5000}
-        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        onClose={handleCloseToast}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          onClose={handleCloseToast}
           severity={toast.severity}
           variant="filled"
           sx={{ width: "100%", borderRadius: 2 }}

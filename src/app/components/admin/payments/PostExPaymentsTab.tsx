@@ -27,6 +27,8 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 
+import { authFetch } from "@/lib/authFetch";
+
 import type { ColumnDef } from "../AdminDataTable";
 import AdminDataTable from "../AdminDataTable";
 import { formatDate } from "@/lib/dateUtils";
@@ -104,7 +106,7 @@ export default function PostExPaymentsTab() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/postex/payments", {
+      const res = await authFetch("/api/admin/postex/payments", {
         headers: authHeaders(),
       });
 
@@ -155,7 +157,7 @@ export default function PostExPaymentsTab() {
       setLiveError("");
 
       try {
-        const res = await fetch("/api/admin/postex/payments", {
+        const res = await authFetch("/api/admin/postex/payments", {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({ trackingNumber }),

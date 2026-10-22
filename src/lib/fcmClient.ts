@@ -2,6 +2,8 @@
 
 import { getToken, onMessage } from "firebase/messaging";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { getFirebaseMessaging } from "@/lib/firebaseClient";
 import { authHeaders } from "@/lib/cart";
 
@@ -63,7 +65,7 @@ export async function registerWebPushToken(): Promise<boolean> {
 
   if (!token) return false;
 
-  await fetch("/api/notifications/devices", {
+  await authFetch("/api/notifications/devices", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
@@ -88,7 +90,7 @@ export async function unregisterWebPushToken() {
     return;
   }
 
-  await fetch("/api/notifications/devices", {
+  await authFetch("/api/notifications/devices", {
     method: "DELETE",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ deviceId }),

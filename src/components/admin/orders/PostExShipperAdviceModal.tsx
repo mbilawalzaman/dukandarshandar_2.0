@@ -27,6 +27,8 @@ import ReplayIcon from "@mui/icons-material/Replay";
 import KeyboardReturnIcon from "@mui/icons-material/KeyboardReturn";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { BRAND } from "@/lib/uiBrand";
 
 interface PostExShipperAdviceModalProps {
@@ -81,7 +83,7 @@ export default function PostExShipperAdviceModal({
         try {
           const token = localStorage.getItem("token");
 
-          const res = await fetch(
+          const res = await authFetch(
             `/api/admin/postex/shipper-advice?trackingNumber=${encodeURIComponent(
               trackingNumber,
             )}`,
@@ -128,7 +130,7 @@ export default function PostExShipperAdviceModal({
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("/api/admin/postex/shipper-advice", {
+      const res = await authFetch("/api/admin/postex/shipper-advice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

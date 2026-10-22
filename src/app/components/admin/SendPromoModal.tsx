@@ -26,6 +26,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import SendIcon from "@mui/icons-material/Send";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import type {
   Promotion,
@@ -135,7 +137,7 @@ export default function SendPromoModal({
     try {
       setLoadingUsers(true);
 
-      const res = await fetch("/api/users", {
+      const res = await authFetch("/api/users", {
         headers: authHeaders(),
       });
 
@@ -222,7 +224,7 @@ export default function SendPromoModal({
     setSuccessMessage("");
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/admin/promotions/${promotion._id}/send-email`,
         {
           method: "POST",

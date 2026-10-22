@@ -23,6 +23,8 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SendIcon from "@mui/icons-material/Send";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import {
   PROMOTION_KIND_LABELS,
@@ -101,7 +103,7 @@ export default function PromotionDetailDrawer({
     let cancelled = false;
 
     setLoading(true);
-    fetch(`/api/admin/promotions/${promotion._id}/redemptions?limit=50`, {
+    authFetch(`/api/admin/promotions/${promotion._id}/redemptions?limit=50`, {
       headers: authHeaders(),
     })
       .then((r) => r.json())

@@ -29,6 +29,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import TuneIcon from "@mui/icons-material/Tune";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import {
   PROMOTION_KIND_LABELS,
@@ -175,7 +177,7 @@ export default function PromotionFormModal({
       setForm(emptyForm(defaultKind));
     }
 
-    fetch("/api/admin/promotion-types", { headers: authHeaders() })
+    authFetch("/api/admin/promotion-types", { headers: authHeaders() })
       .then((r) => r.json())
       .then((d) => {
         if (isCancelled) return;
@@ -274,7 +276,7 @@ export default function PromotionFormModal({
         ? `/api/admin/promotions/${promotion._id}`
         : "/api/admin/promotions";
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method: promotion?._id ? "PUT" : "POST",
         headers: authHeaders(),
         body: JSON.stringify(payload),

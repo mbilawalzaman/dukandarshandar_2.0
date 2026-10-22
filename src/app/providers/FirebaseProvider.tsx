@@ -16,6 +16,8 @@ import {
   type User,
 } from "firebase/auth";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { isChatEnabled } from "@/lib/firebaseConfig";
 import { authHeaders } from "@/lib/cart";
@@ -59,7 +61,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const res = await fetch("/api/firebase/token", {
+      const res = await authFetch("/api/firebase/token", {
         method: "POST",
         headers: authHeaders(),
       });

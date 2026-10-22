@@ -33,6 +33,8 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { getFirebaseDb } from "@/lib/firebaseClient";
 import { useFirebase } from "@/app/providers/FirebaseProvider";
 import { authHeaders } from "@/lib/cart";
@@ -177,7 +179,7 @@ export default function SupportChatPanel({
     shouldStickToBottomRef.current = true;
     pendingRef.current.clear();
 
-    fetch(`/api/conversations/${conversationId}/read`, {
+    authFetch(`/api/conversations/${conversationId}/read`, {
       method: "PATCH",
       headers: authHeaders(),
     }).catch(() => undefined);
@@ -330,11 +332,14 @@ export default function SupportChatPanel({
     shouldStickToBottomRef.current = true;
 
     try {
-      const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ text: trimmed, clientMessageId }),
-      });
+      const res = await authFetch(
+        `/api/conversations/${conversationId}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ text: trimmed, clientMessageId }),
+        },
+      );
 
       const data = await res.json();
 

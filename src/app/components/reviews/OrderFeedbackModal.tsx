@@ -25,6 +25,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { BRAND } from "@/lib/uiBrand";
 import { authHeaders } from "@/lib/cart";
 import Loader from "@/app/components/loader/Loader";
@@ -96,7 +98,7 @@ export default function OrderFeedbackModal({
     setError("");
     setItemMessage(null);
 
-    fetch(`/api/orders/${orderId}/reviews`, { headers: authHeaders() })
+    authFetch(`/api/orders/${orderId}/reviews`, { headers: authHeaders() })
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
@@ -158,7 +160,7 @@ export default function OrderFeedbackModal({
     setItemMessage(null);
 
     try {
-      const res = await fetch(`/api/orders/${orderId}/reviews`, {
+      const res = await authFetch(`/api/orders/${orderId}/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

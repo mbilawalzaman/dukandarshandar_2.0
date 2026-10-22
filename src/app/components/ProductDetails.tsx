@@ -18,6 +18,8 @@ import {
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
@@ -70,7 +72,7 @@ const ProductDetails = () => {
 
   const loadReviews = useCallback(async (pid: string) => {
     try {
-      const res = await fetch(`/api/products/${pid}/reviews`, {
+      const res = await authFetch(`/api/products/${pid}/reviews`, {
         headers: authHeaders(),
       });
 
@@ -147,7 +149,7 @@ const ProductDetails = () => {
     setReviewSuccess("");
 
     try {
-      const res = await fetch(`/api/products/${productId}/reviews`, {
+      const res = await authFetch(`/api/products/${productId}/reviews`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({

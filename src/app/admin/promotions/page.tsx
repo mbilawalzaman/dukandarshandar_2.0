@@ -11,6 +11,8 @@ import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SendIcon from "@mui/icons-material/Send";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import {
   PROMOTION_KIND_LABELS,
@@ -81,7 +83,7 @@ function PromotionsPageInner() {
       setError("");
       const qs = kindFilter ? `?kind=${kindFilter}` : "";
 
-      const res = await fetch(`/api/admin/promotions${qs}`, {
+      const res = await authFetch(`/api/admin/promotions${qs}`, {
         headers: authHeaders(),
       });
 
@@ -126,7 +128,7 @@ function PromotionsPageInner() {
   };
 
   const togglePause = async (p: Promotion) => {
-    const res = await fetch(`/api/admin/promotions/${p._id}/pause`, {
+    const res = await authFetch(`/api/admin/promotions/${p._id}/pause`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ paused: !p.isPaused }),
@@ -139,7 +141,7 @@ function PromotionsPageInner() {
   };
 
   const duplicate = async (p: Promotion) => {
-    const res = await fetch(`/api/admin/promotions/${p._id}/duplicate`, {
+    const res = await authFetch(`/api/admin/promotions/${p._id}/duplicate`, {
       method: "POST",
       headers: authHeaders(),
     });
@@ -159,7 +161,7 @@ function PromotionsPageInner() {
     setError("");
 
     try {
-      const res = await fetch(`/api/admin/promotions/${deleteTarget._id}`, {
+      const res = await authFetch(`/api/admin/promotions/${deleteTarget._id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });

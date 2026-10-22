@@ -7,7 +7,7 @@ import { escapeRegex } from "@/lib/escapeRegex";
 
 import { getDb } from "@/lib/db";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
-import { getAuthUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import type { PaymentBreakdownPoint } from "@/types/apps/adminDashboardTypes";
 import type { ProductImage } from "@/lib/productImages";
 import { MAX_PRODUCT_IMAGES } from "@/lib/productImages";
@@ -89,14 +89,10 @@ function syncPrimaryImageFields(images: StoredProductImage[]) {
 
 export const createProduct = async (req: Request) => {
   try {
-    const user = getAuthUser(req);
+    const auth = requireAdmin(req);
 
-    if (!user || user.role !== "admin") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      );
-    }
+    if (!auth.ok) return auth.response;
+    const user = auth.user;
 
     const {
       name,
@@ -213,14 +209,9 @@ export const createProduct = async (req: Request) => {
 
 export const updateProduct = async (req: Request) => {
   try {
-    const admin = getAuthUser(req);
+    const auth = requireAdmin(req);
 
-    if (!admin || admin.role !== "admin") {
-      return NextResponse.json(
-        { success: false, message: "Admin access required" },
-        { status: 403 },
-      );
-    }
+    if (!auth.ok) return auth.response;
 
     const {
       _id,

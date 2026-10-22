@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 import { Box, Chip, Typography } from "@mui/material";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import { rewardLabel } from "@/lib/promotionDisplay";
 import { usePromotions } from "@/app/providers/PromotionProvider";
@@ -36,7 +38,7 @@ export default function VoucherStrip({ product }: Props) {
   // Pre-mark vouchers already in the wallet.
   useEffect(() => {
     if (!isSignedIn() || offers.every((o) => o.kind !== "voucher")) return;
-    fetch("/api/promotions/mine", { headers: authHeaders() })
+    authFetch("/api/promotions/mine", { headers: authHeaders() })
       .then((r) => r.json())
       .then((d) => {
         if (!d.success) return;
@@ -58,7 +60,7 @@ export default function VoucherStrip({ product }: Props) {
       return;
     }
 
-    const res = await fetch(`/api/promotions/${v._id}/collect`, {
+    const res = await authFetch(`/api/promotions/${v._id}/collect`, {
       method: "POST",
       headers: authHeaders(),
     });

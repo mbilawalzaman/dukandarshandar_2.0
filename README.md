@@ -34,3 +34,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Product categories
+
+Product categories are stored in MongoDB (`productCategories`). Before deploying dynamic category selectors, run `npm run seed:categories` with `DATABASE_URL` and optional `MONGODB_DB` configured in `.env`. The idempotent migration preserves existing category records and imports the former defaults plus category names used by existing products. GET `/api/categories` only reads data and supports cursor pagination (`limit`, `cursor`). Admins can create categories through the Products page.
+
+## Authenticated browser requests
+
+Use `authFetch` from `src/lib/authFetch.ts` for session-authenticated app APIs. It renews expiring access tokens, uses the current bearer token, shares concurrent refresh attempts, and retries a 401 once. Keep login, logout, token refresh, public endpoints, and third-party uploads on plain `fetch`. APIs must return 401 for missing/expired authentication and 403 for insufficient permissions; use `requireAuth` or `requireAdmin`. Run `npm run test:auth` for the session regression checks.

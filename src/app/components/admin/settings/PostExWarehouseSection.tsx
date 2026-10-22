@@ -33,6 +33,8 @@ import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { BRAND } from "@/lib/uiBrand";
 
 export interface PickupAddress {
@@ -91,7 +93,7 @@ export default function PostExWarehouseSection({
     setErrorMsg("");
 
     try {
-      const res = await fetch("/api/admin/postex/pickup-addresses", {
+      const res = await authFetch("/api/admin/postex/pickup-addresses", {
         headers: authHeaders(),
       });
 
@@ -121,7 +123,7 @@ export default function PostExWarehouseSection({
     setCitiesLoading(true);
 
     try {
-      const res = await fetch("/api/admin/postex/cities?type=Pickup", {
+      const res = await authFetch("/api/admin/postex/cities?type=Pickup", {
         headers: authHeaders(),
       });
 
@@ -215,7 +217,7 @@ export default function PostExWarehouseSection({
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/admin/postex/pickup-addresses", {
+      const res = await authFetch("/api/admin/postex/pickup-addresses", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({

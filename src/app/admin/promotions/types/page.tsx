@@ -6,6 +6,8 @@ import { Alert, Box, Button, Chip, Switch, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RestoreIcon from "@mui/icons-material/Restore";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import {
   PROMOTION_KIND_LABELS,
@@ -49,7 +51,7 @@ export default function AdminPromotionTypesPage() {
       setLoading(true);
       setError("");
 
-      const res = await fetch("/api/admin/promotion-types?all=true", {
+      const res = await authFetch("/api/admin/promotion-types?all=true", {
         headers: authHeaders(),
       });
 
@@ -73,7 +75,7 @@ export default function AdminPromotionTypesPage() {
       prev.map((x) => (x._id === t._id ? { ...x, isActive: !t.isActive } : x)),
     );
 
-    const res = await fetch(`/api/admin/promotion-types/${t._id}`, {
+    const res = await authFetch(`/api/admin/promotion-types/${t._id}`, {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify({ isActive: !t.isActive }),
@@ -85,7 +87,7 @@ export default function AdminPromotionTypesPage() {
   const restorePresets = async () => {
     setNotice("");
 
-    const res = await fetch("/api/admin/promotion-types/seed", {
+    const res = await authFetch("/api/admin/promotion-types/seed", {
       method: "POST",
       headers: authHeaders(),
     });
@@ -108,7 +110,7 @@ export default function AdminPromotionTypesPage() {
     setError("");
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/admin/promotion-types/${deleteTarget._id}`,
         { method: "DELETE", headers: authHeaders() },
       );

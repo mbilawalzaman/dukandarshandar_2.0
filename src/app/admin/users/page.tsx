@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 
 import { Box, Typography, Chip } from "@mui/material";
 
+import { authFetch } from "@/lib/authFetch";
+
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 
@@ -26,7 +28,7 @@ export default function AdminUsersPage() {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      const res = await fetch("/api/users", {
+      const res = await authFetch("/api/users", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 

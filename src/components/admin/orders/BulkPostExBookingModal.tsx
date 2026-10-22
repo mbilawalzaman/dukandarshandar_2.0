@@ -24,6 +24,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
+import { authFetch } from "@/lib/authFetch";
+
 export interface OrderForBulkBooking {
   _id: string;
   orderNumber?: string;
@@ -87,7 +89,7 @@ export default function BulkPostExBookingModal({
       const order = unbookedOrders[i];
 
       try {
-        const res = await fetch("/api/admin/postex/orders/create", {
+        const res = await authFetch("/api/admin/postex/orders/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -161,7 +163,7 @@ export default function BulkPostExBookingModal({
     setErrorMsg(null);
 
     try {
-      const res = await fetch("/api/admin/postex/load-sheet", {
+      const res = await authFetch("/api/admin/postex/load-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -207,7 +209,7 @@ export default function BulkPostExBookingModal({
     setErrorMsg(null);
 
     try {
-      const res = await fetch("/api/admin/postex/airway-bill", {
+      const res = await authFetch("/api/admin/postex/airway-bill", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

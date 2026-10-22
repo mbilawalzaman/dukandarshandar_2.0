@@ -20,6 +20,8 @@ import {
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { useNotifications } from "@/app/providers/NotificationProvider";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
@@ -95,7 +97,7 @@ export default function NotificationsPanel({
         limit: String(perPage),
       });
 
-      const res = await fetch(`/api/notifications?${params.toString()}`, {
+      const res = await authFetch(`/api/notifications?${params.toString()}`, {
         headers: authHeaders(),
       });
 
@@ -118,7 +120,7 @@ export default function NotificationsPanel({
   }, [fetchNotifications]);
 
   const markRead = async (id: string) => {
-    await fetch(`/api/notifications/${id}/read`, {
+    await authFetch(`/api/notifications/${id}/read`, {
       method: "PATCH",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({}),
@@ -127,7 +129,7 @@ export default function NotificationsPanel({
   };
 
   const markAll = async () => {
-    await fetch("/api/notifications/read-all", {
+    await authFetch("/api/notifications/read-all", {
       method: "PATCH",
       headers: authHeaders(),
     });

@@ -26,26 +26,14 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
-import {
-  getProductImageUrls,
-  MAX_PRODUCT_IMAGES,
-  type ProductImage,
-} from "@/lib/productImages";
+import CategoryLoadStatus from "@/app/components/catalog/CategoryLoadStatus";
+import { authFetch } from "@/lib/authFetch";
+import { useProductCategories } from "@/hooks/useProductCategories";
+import { getProductImageUrls, MAX_PRODUCT_IMAGES } from "@/lib/productImages";
 
-export interface ProductFormData {
-  _id?: string;
-  name: string;
-  category: string;
-  price: number | string;
-  quantity: number | string;
-  rating: number | string;
-  description: string;
-  image: string;
-  images?: ProductImage[];
-  image_public_id?: string;
-  featured?: boolean;
-}
+import type { ProductFormData } from "@/types/apps/productTypes";
+
+export type { ProductFormData } from "@/types/apps/productTypes";
 
 interface ProductFormModalProps {
   open: boolean;
@@ -71,7 +59,8 @@ export default function ProductFormModal({
   onClose,
   onSuccess,
   productToEdit,
-}: ProductFormModalProps) {
+}: ProductFormModalProps): React.JSX.Element {
+  const { categories } = useProductCategories();
   const [formData, setFormData] = useState<ProductFormData>(initialFormState);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -261,14 +250,10 @@ export default function ProductFormModal({
 
       const method = isEdit ? "PUT" : "POST";
 
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           ...formData,
@@ -289,7 +274,11 @@ export default function ProductFormModal({
         onSuccess();
         onClose();
       } else {
-        setErrorMsg(data.message || "Failed to save product.");
+        setErrorMsg(
+          res.status === 401
+            ? "Your session has expired. Please sign in again, then retry saving this product."
+            : data.message || data.error || "Failed to save product.",
+        );
       }
     } catch (err) {
       console.error("Error submitting product:", err);
@@ -323,6 +312,7 @@ export default function ProductFormModal({
               />
             </Grid>
             <Grid item xs={12} sm={6}>
+              <CategoryLoadStatus />
               <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -336,7 +326,7 @@ export default function ProductFormModal({
                     }))
                   }
                 >
-                  {PRODUCT_CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <MenuItem key={cat} value={cat}>
                       {cat}
                     </MenuItem>

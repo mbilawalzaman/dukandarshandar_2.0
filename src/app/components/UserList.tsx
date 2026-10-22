@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import { authFetch } from "@/lib/authFetch";
+
 interface User {
   _id: string;
   name: string;
@@ -23,7 +25,7 @@ export default function UserList() {
             return;
           }
 
-          const res = await fetch("/api/users", {
+          const res = await authFetch("/api/users", {
             headers: { Authorization: `Bearer ${token}` },
           });
 

@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Box, Container, Typography, Alert } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 
+import { authFetch } from "@/lib/authFetch";
+
 import PageBanner from "../components/PageBanner";
 import SupportChatPanel from "../components/chat/SupportChatPanel";
 import { authHeaders } from "@/lib/cart";
@@ -73,7 +75,7 @@ function SupportContent() {
 
     const init = async () => {
       try {
-        const res = await fetch("/api/conversations", {
+        const res = await authFetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({ orderId }),

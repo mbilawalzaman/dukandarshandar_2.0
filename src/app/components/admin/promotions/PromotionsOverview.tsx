@@ -10,6 +10,8 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import RedeemIcon from "@mui/icons-material/Redeem";
 import SavingsIcon from "@mui/icons-material/Savings";
 
+import { authFetch } from "@/lib/authFetch";
+
 import StatCard from "@/app/components/admin/StatCard";
 import { authHeaders } from "@/lib/cart";
 import {
@@ -41,7 +43,7 @@ export default function PromotionsOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/promotions/summary", { headers: authHeaders() })
+    authFetch("/api/admin/promotions/summary", { headers: authHeaders() })
       .then((r) => r.json())
       .then((d) => d.success && setSummary(d.summary))
       .catch(() => undefined)

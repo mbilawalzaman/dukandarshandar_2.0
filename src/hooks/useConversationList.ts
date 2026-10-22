@@ -12,6 +12,8 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { getFirebaseDb } from "@/lib/firebaseClient";
 import { authHeaders } from "@/lib/cart";
 import { isChatEnabled } from "@/lib/firebaseConfig";
@@ -108,7 +110,10 @@ export function useConversationList(
     setError(null);
 
     try {
-      const res = await fetch("/api/conversations", { headers: authHeaders() });
+      const res = await authFetch("/api/conversations", {
+        headers: authHeaders(),
+      });
+
       const data = await res.json();
 
       if (!res.ok || !data.success)

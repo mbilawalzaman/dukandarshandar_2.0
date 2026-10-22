@@ -31,8 +31,11 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { getProductThumbnail } from "@/lib/productImages";
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
+import CategoryLoadStatus from "@/app/components/catalog/CategoryLoadStatus";
+import { useProductCategories } from "@/hooks/useProductCategories";
 import type { PromotionProductDeal } from "@/types/apps/promotionTypes";
 import type { ProductCardData } from "@/app/components/ProductCard";
 
@@ -51,7 +54,8 @@ export default function ProductPicker({
   onChange,
   withPricing,
   defaultPercent,
-}: Props) {
+}: Props): React.JSX.Element {
+  const { categories } = useProductCategories();
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [catalog, setCatalog] = useState<ProductCardData[]>([]);
@@ -83,7 +87,7 @@ export default function ProductPicker({
         if (selectedCategory && selectedCategory !== "all")
           params.set("category", selectedCategory);
 
-        const res = await fetch(`/api/products?${params.toString()}`, {
+        const res = await authFetch(`/api/products?${params.toString()}`, {
           signal: controller.signal,
         });
 
@@ -201,6 +205,7 @@ export default function ProductPicker({
           />
         </Grid>
         <Grid item xs={12} sm={5}>
+          <CategoryLoadStatus />
           <TextField
             fullWidth
             select
@@ -210,7 +215,7 @@ export default function ProductPicker({
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
             <MenuItem value="all">All Categories ({catalog.length})</MenuItem>
-            {PRODUCT_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <MenuItem key={cat} value={cat}>
                 {cat}
               </MenuItem>

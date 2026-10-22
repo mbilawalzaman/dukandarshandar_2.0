@@ -1,3 +1,4 @@
+import { authFetch } from "@/lib/authFetch";
 import { toPlayableVideoUrl } from "@/lib/cloudinaryUrl";
 
 /**
@@ -14,7 +15,7 @@ export async function uploadVideoToCloudinary(file: File): Promise<{
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  const signRes = await fetch("/api/admin/media/sign", {
+  const signRes = await authFetch("/api/admin/media/sign", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

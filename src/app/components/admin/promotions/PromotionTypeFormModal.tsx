@@ -22,6 +22,8 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import {
   PROMOTION_KIND_LABELS,
@@ -122,7 +124,7 @@ export default function PromotionTypeFormModal({
         ? `/api/admin/promotion-types/${type._id}`
         : "/api/admin/promotion-types";
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method: type?._id ? "PUT" : "POST",
         headers: authHeaders(),
         body: JSON.stringify(form),

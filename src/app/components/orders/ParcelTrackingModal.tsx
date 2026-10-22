@@ -16,6 +16,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
+import { authFetch } from "@/lib/authFetch";
+
 import PostExTrackingTimeline from "./PostExTrackingTimeline";
 import { authHeaders } from "@/lib/cart";
 
@@ -60,7 +62,7 @@ export default function ParcelTrackingModal({
       if (orderId) params.set("orderId", orderId);
       if (propTrackingNumber) params.set("trackingNumber", propTrackingNumber);
 
-      const res = await fetch(`/api/orders/track?${params.toString()}`, {
+      const res = await authFetch(`/api/orders/track?${params.toString()}`, {
         headers: authHeaders(),
       });
 

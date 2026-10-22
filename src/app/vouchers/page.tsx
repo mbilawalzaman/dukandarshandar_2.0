@@ -14,6 +14,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { authFetch } from "@/lib/authFetch";
+
 import PageBanner from "@/app/components/PageBanner";
 import Loader from "@/app/components/loader/Loader";
 import VoucherCard, {
@@ -35,7 +37,7 @@ export default function MyVouchersPage() {
 
   const load = () => {
     setLoading(true);
-    fetch("/api/promotions/mine", { headers: authHeaders() })
+    authFetch("/api/promotions/mine", { headers: authHeaders() })
       .then(async (r) => {
         if (r.status === 401) {
           router.push("/login?next=/vouchers");
@@ -77,7 +79,7 @@ export default function MyVouchersPage() {
   }, [vouchers]);
 
   const collect = async (v: VoucherCardData) => {
-    const res = await fetch(`/api/promotions/${v._id}/collect`, {
+    const res = await authFetch(`/api/promotions/${v._id}/collect`, {
       method: "POST",
       headers: authHeaders(),
     });

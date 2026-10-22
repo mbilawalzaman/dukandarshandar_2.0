@@ -13,6 +13,8 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
+import { authFetch } from "@/lib/authFetch";
+
 import { authHeaders } from "@/lib/cart";
 import type { EngineCartItem } from "@/lib/promotionEngine";
 import { usePromotions } from "@/app/providers/PromotionProvider";
@@ -51,7 +53,7 @@ export default function VoucherPicker({
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) return;
-    fetch("/api/promotions/mine", { headers: authHeaders() })
+    authFetch("/api/promotions/mine", { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => d?.success && setWallet(d.vouchers))
       .catch(() => undefined);
