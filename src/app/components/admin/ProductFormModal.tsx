@@ -40,6 +40,7 @@ interface ProductFormModalProps {
   onClose: () => void;
   onSuccess: () => void;
   productToEdit?: ProductFormData | null;
+  readOnly?: boolean;
 }
 
 const initialFormState: ProductFormData = {
@@ -59,6 +60,7 @@ export default function ProductFormModal({
   onClose,
   onSuccess,
   productToEdit,
+  readOnly = false,
 }: ProductFormModalProps): React.JSX.Element {
   const { categories } = useProductCategories();
   const [formData, setFormData] = useState<ProductFormData>(initialFormState);
@@ -102,7 +104,7 @@ export default function ProductFormModal({
 
     setErrorMsg("");
     setIsDragging(false);
-  }, [productToEdit, open]);
+  }, [productToEdit, open, readOnly]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -115,7 +117,8 @@ export default function ProductFormModal({
     }));
   };
 
-  const processFiles = (files: FileList | File[]) => {
+  const processFiles = (files: FileList | File[]): void => {
+    if (readOnly) return;
     const fileArray = Array.from(files);
     const remaining = MAX_PRODUCT_IMAGES - selectedImages.length;
 
@@ -214,8 +217,9 @@ export default function ProductFormModal({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    if (readOnly) return;
     setErrorMsg("");
 
     const priceNum = Number(formData.price);
@@ -291,7 +295,11 @@ export default function ProductFormModal({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
-        {formData._id ? "Edit Product" : "Add New Product"}
+        {readOnly
+          ? "Product Details"
+          : formData._id
+            ? "Edit Product"
+            : "Add New Product"}
       </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent dividers>
@@ -307,32 +315,44 @@ export default function ProductFormModal({
                 label="Product Name"
                 name="name"
                 value={formData.name}
+                InputProps={{ readOnly }}
                 onChange={handleChange}
                 required
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <CategoryLoadStatus />
-              <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  name="category"
+              {readOnly ? (
+                <TextField
+                  fullWidth
                   label="Category"
                   value={formData.category}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      category: String(e.target.value),
-                    }))
-                  }
-                >
-                  {categories.map((cat) => (
-                    <MenuItem key={cat} value={cat}>
-                      {cat}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  InputProps={{ readOnly: true }}
+                />
+              ) : (
+                <>
+                  <CategoryLoadStatus />
+                  <FormControl fullWidth required>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      name="category"
+                      label="Category"
+                      value={formData.category}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: String(e.target.value),
+                        }))
+                      }
+                    >
+                      {categories.map((cat) => (
+                        <MenuItem key={cat} value={cat}>
+                          {cat}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </>
+              )}
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
@@ -342,6 +362,7 @@ export default function ProductFormModal({
                 name="price"
                 inputProps={{ min: 0, step: "any" }}
                 value={formData.price}
+                InputProps={{ readOnly }}
                 onChange={handleChange}
                 required
               />
@@ -354,6 +375,7 @@ export default function ProductFormModal({
                 name="quantity"
                 inputProps={{ min: 0, step: 1 }}
                 value={formData.quantity}
+                InputProps={{ readOnly }}
                 onChange={handleChange}
                 required
               />
@@ -366,6 +388,7 @@ export default function ProductFormModal({
                 name="rating"
                 inputProps={{ min: 0, max: 5, step: 0.5 }}
                 value={formData.rating}
+                InputProps={{ readOnly }}
                 onChange={handleChange}
               />
             </Grid>
@@ -377,6 +400,7 @@ export default function ProductFormModal({
                 label="Description"
                 name="description"
                 value={formData.description}
+                InputProps={{ readOnly }}
                 onChange={handleChange}
                 required
               />
@@ -385,6 +409,7 @@ export default function ProductFormModal({
               <FormControlLabel
                 control={
                   <Checkbox
+                    disabled={readOnly}
                     checked={Boolean(formData.featured)}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -407,8 +432,9 @@ export default function ProductFormModal({
                 color="text.secondary"
                 sx={{ display: "block", mb: 1.5 }}
               >
-                The first image is used as the listing thumbnail. Drag order
-                with arrows to reorder.
+                {readOnly
+                  ? "The first image is used as the listing thumbnail."
+                  : "The first image is used as the listing thumbnail. Use the arrows to reorder."}
               </Typography>
 
               {selectedImages.length > 0 && (
@@ -463,150 +489,160 @@ export default function ProductFormModal({
                           }}
                         />
                       )}
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 0.5,
-                        }}
-                      >
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveImage(index);
-                          }}
-                          sx={{
-                            backgroundColor: "rgba(0,0,0,0.6)",
-                            color: "#fff",
-                            "&:hover": {
-                              backgroundColor: "rgba(239, 68, 68, 0.9)",
-                            },
-                          }}
-                          title="Remove image"
-                        >
-                          <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          gap: 0.5,
-                          p: 0.5,
-                          bgcolor: "var(--theme-bg-default, #f8fafc)",
-                        }}
-                      >
-                        <IconButton
-                          size="small"
-                          disabled={index === 0}
-                          onClick={() => moveImage(index, -1)}
-                          title="Move earlier (toward thumbnail)"
-                        >
-                          <ArrowBackIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          disabled={index === selectedImages.length - 1}
-                          onClick={() => moveImage(index, 1)}
-                          title="Move later"
-                        >
-                          <ArrowForwardIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Box>
+                      {!readOnly && (
+                        <>
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 4,
+                              right: 4,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveImage(index);
+                              }}
+                              sx={{
+                                backgroundColor: "rgba(0,0,0,0.6)",
+                                color: "#fff",
+                                "&:hover": {
+                                  backgroundColor: "rgba(239, 68, 68, 0.9)",
+                                },
+                              }}
+                              title="Remove image"
+                            >
+                              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "center",
+                              gap: 0.5,
+                              p: 0.5,
+                              bgcolor: "var(--theme-bg-default, #f8fafc)",
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              disabled={index === 0}
+                              onClick={() => moveImage(index, -1)}
+                              title="Move earlier (toward thumbnail)"
+                            >
+                              <ArrowBackIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              disabled={index === selectedImages.length - 1}
+                              onClick={() => moveImage(index, 1)}
+                              title="Move later"
+                            >
+                              <ArrowForwardIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Box>
+                        </>
+                      )}
                     </Box>
                   ))}
                 </Box>
               )}
 
-              <Box
-                onDragOver={handleDragOver}
-                onDragEnter={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                sx={{
-                  border: isDragging
-                    ? "2px dashed #febe4c"
-                    : "2px dashed #cbd5e1",
-                  backgroundColor: isDragging
-                    ? "rgba(254, 190, 76, 0.08)"
-                    : "#fafafa",
-                  borderRadius: 2.5,
-                  p: 3,
-                  textAlign: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease-in-out",
-                  "&:hover": {
-                    borderColor: "var(--theme-primary-main, #febe4c)",
-                    backgroundColor: "rgba(254, 190, 76, 0.04)",
-                  },
-                }}
-              >
-                <input
-                  ref={fileInputRef}
-                  accept="image/*"
-                  type="file"
-                  multiple
-                  onChange={handleFileInputChange}
-                  style={{ display: "none" }}
-                />
-
-                <CloudUploadIcon
+              {!readOnly && (
+                <Box
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
                   sx={{
-                    fontSize: 44,
-                    color: isDragging ? "primary.main" : "#94a3b8",
-                    mb: 1,
+                    border: isDragging
+                      ? "2px dashed #febe4c"
+                      : "2px dashed #cbd5e1",
+                    backgroundColor: isDragging
+                      ? "rgba(254, 190, 76, 0.08)"
+                      : "#fafafa",
+                    borderRadius: 2.5,
+                    p: 3,
+                    textAlign: "center",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      borderColor: "var(--theme-primary-main, #febe4c)",
+                      backgroundColor: "rgba(254, 190, 76, 0.04)",
+                    },
                   }}
-                />
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, color: "#1e293b" }}
                 >
-                  {isDragging ? "Drop images here" : "Drag & drop images here"}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 0.5 }}
-                >
-                  or{" "}
-                  <Box
-                    component="span"
+                  <input
+                    ref={fileInputRef}
+                    accept="image/*"
+                    type="file"
+                    multiple
+                    onChange={handleFileInputChange}
+                    style={{ display: "none" }}
+                  />
+
+                  <CloudUploadIcon
                     sx={{
-                      color: "primary.main",
-                      fontWeight: 600,
-                      textDecoration: "underline",
+                      fontSize: 44,
+                      color: isDragging ? "primary.main" : "#94a3b8",
+                      mb: 1,
                     }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: 600, color: "#1e293b" }}
                   >
-                    browse
-                  </Box>{" "}
-                  from your computer (max 5MB each, up to {MAX_PRODUCT_IMAGES}{" "}
-                  images)
-                </Typography>
-              </Box>
+                    {isDragging
+                      ? "Drop images here"
+                      : "Drag & drop images here"}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    or{" "}
+                    <Box
+                      component="span"
+                      sx={{
+                        color: "primary.main",
+                        fontWeight: 600,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      browse
+                    </Box>{" "}
+                    from your computer (max 5MB each, up to {MAX_PRODUCT_IMAGES}{" "}
+                    images)
+                  </Typography>
+                </Box>
+              )}
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose} color="inherit" disabled={submitting}>
-            Cancel
+            {readOnly ? "Close" : "Cancel"}
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={submitting}
-          >
-            {submitting
-              ? "Saving..."
-              : formData._id
-                ? "Update Product"
-                : "Save Product"}
-          </Button>
+          {!readOnly && (
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={submitting}
+            >
+              {submitting
+                ? "Saving..."
+                : formData._id
+                  ? "Update Product"
+                  : "Save Product"}
+            </Button>
+          )}
         </DialogActions>
       </form>
     </Dialog>

@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 import {
   Box,
@@ -41,7 +40,6 @@ import type { Product, StockCounts } from "@/types/apps/productTypes";
 import { refreshProductCategories } from "@/lib/productCategoryStore";
 
 export default function AdminProductsPage(): React.JSX.Element {
-  const router = useRouter();
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryName, setCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState("");
@@ -67,6 +65,7 @@ export default function AdminProductsPage(): React.JSX.Element {
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isProductReadOnly, setIsProductReadOnly] = useState(false);
 
   const [selectedProduct, setSelectedProduct] =
     useState<ProductFormData | null>(null);
@@ -186,11 +185,13 @@ export default function AdminProductsPage(): React.JSX.Element {
   );
 
   const handleOpenAddModal = useCallback((): void => {
+    setIsProductReadOnly(false);
     setSelectedProduct(null);
     setIsFormModalOpen(true);
   }, []);
 
   const handleOpenEditModal = useCallback((product: Product): void => {
+    setIsProductReadOnly(false);
     setSelectedProduct(product);
     setIsFormModalOpen(true);
   }, []);
@@ -327,12 +328,11 @@ export default function AdminProductsPage(): React.JSX.Element {
     [],
   );
 
-  const handleViewProduct = useCallback(
-    (product: Product): void => {
-      router.push(`/products/${product._id}`);
-    },
-    [router],
-  );
+  const handleViewProduct = useCallback((product: Product): void => {
+    setSelectedProduct(product);
+    setIsProductReadOnly(true);
+    setIsFormModalOpen(true);
+  }, []);
 
   const handleRowsPerPageChange = useCallback((next: number): void => {
     setRowsPerPage(next);
@@ -542,6 +542,7 @@ export default function AdminProductsPage(): React.JSX.Element {
         onClose={handleCloseProductForm}
         onSuccess={fetchProducts}
         productToEdit={selectedProduct}
+        readOnly={isProductReadOnly}
       />
 
       <ConfirmDeleteModal
