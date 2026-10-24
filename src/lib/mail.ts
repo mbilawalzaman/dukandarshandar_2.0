@@ -56,6 +56,9 @@ export async function sendMail(
       port: Number(process.env.EMAIL_PORT || 465),
       secure: Number(process.env.EMAIL_PORT || 465) === 465,
       auth: { user, pass },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
     });
 
     const from = process.env.MAIL_FROM || user;

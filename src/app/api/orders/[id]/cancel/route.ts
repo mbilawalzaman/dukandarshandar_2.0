@@ -2,6 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { cancelOrder } from "@/controllers/orderController";
 
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },

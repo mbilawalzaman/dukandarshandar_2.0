@@ -7,6 +7,8 @@ import {
   deleteOrdersHandler,
 } from "@/controllers/orderController";
 
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   return getOrders(req);
 }

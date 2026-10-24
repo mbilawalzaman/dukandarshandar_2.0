@@ -25,6 +25,7 @@ import {
   createNotification,
 } from "@/services/notificationService";
 import { getShopInbox, sendMail } from "@/lib/mail";
+import { runBackground } from "@/lib/backgroundTask";
 import {
   orderConfirmationEmail,
   orderStatusEmail,
@@ -581,88 +582,6 @@ export async function createOrderService(
 
   newOrder.promotions_recorded = quote.applied.length > 0;
 
-  // Background notifications and alerts (fire-and-forget safely)
-  await safeNotify(async () => {
-    const itemIds = enrichedItems
-      .map((item) =>
-        item._id && ObjectId.isValid(item._id) ? new ObjectId(item._id) : null,
-      )
-      .filter((id): id is ObjectId => id !== null);
-
-    if (itemIds.length === 0) return;
-
-    const products = await db
-      .collection("products")
-      .find({ _id: { $in: itemIds } })
-      .toArray();
-
-    for (const product of products) {
-      if (Number(product.quantity) <= 5) {
-        await notifyAdmins({
-          type: "low_stock",
-          title: "Low stock alert",
-          body: `${product.name} has only ${product.quantity} units left`,
-          entityType: "product",
-          entityId: String(product._id),
-          idempotencyKey: `low_stock:${product._id}:${product.quantity}`,
-          sendPush: true,
-          route: "/admin/products",
-        });
-      }
-    }
-  });
-
-  const orderId = identity.id.slice(-8).toUpperCase();
-
-  await safeNotify(() =>
-    notifyAdmins({
-      type: "order_placed",
-      title: "New order placed",
-      body: `Order #${orderId} PKR ${computedTotal.toLocaleString()}`,
-      entityType: "order",
-      entityId: String(newOrder._id),
-      actorId: user?.userId || null,
-      idempotencyKey: `order_placed:${newOrder._id}`,
-      sendPush: true,
-      route: "/admin/orders",
-    }),
-  );
-
-  const deliverySettings = await getDeliverySettings().catch(() => null);
-  const storeName = deliverySettings?.shopName || "";
-
-  const confirmationHtml = orderConfirmationEmail({
-    name: newOrder.customer_name,
-    orderId,
-    items: enrichedItems,
-    total: computedTotal,
-    subtotal,
-    shipping,
-    discounts: newOrder.discounts,
-    province: newOrder.province,
-    city: newOrder.city,
-    area: newOrder.area,
-    address: newOrder.address,
-    shopName: storeName,
-  });
-
-  await Promise.all([
-    sendMail({
-      to: newOrder.customer_email,
-      subject: storeName
-        ? `Order #${orderId} confirmed - ${storeName}`
-        : `Order #${orderId} confirmed`,
-      html: confirmationHtml,
-    }),
-    getShopInbox()
-      ? sendMail({
-          to: getShopInbox(),
-          subject: `New order #${orderId} PKR ${computedTotal.toLocaleString()}`,
-          html: confirmationHtml,
-        })
-      : Promise.resolve(),
-  ]);
-
   const synced = await syncCheckoutProfileToUser(user?.userId, {
     customer_name,
     customer_email,
@@ -672,6 +591,92 @@ export async function createOrderService(
     province,
     area,
   }).catch(() => ({ updated: false, session: undefined }));
+
+  // Non-blocking background operations: low stock alerts, admin notifications, customer emails
+  runBackground(async () => {
+    await safeNotify(async () => {
+      const itemIds = enrichedItems
+        .map((item) =>
+          item._id && ObjectId.isValid(item._id)
+            ? new ObjectId(item._id)
+            : null,
+        )
+        .filter((id): id is ObjectId => id !== null);
+
+      if (itemIds.length === 0) return;
+
+      const products = await db
+        .collection("products")
+        .find({ _id: { $in: itemIds } })
+        .toArray();
+
+      for (const product of products) {
+        if (Number(product.quantity) <= 5) {
+          await notifyAdmins({
+            type: "low_stock",
+            title: "Low stock alert",
+            body: `${product.name} has only ${product.quantity} units left`,
+            entityType: "product",
+            entityId: String(product._id),
+            idempotencyKey: `low_stock:${product._id}:${product.quantity}`,
+            sendPush: true,
+            route: "/admin/products",
+          });
+        }
+      }
+    });
+
+    const orderId = identity.id.slice(-8).toUpperCase();
+
+    await safeNotify(() =>
+      notifyAdmins({
+        type: "order_placed",
+        title: "New order placed",
+        body: `Order #${orderId} PKR ${computedTotal.toLocaleString()}`,
+        entityType: "order",
+        entityId: String(newOrder._id),
+        actorId: user?.userId || null,
+        idempotencyKey: `order_placed:${newOrder._id}`,
+        sendPush: true,
+        route: "/admin/orders",
+      }),
+    );
+
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+
+    const confirmationHtml = orderConfirmationEmail({
+      name: newOrder.customer_name,
+      orderId,
+      items: enrichedItems,
+      total: computedTotal,
+      subtotal,
+      shipping,
+      discounts: newOrder.discounts,
+      province: newOrder.province,
+      city: newOrder.city,
+      area: newOrder.area,
+      address: newOrder.address,
+      shopName: storeName,
+    });
+
+    await Promise.all([
+      sendMail({
+        to: newOrder.customer_email,
+        subject: storeName
+          ? `Order #${orderId} confirmed - ${storeName}`
+          : `Order #${orderId} confirmed`,
+        html: confirmationHtml,
+      }),
+      getShopInbox()
+        ? sendMail({
+            to: getShopInbox(),
+            subject: `New order #${orderId} PKR ${computedTotal.toLocaleString()}`,
+            html: confirmationHtml,
+          })
+        : Promise.resolve(),
+    ]);
+  });
 
   return {
     created: true,
@@ -737,63 +742,65 @@ export async function updateOrderStatusService(
     throw new CheckoutError("Order changed. Refresh and try again.", 409);
   }
 
-  if (existingOrder.customer_email) {
-    const deliverySettings = await getDeliverySettings().catch(() => null);
-    const storeName = deliverySettings?.shopName || "";
-    const displayOrderId = String(existingOrder._id).slice(-8).toUpperCase();
-    const isDelivered = status === "delivered";
+  runBackground(async () => {
+    if (existingOrder.customer_email) {
+      const deliverySettings = await getDeliverySettings().catch(() => null);
+      const storeName = deliverySettings?.shopName || "";
+      const displayOrderId = String(existingOrder._id).slice(-8).toUpperCase();
+      const isDelivered = status === "delivered";
 
-    await sendMail({
-      to: existingOrder.customer_email,
-      subject: isDelivered
-        ? storeName
-          ? `Order #${displayOrderId} delivered! Rate & Review Your Products - ${storeName}`
-          : `Order #${displayOrderId} delivered! Rate & Review Your Products`
-        : storeName
-          ? `Order #${displayOrderId} is ${status} - ${storeName}`
-          : `Order #${displayOrderId} is ${status}`,
-      html: isDelivered
-        ? orderDeliveredEmail({
-            name: existingOrder.customer_name || "Customer",
-            orderId: displayOrderId,
-            fullOrderId: String(existingOrder._id),
-            shopName: storeName,
-          })
-        : orderStatusEmail({
-            name: existingOrder.customer_name || "Customer",
-            orderId: displayOrderId,
-            status,
-            shopName: storeName,
-          }),
-    });
-  }
+      await sendMail({
+        to: existingOrder.customer_email,
+        subject: isDelivered
+          ? storeName
+            ? `Order #${displayOrderId} delivered! Rate & Review Your Products - ${storeName}`
+            : `Order #${displayOrderId} delivered! Rate & Review Your Products`
+          : storeName
+            ? `Order #${displayOrderId} is ${status} - ${storeName}`
+            : `Order #${displayOrderId} is ${status}`,
+        html: isDelivered
+          ? orderDeliveredEmail({
+              name: existingOrder.customer_name || "Customer",
+              orderId: displayOrderId,
+              fullOrderId: String(existingOrder._id),
+              shopName: storeName,
+            })
+          : orderStatusEmail({
+              name: existingOrder.customer_name || "Customer",
+              orderId: displayOrderId,
+              status,
+              shopName: storeName,
+            }),
+      });
+    }
 
-  const recipientId = existingOrder.customer_id
-    ? String(existingOrder.customer_id)
-    : null;
+    const recipientId = existingOrder.customer_id
+      ? String(existingOrder.customer_id)
+      : null;
 
-  if (recipientId) {
-    const isDelivered = status === "delivered";
-    const displayId = String(existingOrder._id).slice(-8).toUpperCase();
+    if (recipientId) {
+      const isDelivered = status === "delivered";
+      const displayId = String(existingOrder._id).slice(-8).toUpperCase();
 
-    await safeNotify(() =>
-      createNotification({
-        recipients: [recipientId!],
-        type: isDelivered ? "order_delivered" : "order_status",
-        title: isDelivered
-          ? `Order #${displayId} Delivered 🎉`
-          : `Order #${displayId} updated`,
-        body: isDelivered
-          ? `Your order #${displayId} has been delivered. Tap to rate and review your products!`
-          : `Your order is now ${status}`,
-        entityType: "order",
-        entityId: String(existingOrder._id),
-        idempotencyKey: `order_status:${existingOrder._id}:${status}`,
-        sendPush: true,
-        route: `/orders?orderId=${existingOrder._id}&action=review`,
-      }),
-    );
-  }
+      await safeNotify(() =>
+        createNotification({
+          recipients: [recipientId],
+          type: isDelivered ? "order_delivered" : "order_status",
+          title: isDelivered
+            ? `Order #${displayId} Delivered 🎉`
+            : `Order #${displayId} updated`,
+          body: isDelivered
+            ? `Your order #${displayId} has been delivered. Tap to rate and review your products!`
+            : `Your order is now ${status}`,
+          entityType: "order",
+          entityId: String(existingOrder._id),
+          idempotencyKey: `order_status:${existingOrder._id}:${status}`,
+          sendPush: true,
+          route: `/orders?orderId=${existingOrder._id}&action=review`,
+        }),
+      );
+    }
+  });
 
   return {
     success: true,

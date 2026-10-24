@@ -18,6 +18,7 @@ import { sendMail, getShopInbox } from "@/lib/mail";
 import { orderStatusEmail } from "@/lib/emailTemplates";
 import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import { releaseRedemptions } from "@/services/promotionService";
+import { runBackground } from "@/lib/backgroundTask";
 
 export type CancelOrderResult =
   | { success: true; orderId: string; refunded: boolean }
@@ -277,49 +278,51 @@ export async function cancelCustomerOrder(
 
   const displayOrderId = String(orderId).slice(-8).toUpperCase();
 
-  await safeNotify(() =>
-    notifyAdmins({
-      type: "order_status",
-      title: "Order cancelled by customer",
-      body: `Order #${displayOrderId}${refunded ? " (refunded)" : ""}`,
-      entityType: "order",
-      entityId: String(orderId),
-      actorId: user.userId || null,
-      idempotencyKey: `order_cancelled_customer:${orderId}`,
-      sendPush: true,
-      route: "/admin/orders",
-    }),
-  );
-
-  if (order.customer_email) {
-    const deliverySettings = await getDeliverySettings().catch(() => null);
-    const storeName = deliverySettings?.shopName || "";
-
-    await sendMail({
-      to: order.customer_email,
-      subject: `Order #${displayOrderId} cancelled - ${storeName}`,
-      html: orderStatusEmail({
-        name: order.customer_name || "Customer",
-        orderId: displayOrderId,
-        status: refunded ? "cancelled (refund initiated)" : "cancelled",
-        shopName: storeName,
+  runBackground(async () => {
+    await safeNotify(() =>
+      notifyAdmins({
+        type: "order_status",
+        title: "Order cancelled by customer",
+        body: `Order #${displayOrderId}${refunded ? " (refunded)" : ""}`,
+        entityType: "order",
+        entityId: String(orderId),
+        actorId: user.userId || null,
+        idempotencyKey: `order_cancelled_customer:${orderId}`,
+        sendPush: true,
+        route: "/admin/orders",
       }),
-    }).catch(() => undefined);
-  }
+    );
 
-  const inbox = getShopInbox();
+    if (order.customer_email) {
+      const deliverySettings = await getDeliverySettings().catch(() => null);
+      const storeName = deliverySettings?.shopName || "";
 
-  if (inbox) {
-    await sendMail({
-      to: inbox,
-      subject: `Customer cancelled order #${displayOrderId}`,
-      html: orderStatusEmail({
-        name: order.customer_name || "Customer",
-        orderId: displayOrderId,
-        status: refunded ? "cancelled (refund initiated)" : "cancelled",
-      }),
-    }).catch(() => undefined);
-  }
+      await sendMail({
+        to: order.customer_email,
+        subject: `Order #${displayOrderId} cancelled - ${storeName}`,
+        html: orderStatusEmail({
+          name: order.customer_name || "Customer",
+          orderId: displayOrderId,
+          status: refunded ? "cancelled (refund initiated)" : "cancelled",
+          shopName: storeName,
+        }),
+      }).catch(() => undefined);
+    }
+
+    const inbox = getShopInbox();
+
+    if (inbox) {
+      await sendMail({
+        to: inbox,
+        subject: `Customer cancelled order #${displayOrderId}`,
+        html: orderStatusEmail({
+          name: order.customer_name || "Customer",
+          orderId: displayOrderId,
+          status: refunded ? "cancelled (refund initiated)" : "cancelled",
+        }),
+      }).catch(() => undefined);
+    }
+  });
 
   return { success: true, orderId: String(orderId), refunded };
 }
