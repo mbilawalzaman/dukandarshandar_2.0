@@ -23,7 +23,7 @@ import { authFetch } from "@/lib/authFetch";
 import { useCart } from "@/app/providers/CartProvider";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
-import { authHeaders } from "@/lib/cart";
+import { authHeaders, setBuyNowCheckoutItem } from "@/lib/cart";
 import ProductImageGallery from "@/app/components/ProductImageGallery";
 import { getProductImageUrls, getProductThumbnail } from "@/lib/productImages";
 import { usePromotions } from "@/app/providers/PromotionProvider";
@@ -230,7 +230,7 @@ const ProductDetails = () => {
 
   const handleBuyNow = () => {
     if (!product) return;
-    add(
+    setBuyNowCheckoutItem(
       {
         _id: product._id,
         name: product.name,
@@ -240,7 +240,7 @@ const ProductDetails = () => {
       },
       quantity,
     );
-    router.push("/checkout");
+    router.push("/checkout?buyNow=1");
   };
 
   const handleWishlist = async () => {

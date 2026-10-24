@@ -17,6 +17,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 
 import { useCart } from "@/app/providers/CartProvider";
+import { setBuyNowCheckoutItem } from "@/lib/cart";
 import { getProductThumbnail } from "@/lib/productImages";
 import { usePromotions } from "@/app/providers/PromotionProvider";
 import PriceTag from "@/app/components/promotions/PriceTag";
@@ -282,7 +283,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           fullWidth
           disabled={outOfStock}
           onClick={() => {
-            add(
+            setBuyNowCheckoutItem(
               {
                 _id: product._id,
                 name: product.name,
@@ -292,7 +293,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               },
               1,
             );
-            router.push("/checkout");
+            router.push("/checkout?buyNow=1");
           }}
           sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
         >

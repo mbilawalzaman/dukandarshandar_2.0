@@ -24,7 +24,13 @@ import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
 import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector";
 import PakistanLocationFields from "../components/checkout/PakistanLocationFields";
 import { useCart } from "@/app/providers/CartProvider";
-import { authHeaders } from "@/lib/cart";
+import {
+  authHeaders,
+  clearBuyNowCheckoutItem,
+  getCheckoutReturnPath,
+  getBuyNowCheckoutItem,
+  type CartItem,
+} from "@/lib/cart";
 import { BRAND } from "@/lib/uiBrand";
 import Loader from "@/app/components/loader/Loader";
 import { useDeliverySettings } from "@/hooks/useDeliverySettings";
@@ -56,7 +62,15 @@ type SafepaySession = CheckoutSafepaySessionType;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, clear, toast } = useCart();
+  const { items: cartItems, clear, toast } = useCart();
+  const [buyNowItem, setBuyNowItem] = useState<CartItem | null>(null);
+  const [isBuyNowCheckout, setIsBuyNowCheckout] = useState(false);
+  const [checkoutIntentReady, setCheckoutIntentReady] = useState(false);
+  const items = isBuyNowCheckout
+    ? buyNowItem
+      ? [buyNowItem]
+      : []
+    : cartItems;
   const { settings, getShipping, isPromoActive } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -82,6 +96,14 @@ export default function CheckoutPage() {
     address: "",
   });
 
+  useEffect(() => {
+    const isBuyNow = new URLSearchParams(window.location.search).get("buyNow") === "1";
+    setIsBuyNowCheckout(isBuyNow);
+    setBuyNowItem(isBuyNow ? getBuyNowCheckoutItem() : null);
+    if (!isBuyNow) clearBuyNowCheckoutItem();
+    setCheckoutIntentReady(true);
+  }, []);
+
   const storeName = settings.shopName || "Ecommerce Store";
 
   const safepayEnabled =
@@ -94,7 +116,7 @@ export default function CheckoutPage() {
         "Please login, sign up, or continue as guest to place an order.",
         severity,
       );
-      router.push("/login?next=/checkout");
+      router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
     };
 
     void (async () => {
@@ -284,9 +306,10 @@ export default function CheckoutPage() {
   const effectiveShippingFee = shippingBreakdown.finalFee;
 
   useEffect(() => {
+    if (!checkoutIntentReady) return;
     requestQuote(appliedCode, effectiveShippingFee);
     // re-quote whenever the cart, voucher, or effective shipping fee changes
-  }, [cartFingerprint, appliedCode, effectiveShippingFee, requestQuote]);
+  }, [checkoutIntentReady, cartFingerprint, appliedCode, effectiveShippingFee, requestQuote]);
 
   // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
   useEffect(() => {
@@ -466,7 +489,7 @@ export default function CheckoutPage() {
         "Please login, sign up, or continue as guest to place your order.",
         "error",
       );
-      router.push("/login?next=/checkout");
+      router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
 
       return false;
     }
@@ -479,7 +502,7 @@ export default function CheckoutPage() {
         "Please login, sign up, or continue as guest to place your order.",
         "error",
       );
-      router.push("/login?next=/checkout");
+      router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
 
       return false;
     }
@@ -632,7 +655,7 @@ export default function CheckoutPage() {
 
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
-        router.push("/login?next=/checkout");
+        router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
 
         return;
       }
@@ -641,7 +664,8 @@ export default function CheckoutPage() {
         if (data.token) persistAccessToken(data.token);
         setEmailRequiredHint(false);
         sessionStorage.removeItem("checkout_attempt");
-        clear();
+        if (isBuyNowCheckout) clearBuyNowCheckoutItem();
+        else clear();
         toast("Order placed successfully!");
         router.push("/orders?placed=1");
       } else {
@@ -686,7 +710,7 @@ export default function CheckoutPage() {
 
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
-        router.push("/login?next=/checkout");
+        router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
 
         return;
       }
@@ -723,7 +747,8 @@ export default function CheckoutPage() {
   const handlePaymentSuccess = () => {
     persistGuestInfoIfApplicable();
     sessionStorage.removeItem("checkout_attempt");
-    clear();
+    if (isBuyNowCheckout) clearBuyNowCheckoutItem();
+    else clear();
     toast("Payment submitted successfully!");
     router.push("/orders?placed=1");
   };
@@ -739,7 +764,7 @@ export default function CheckoutPage() {
           ? "Payment ready below"
           : "Continue to card payment";
 
-  if (checkingAuth) {
+  if (checkingAuth || !checkoutIntentReady) {
     return <Loader size={220} message="Verifying checkout session..." />;
   }
 
