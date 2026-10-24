@@ -92,16 +92,29 @@ export default function RecentActivityFeed({
                       </TableCell>
                       <TableCell align="center">
                         <Chip
-                          label={ord.status}
+                          label={
+                            (ord.status || "")
+                              .toLowerCase()
+                              .replace(/\s+/g, "_") === "ready_to_ship"
+                              ? "Ready to Ship"
+                              : ord.status
+                          }
                           size="small"
                           color={
                             ord.status === "delivered"
                               ? "success"
                               : ord.status === "pending"
                                 ? "warning"
-                                : ord.status === "shipped"
-                                  ? "primary"
-                                  : "error"
+                                : ord.status === "processing"
+                                  ? "info"
+                                  : (ord.status || "")
+                                        .toLowerCase()
+                                        .replace(/\s+/g, "_") ===
+                                      "ready_to_ship"
+                                    ? "secondary"
+                                    : ord.status === "shipped"
+                                      ? "primary"
+                                      : "default"
                           }
                           sx={{
                             textTransform: "capitalize",
@@ -118,7 +131,7 @@ export default function RecentActivityFeed({
                       align="center"
                       sx={{ py: 3, color: "text.secondary" }}
                     >
-                      No orders recorded yet.
+                      No active orders in progress.
                     </TableCell>
                   </TableRow>
                 )}

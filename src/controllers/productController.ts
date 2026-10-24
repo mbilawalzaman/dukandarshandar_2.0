@@ -812,6 +812,21 @@ export const getAdminDashboardStats = async () => {
   try {
     const db = await getDb();
 
+    const ACTIVE_ORDER_STATUSES = [
+      "pending",
+      "processing",
+      "ready_to_ship",
+      "ready to ship",
+      "Pending",
+      "Processing",
+      "Ready to Ship",
+      "Ready To Ship",
+    ];
+
+    const activeOrdersFilter = {
+      status: { $in: ACTIVE_ORDER_STATUSES },
+    };
+
     const [
       totalProducts,
       totalUsers,
@@ -828,7 +843,7 @@ export const getAdminDashboardStats = async () => {
     ] = await Promise.all([
       db.collection("products").countDocuments({}),
       db.collection("users").countDocuments({}),
-      db.collection("orders").countDocuments({}),
+      db.collection("orders").countDocuments(activeOrdersFilter),
       db
         .collection("orders")
         .aggregate([
@@ -874,7 +889,7 @@ export const getAdminDashboardStats = async () => {
         .toArray(),
       db
         .collection("orders")
-        .find({})
+        .find(activeOrdersFilter)
         .sort({ created_at: -1 })
         .limit(5)
         .toArray(),

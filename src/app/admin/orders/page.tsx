@@ -25,6 +25,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 import { authFetch } from "@/lib/authFetch";
 
@@ -38,6 +39,7 @@ import {
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
+import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
 import PostExBookingModal from "@/components/admin/orders/PostExBookingModal";
 import BulkPostExBookingModal from "@/components/admin/orders/BulkPostExBookingModal";
 import PostExShipperAdviceModal from "@/components/admin/orders/PostExShipperAdviceModal";
@@ -184,6 +186,9 @@ export default function AdminOrdersPage() {
     useState<Order | null>(null);
 
   const [shipperAdviceModalOpen, setShipperAdviceModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [ordersToDelete, setOrdersToDelete] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const [toast, setToast] = useState<{
     open: boolean;
@@ -263,6 +268,59 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const handleOpenDeleteModal = (ids: string[]) => {
+    if (!ids.length) return;
+    setOrdersToDelete(ids);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (ordersToDelete.length === 0) return;
+
+    try {
+      setDeleting(true);
+
+      const res = await authFetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderIds: ordersToDelete }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setToast({
+          open: true,
+          message:
+            data.message ||
+            `Deleted ${ordersToDelete.length} order(s) successfully`,
+          severity: "success",
+        });
+        setSelectedOrderIds((prev) =>
+          prev.filter((id) => !ordersToDelete.includes(id)),
+        );
+        setDeleteModalOpen(false);
+        setOrdersToDelete([]);
+        await fetchOrders();
+      } else {
+        setToast({
+          open: true,
+          message: data.error || data.message || "Failed to delete order(s)",
+          severity: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Error deleting order(s):", err);
+      setToast({
+        open: true,
+        message: "An error occurred while deleting order(s)",
+        severity: "error",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleStatusChange = async (
     orderId: string,
@@ -604,6 +662,24 @@ export default function AdminOrdersPage() {
                 </IconButton>
               </Tooltip>
             )}
+          <Tooltip title="Delete Order">
+            <IconButton
+              size="small"
+              onClick={() => handleOpenDeleteModal([row._id])}
+              sx={{
+                border: "1px solid #ef4444",
+                backgroundColor: "#fef2f2",
+                color: "#ef4444",
+                borderRadius: "50%",
+                p: 0.4,
+                "&:hover": {
+                  backgroundColor: "#fee2e2",
+                },
+              }}
+            >
+              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
@@ -915,16 +991,47 @@ export default function AdminOrdersPage() {
         selectedIds={selectedOrderIds}
         onSelectChange={setSelectedOrderIds}
         batchActions={
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            startIcon={<LocalShippingIcon fontSize="small" />}
-            onClick={() => setBulkPostexModalOpen(true)}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
           >
-            Bulk PostEx Actions ({selectedOrderIds.length})
-          </Button>
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              startIcon={<DeleteOutlineIcon fontSize="small" />}
+              onClick={() => handleOpenDeleteModal(selectedOrderIds)}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                borderRadius: 2,
+                px: 1.5,
+              }}
+            >
+              Delete ({selectedOrderIds.length})
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="small"
+              startIcon={<LocalShippingIcon fontSize="small" />}
+              onClick={() => setBulkPostexModalOpen(true)}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                borderRadius: 2,
+                px: 1.5,
+              }}
+            >
+              Bulk PostEx Actions ({selectedOrderIds.length})
+            </Button>
+          </Box>
         }
+        onDelete={(row) => handleOpenDeleteModal([row._id])}
         extraActions={(row) => {
           const st = (row.status || "").toLowerCase();
 
@@ -997,6 +1104,38 @@ export default function AdminOrdersPage() {
         onClose={() => setShipperAdviceModalOpen(false)}
         order={selectedOrderForShipperAdvice}
         onSuccess={fetchOrders}
+      />
+
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={() => {
+          if (!deleting) {
+            setDeleteModalOpen(false);
+            setOrdersToDelete([]);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+        title={
+          ordersToDelete.length > 1
+            ? `Delete ${ordersToDelete.length} Orders`
+            : "Delete Order"
+        }
+        message={
+          ordersToDelete.length > 1
+            ? `Are you sure you want to permanently delete these ${ordersToDelete.length} selected orders? This action cannot be undone.`
+            : `Are you sure you want to permanently delete order #${String(
+                ordersToDelete[0] || "",
+              )
+                .slice(-6)
+                .toUpperCase()}? This action cannot be undone.`
+        }
+        confirmLabel={
+          ordersToDelete.length > 1
+            ? `Delete ${ordersToDelete.length} Orders`
+            : "Delete Order"
+        }
+        loadingLabel="Deleting..."
       />
 
       <Snackbar

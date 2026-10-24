@@ -47,7 +47,7 @@ export default function DashboardMetricsGrid({
           value={loading ? "..." : stats.totalOrders}
           icon={<ShoppingCartIcon />}
           color="#f59e0b"
-          subtitle="Customer orders placed"
+          subtitle="Pending, processing & ready"
         />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>

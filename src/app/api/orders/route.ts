@@ -887,3 +887,55 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const admin = requireAdmin(req);
+
+    if (!admin.ok) return admin.response;
+
+    const body = (await req.json().catch(() => ({}))) as {
+      orderIds?: unknown;
+      orderId?: unknown;
+    };
+
+    const url = new URL(req.url);
+    const queryId = url.searchParams.get("id");
+
+    const rawIds = Array.isArray(body?.orderIds)
+      ? body.orderIds
+      : typeof body?.orderId === "string"
+        ? [body.orderId]
+        : typeof queryId === "string"
+          ? [queryId]
+          : [];
+
+    const orderIds = rawIds
+      .filter(
+        (id): id is string => typeof id === "string" && id.trim().length > 0,
+      )
+      .map((id) => id.trim());
+
+    if (orderIds.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "No order IDs provided" },
+        { status: 400 },
+      );
+    }
+
+    const { deleteOrders } = await import("@/controllers/orderController");
+    const result = await deleteOrders(orderIds);
+
+    return NextResponse.json(result, { status: result.success ? 200 : 400 });
+  } catch (error) {
+    console.error("Error in DELETE /api/orders:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Failed to delete order";
+
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
+  }
+}
