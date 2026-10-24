@@ -1,0 +1,875 @@
+import { ObjectId } from "mongodb";
+
+import { getDb } from "@/lib/db";
+import { escapeRegex } from "@/lib/escapeRegex";
+import { startOfDay, endOfDay } from "@/lib/dateUtils";
+import { parsePageLimit, paginationMeta } from "@/lib/pagination";
+import { allowedOrderTransitions, ownsOrder } from "@/lib/orderRules";
+import {
+  withOrderTransaction,
+  reserveOrderStock,
+} from "@/lib/orderTransaction";
+import { CheckoutError, validateCheckout } from "@/lib/checkoutValidation";
+import {
+  checkoutIdentity,
+  validateShippingLocation,
+} from "@/lib/checkout.server";
+import {
+  quoteCart,
+  recordRedemptions,
+  toOrderDiscountLines,
+} from "@/services/promotionService";
+import { safeNotify } from "@/lib/safeNotify";
+import {
+  notifyAdmins,
+  createNotification,
+} from "@/services/notificationService";
+import { getShopInbox, sendMail } from "@/lib/mail";
+import {
+  orderConfirmationEmail,
+  orderStatusEmail,
+  orderDeliveredEmail,
+} from "@/lib/emailTemplates";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
+import { syncCheckoutProfileToUser } from "@/lib/syncCheckoutProfile";
+import { cancelCustomerOrder } from "@/services/orderCancelService";
+import PostExService from "@/services/postex.service.js";
+import type { JwtPayload } from "@/lib/auth";
+
+export async function enrichOrdersWithImages(
+  db: Awaited<ReturnType<typeof getDb>>,
+  orders: Array<{
+    items?: Array<{ _id?: string; name?: string; image?: string }>;
+  }>,
+) {
+  const productIdsToFetch: ObjectId[] = [];
+  const productNamesToFetch: string[] = [];
+
+  orders.forEach((o) => {
+    o.items?.forEach((it) => {
+      if (!it.image) {
+        if (it._id && ObjectId.isValid(it._id)) {
+          productIdsToFetch.push(new ObjectId(it._id));
+        } else if (it.name) {
+          productNamesToFetch.push(it.name);
+        }
+      }
+    });
+  });
+
+  if (productIdsToFetch.length === 0 && productNamesToFetch.length === 0)
+    return;
+
+  const orConditions: Array<Record<string, unknown>> = [];
+
+  if (productIdsToFetch.length > 0)
+    orConditions.push({ _id: { $in: productIdsToFetch } });
+  if (productNamesToFetch.length > 0)
+    orConditions.push({ name: { $in: productNamesToFetch } });
+
+  const products = await db
+    .collection("products")
+    .find({ $or: orConditions })
+    .toArray();
+
+  const imgById: Record<string, string> = {};
+  const imgByName: Record<string, string> = {};
+
+  products.forEach((p) => {
+    if (p.image) {
+      imgById[String(p._id)] = p.image;
+      imgByName[p.name] = p.image;
+    }
+  });
+
+  orders.forEach((o) => {
+    o.items?.forEach((it) => {
+      if (!it.image) {
+        it.image =
+          (it._id && imgById[String(it._id)]) ||
+          (it.name && imgByName[it.name]) ||
+          "";
+      }
+    });
+  });
+}
+
+function resolveTimeframeFrom(searchParams: URLSearchParams): Date | null {
+  const timeframe = searchParams.get("timeframe");
+
+  if (!timeframe || timeframe === "all") return null;
+
+  const now = new Date();
+  const from = new Date(now);
+
+  if (timeframe === "30d" || timeframe === "30days") {
+    from.setDate(from.getDate() - 30);
+
+    return from;
+  }
+
+  if (timeframe === "90d" || timeframe === "3months") {
+    from.setDate(from.getDate() - 90);
+
+    return from;
+  }
+
+  if (timeframe === "365d" || timeframe === "6months") {
+    from.setDate(from.getDate() - 180);
+
+    return from;
+  }
+
+  if (timeframe === "thisYear") {
+    return new Date(now.getFullYear(), 0, 1);
+  }
+
+  return null;
+}
+
+export function buildOrderFilter(
+  baseQuery: Record<string, unknown>,
+  searchParams: URLSearchParams,
+) {
+  const filter: Record<string, unknown> = { ...baseQuery };
+  const status = searchParams.get("status");
+  const payment = searchParams.get("payment");
+  const search = searchParams.get("search")?.trim();
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
+  const andConditions: Array<Record<string, unknown>> = [];
+
+  if (status && status !== "all") {
+    const normStatus = status.toLowerCase();
+
+    if (normStatus === "pending") {
+      andConditions.push({
+        status: { $in: ["pending", "Pending", "confirmed", "Confirmed"] },
+      });
+    } else if (normStatus === "ready_to_ship") {
+      andConditions.push({
+        status: { $in: ["ready_to_ship", "Ready to Ship"] },
+      });
+    } else {
+      andConditions.push({
+        status: {
+          $regex: new RegExp(`^${normStatus.replace(/_/g, "[ _]")}$`, "i"),
+        },
+      });
+    }
+  }
+
+  if (payment && payment !== "all") {
+    switch (payment) {
+      case "cod":
+        andConditions.push({ payment_method: "cod" });
+        break;
+      case "card":
+        andConditions.push({ payment_method: "card" });
+        break;
+      case "paid":
+        andConditions.push({ payment_status: "paid" });
+        break;
+      case "unpaid":
+        andConditions.push({
+          payment_status: { $ne: "paid" },
+          payment_method: { $ne: "cod" },
+          status: { $ne: "cancelled" },
+        });
+        break;
+      case "awaiting":
+        andConditions.push({ status: "pending_payment" });
+        break;
+      case "failed":
+        andConditions.push({
+          $or: [{ status: "payment_failed" }, { payment_status: "failed" }],
+        });
+        break;
+    }
+  }
+
+  if (search) {
+    const searchOr: Array<Record<string, unknown>> = [
+      { customer_name: { $regex: escapeRegex(search), $options: "i" } },
+      { customer_email: { $regex: escapeRegex(search), $options: "i" } },
+      { "items.name": { $regex: escapeRegex(search), $options: "i" } },
+      ...(ObjectId.isValid(search) ? [{ _id: new ObjectId(search) }] : []),
+    ];
+
+    andConditions.push({ $or: searchOr });
+  }
+
+  if (startDate || endDate) {
+    const startObj = startDate ? startOfDay(startDate) : null;
+    const endObj = endDate ? endOfDay(endDate) : null;
+
+    const dateCond: Record<string, unknown> = {};
+    const stringDateCond: Record<string, unknown> = {};
+
+    if (startObj && !isNaN(startObj.getTime())) {
+      dateCond.$gte = startObj;
+      stringDateCond.$gte = startObj.toISOString();
+    }
+
+    if (endObj && !isNaN(endObj.getTime())) {
+      dateCond.$lte = endObj;
+      stringDateCond.$lte = endObj.toISOString();
+    }
+
+    if (Object.keys(dateCond).length > 0) {
+      andConditions.push({
+        $or: [{ created_at: dateCond }, { created_at: stringDateCond }],
+      });
+    }
+  } else {
+    const from = resolveTimeframeFrom(searchParams);
+
+    if (from) {
+      andConditions.push({
+        $or: [
+          { created_at: { $gte: from } },
+          { created_at: { $gte: from.toISOString() } },
+        ],
+      });
+    }
+  }
+
+  if (andConditions.length > 0) {
+    if (filter.$or) {
+      const ownershipOr = filter.$or;
+
+      delete filter.$or;
+      filter.$and = [{ $or: ownershipOr }, ...andConditions];
+    } else {
+      filter.$and = andConditions;
+    }
+  }
+
+  return filter;
+}
+
+export function orderSort(
+  searchParams: URLSearchParams,
+): Record<string, 1 | -1> {
+  const sortBy = searchParams.get("sortBy") || "newest";
+
+  switch (sortBy) {
+    case "oldest":
+      return { created_at: 1 };
+    case "amount_desc":
+      return { total_amount: -1 };
+    case "amount_asc":
+      return { total_amount: 1 };
+    default:
+      return { created_at: -1 };
+  }
+}
+
+export async function buildOrderSummary(
+  db: Awaited<ReturnType<typeof getDb>>,
+  baseQuery: Record<string, unknown>,
+) {
+  const [totalOrders, statusAgg, spentAgg, activeCount, deliveredCount] =
+    await Promise.all([
+      db.collection("orders").countDocuments(baseQuery),
+      db
+        .collection("orders")
+        .aggregate([
+          { $match: baseQuery },
+          { $group: { _id: "$status", count: { $sum: 1 } } },
+        ])
+        .toArray(),
+      db
+        .collection("orders")
+        .aggregate([
+          {
+            $match: {
+              ...baseQuery,
+              status: { $ne: "cancelled" },
+              $or: [
+                { payment_status: "paid" },
+                { payment_method: "cod", status: "delivered" },
+              ],
+            },
+          },
+          { $group: { _id: null, total: { $sum: "$total_amount" } } },
+        ])
+        .toArray(),
+      db.collection("orders").countDocuments({
+        ...baseQuery,
+        status: {
+          $in: [
+            "pending",
+            "processing",
+            "ready_to_ship",
+            "Ready to Ship",
+            "shipped",
+            "pending_payment",
+            "payment_review",
+            "cancelling",
+          ],
+        },
+      }),
+      db
+        .collection("orders")
+        .countDocuments({ ...baseQuery, status: "delivered" }),
+    ]);
+
+  const statusCounts: Record<string, number> = {
+    pending: 0,
+    processing: 0,
+    ready_to_ship: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+    pending_payment: 0,
+    payment_failed: 0,
+  };
+
+  statusAgg.forEach((row) => {
+    const key = String(row._id || "pending")
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    statusCounts[key] = (statusCounts[key] || 0) + (row.count as number);
+  });
+
+  return {
+    totalOrders,
+    totalSpent: spentAgg[0]?.total || 0,
+    activeCount,
+    deliveredCount,
+    statusCounts,
+  };
+}
+
+export async function listOrdersService(
+  user: JwtPayload,
+  searchParams: URLSearchParams,
+) {
+  const { page, limit, skip } = parsePageLimit(searchParams, {
+    page: 1,
+    limit: 10,
+    maxLimit: 50,
+  });
+
+  const baseQuery: Record<string, unknown> =
+    user.role === "admin" ? {} : { customer_id: user.userId };
+
+  const filter = buildOrderFilter(baseQuery, searchParams);
+  const sort = orderSort(searchParams);
+
+  const db = await getDb();
+
+  const [orders, total, summary] = await Promise.all([
+    db
+      .collection("orders")
+      .find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    db.collection("orders").countDocuments(filter),
+    buildOrderSummary(db, baseQuery),
+  ]);
+
+  await enrichOrdersWithImages(
+    db,
+    orders as Array<{
+      items?: Array<{ _id?: string; name?: string; image?: string }>;
+    }>,
+  );
+
+  return {
+    orders,
+    pagination: paginationMeta(page, limit, total),
+    summary,
+  };
+}
+
+export async function getOrderByIdService(
+  orderId: string,
+  user: { userId?: string; role?: string },
+) {
+  if (!orderId || !ObjectId.isValid(orderId)) return null;
+
+  const db = await getDb();
+
+  const order = await db
+    .collection("orders")
+    .findOne({ _id: new ObjectId(orderId) });
+
+  if (!order) return null;
+  if (!ownsOrder(order, user)) return { forbidden: true as const };
+
+  await enrichOrdersWithImages(db, [
+    order as { items?: Array<{ _id?: string; name?: string; image?: string }> },
+  ]);
+
+  return { order };
+}
+
+export async function createOrderService(
+  rawBody: unknown,
+  user: JwtPayload,
+  req: Request,
+) {
+  const body = validateCheckout(rawBody, ["cod"]);
+
+  const {
+    customer_name,
+    customer_email,
+    phone,
+    province,
+    city,
+    area,
+    address,
+    items,
+    payment_method,
+    promo_code,
+  } = body;
+
+  const identity = checkoutIdentity(req, user.userId, body);
+  const db = await getDb();
+
+  const previous = await db
+    .collection("orders")
+    .findOne({ _id: new ObjectId(identity.id) });
+
+  if (previous) {
+    if (
+      previous.customer_id !== user.userId ||
+      previous.checkout_fingerprint !== identity.fingerprint
+    )
+      throw new CheckoutError(
+        "Checkout key was already used for a different order",
+        409,
+      );
+
+    return {
+      created: false,
+      order: previous,
+      message: "Order already placed",
+    };
+  }
+
+  await validateShippingLocation(body);
+
+  const rawShippingFee = (body as unknown as { shippingFee?: number })
+    .shippingFee;
+
+  const quote = await quoteCart({
+    items,
+    voucherCode: promo_code || null,
+    customerId: user.userId || null,
+    customerEmail: customer_email || user.email || null,
+    shippingFee:
+      typeof rawShippingFee === "number" && rawShippingFee >= 0
+        ? rawShippingFee
+        : undefined,
+  });
+
+  if (quote.missingProductIds.length > 0) {
+    throw new CheckoutError(
+      "Some items in your cart are no longer available",
+      400,
+    );
+  }
+
+  if (promo_code && quote.rejected.length > 0) {
+    throw new CheckoutError(quote.rejected[0].message, 400);
+  }
+
+  const {
+    subtotal,
+    shipping,
+    deliveryPromo: delivery_promo,
+    discountTotal: discount_total,
+    total: computedTotal,
+  } = quote;
+
+  const enrichedItems = quote.orderItems;
+
+  const newOrder = {
+    _id: new ObjectId(identity.id),
+    checkout_fingerprint: identity.fingerprint,
+    stock_reserved: true,
+    customer_name: customer_name || user?.userName || "Guest Customer",
+    customer_email: customer_email || user?.email || "guest@example.com",
+    customer_id: user?.userId || null,
+    phone: phone || "",
+    province: province || "",
+    city: city || "",
+    area: area || "",
+    address: address || "",
+    items: enrichedItems,
+    subtotal,
+    shipping,
+    delivery_promo,
+    discounts: toOrderDiscountLines(quote),
+    discount_total,
+    discount_code: quote.voucher?.code || null,
+    discount_amount: quote.voucherDiscount,
+    promotions_recorded: false,
+    total_amount: computedTotal,
+    payment_method: payment_method || "cod",
+    payment_status: "unpaid",
+    status: "pending",
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
+
+  const committed = await withOrderTransaction(async (tx) => {
+    const existing = await tx.db
+      .collection("orders")
+      .findOne({ _id: newOrder._id }, { session: tx.session });
+
+    if (existing) {
+      if (
+        existing.checkout_fingerprint !== identity.fingerprint ||
+        existing.customer_id !== user.userId
+      )
+        throw new CheckoutError(
+          "Checkout key was already used for a different order",
+          409,
+        );
+
+      return { created: false, order: existing };
+    }
+
+    await reserveOrderStock(tx, enrichedItems);
+    await tx.db
+      .collection("orders")
+      .insertOne(newOrder, { session: tx.session });
+
+    if (quote.applied.length) {
+      const kept = await recordRedemptions(
+        {
+          orderId: identity.id,
+          quote,
+          customerId: user.userId,
+          customerEmail: customer_email,
+        },
+        tx,
+      );
+
+      if (kept.length !== quote.applied.length)
+        throw new CheckoutError(
+          "A promotion has reached its limit. Refresh your cart and try again.",
+          409,
+        );
+      await tx.db
+        .collection("orders")
+        .updateOne(
+          { _id: newOrder._id },
+          { $set: { promotions_recorded: true } },
+          { session: tx.session },
+        );
+    }
+
+    return { created: true, order: newOrder };
+  });
+
+  if (!committed.created) {
+    return {
+      created: false,
+      order: committed.order,
+      message: "Order already placed",
+    };
+  }
+
+  newOrder.promotions_recorded = quote.applied.length > 0;
+
+  // Background notifications and alerts (fire-and-forget safely)
+  await safeNotify(async () => {
+    const itemIds = enrichedItems
+      .map((item) =>
+        item._id && ObjectId.isValid(item._id) ? new ObjectId(item._id) : null,
+      )
+      .filter((id): id is ObjectId => id !== null);
+
+    if (itemIds.length === 0) return;
+
+    const products = await db
+      .collection("products")
+      .find({ _id: { $in: itemIds } })
+      .toArray();
+
+    for (const product of products) {
+      if (Number(product.quantity) <= 5) {
+        await notifyAdmins({
+          type: "low_stock",
+          title: "Low stock alert",
+          body: `${product.name} has only ${product.quantity} units left`,
+          entityType: "product",
+          entityId: String(product._id),
+          idempotencyKey: `low_stock:${product._id}:${product.quantity}`,
+          sendPush: true,
+          route: "/admin/products",
+        });
+      }
+    }
+  });
+
+  const orderId = identity.id.slice(-8).toUpperCase();
+
+  await safeNotify(() =>
+    notifyAdmins({
+      type: "order_placed",
+      title: "New order placed",
+      body: `Order #${orderId} PKR ${computedTotal.toLocaleString()}`,
+      entityType: "order",
+      entityId: String(newOrder._id),
+      actorId: user?.userId || null,
+      idempotencyKey: `order_placed:${newOrder._id}`,
+      sendPush: true,
+      route: "/admin/orders",
+    }),
+  );
+
+  const deliverySettings = await getDeliverySettings().catch(() => null);
+  const storeName = deliverySettings?.shopName || "";
+
+  const confirmationHtml = orderConfirmationEmail({
+    name: newOrder.customer_name,
+    orderId,
+    items: enrichedItems,
+    total: computedTotal,
+    subtotal,
+    shipping,
+    discounts: newOrder.discounts,
+    province: newOrder.province,
+    city: newOrder.city,
+    area: newOrder.area,
+    address: newOrder.address,
+    shopName: storeName,
+  });
+
+  await Promise.all([
+    sendMail({
+      to: newOrder.customer_email,
+      subject: storeName
+        ? `Order #${orderId} confirmed - ${storeName}`
+        : `Order #${orderId} confirmed`,
+      html: confirmationHtml,
+    }),
+    getShopInbox()
+      ? sendMail({
+          to: getShopInbox(),
+          subject: `New order #${orderId} PKR ${computedTotal.toLocaleString()}`,
+          html: confirmationHtml,
+        })
+      : Promise.resolve(),
+  ]);
+
+  const synced = await syncCheckoutProfileToUser(user?.userId, {
+    customer_name,
+    customer_email,
+    phone,
+    address,
+    city,
+    province,
+    area,
+  }).catch(() => ({ updated: false, session: undefined }));
+
+  return {
+    created: true,
+    order: newOrder,
+    syncedSession: synced.session,
+    profileSynced: synced.updated,
+  };
+}
+
+export async function updateOrderStatusService(
+  orderId: string,
+  status: string,
+  adminUser: JwtPayload,
+) {
+  if (!orderId || !ObjectId.isValid(orderId)) {
+    throw new CheckoutError("Invalid order ID", 400);
+  }
+
+  const db = await getDb();
+
+  const existingOrder = await db
+    .collection("orders")
+    .findOne({ _id: new ObjectId(orderId) });
+
+  if (!existingOrder) {
+    throw new CheckoutError("Order not found", 404);
+  }
+
+  if (status === "cancelled") {
+    const cancelled = await cancelCustomerOrder(orderId, adminUser);
+
+    if (cancelled.success) {
+      return {
+        success: true,
+        message: cancelled.refunded
+          ? "Order cancelled and refund initiated"
+          : "Order cancelled",
+        status: 200,
+      };
+    }
+
+    return {
+      success: false,
+      message: cancelled.message,
+      status: cancelled.status,
+    };
+  }
+
+  if (!allowedOrderTransitions(existingOrder).includes(status)) {
+    throw new CheckoutError("This order status transition is not allowed", 409);
+  }
+
+  const result = await db.collection("orders").updateOne(
+    {
+      _id: existingOrder._id,
+      status: existingOrder.status,
+      payment_status: existingOrder.payment_status,
+    },
+    { $set: { status, updated_at: new Date() } },
+  );
+
+  if (result.modifiedCount !== 1) {
+    throw new CheckoutError("Order changed. Refresh and try again.", 409);
+  }
+
+  if (existingOrder.customer_email) {
+    const deliverySettings = await getDeliverySettings().catch(() => null);
+    const storeName = deliverySettings?.shopName || "";
+    const displayOrderId = String(existingOrder._id).slice(-8).toUpperCase();
+    const isDelivered = status === "delivered";
+
+    await sendMail({
+      to: existingOrder.customer_email,
+      subject: isDelivered
+        ? storeName
+          ? `Order #${displayOrderId} delivered! Rate & Review Your Products - ${storeName}`
+          : `Order #${displayOrderId} delivered! Rate & Review Your Products`
+        : storeName
+          ? `Order #${displayOrderId} is ${status} - ${storeName}`
+          : `Order #${displayOrderId} is ${status}`,
+      html: isDelivered
+        ? orderDeliveredEmail({
+            name: existingOrder.customer_name || "Customer",
+            orderId: displayOrderId,
+            fullOrderId: String(existingOrder._id),
+            shopName: storeName,
+          })
+        : orderStatusEmail({
+            name: existingOrder.customer_name || "Customer",
+            orderId: displayOrderId,
+            status,
+            shopName: storeName,
+          }),
+    });
+  }
+
+  const recipientId = existingOrder.customer_id
+    ? String(existingOrder.customer_id)
+    : null;
+
+  if (recipientId) {
+    const isDelivered = status === "delivered";
+    const displayId = String(existingOrder._id).slice(-8).toUpperCase();
+
+    await safeNotify(() =>
+      createNotification({
+        recipients: [recipientId!],
+        type: isDelivered ? "order_delivered" : "order_status",
+        title: isDelivered
+          ? `Order #${displayId} Delivered 🎉`
+          : `Order #${displayId} updated`,
+        body: isDelivered
+          ? `Your order #${displayId} has been delivered. Tap to rate and review your products!`
+          : `Your order is now ${status}`,
+        entityType: "order",
+        entityId: String(existingOrder._id),
+        idempotencyKey: `order_status:${existingOrder._id}:${status}`,
+        sendPush: true,
+        route: `/orders?orderId=${existingOrder._id}&action=review`,
+      }),
+    );
+  }
+
+  return {
+    success: true,
+    message: "Order status updated successfully",
+    status: 200,
+  };
+}
+
+export async function trackOrderService(
+  params: { trackingNumber?: string | null; orderId?: string | null },
+  user: JwtPayload,
+) {
+  const { trackingNumber, orderId } = params;
+
+  if (!trackingNumber && !orderId) {
+    throw new CheckoutError("orderId or trackingNumber is required", 400);
+  }
+
+  const db = await getDb();
+  let query: Record<string, unknown> = {};
+
+  if (orderId && ObjectId.isValid(orderId)) {
+    query._id = new ObjectId(orderId);
+  } else if (trackingNumber) {
+    query = {
+      $or: [
+        { trackingNumber },
+        { "postexDetails.trackingNumber": trackingNumber },
+      ],
+    };
+  }
+
+  const order = await db.collection("orders").findOne(query);
+
+  if (!order) {
+    throw new CheckoutError("Order not found", 404);
+  }
+
+  if (!ownsOrder(order, user)) {
+    throw new CheckoutError("Forbidden", 403);
+  }
+
+  const tn =
+    trackingNumber ||
+    order.postexDetails?.trackingNumber ||
+    order.trackingNumber;
+
+  if (!tn) {
+    throw new CheckoutError("Tracking number not found for this order", 404);
+  }
+
+  try {
+    const liveData = await PostExService.trackOrder(tn);
+
+    return { success: true, data: liveData, order, isFallback: false };
+  } catch (liveErr) {
+    console.warn("[PostEx Live Track Error - using fallback]:", liveErr);
+
+    return {
+      success: true,
+      data: {
+        dist: {
+          trackingNumber: tn,
+          transactionStatus:
+            order.postexStatus ||
+            order.postexDetails?.orderStatus ||
+            order.status,
+          customerName: order.customer_name,
+          deliveryAddress: order.address,
+          cityName: order.city,
+          invoicePayment: order.total_amount,
+          transactionStatusHistory: order.postexDetails?.statusHistory || [],
+        },
+      },
+      order,
+      isFallback: true,
+    };
+  }
+}
