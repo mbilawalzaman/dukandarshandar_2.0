@@ -103,12 +103,29 @@ export type AddToCartProduct = {
   category?: string;
 };
 
-export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
+export function addToCart(
+  product: AddToCartProduct,
+  quantity = 1,
+  availableQuantity = Number.POSITIVE_INFINITY,
+): { items: CartItem[]; addedQuantity: number } {
   const cart = getCart();
   const existing = cart.find((item) => item._id === product._id);
+  const currentQuantity = existing?.quantity ?? 0;
+  const requestedQuantity = Math.max(0, Math.floor(Number(quantity) || 0));
+
+  const stockLimit = Number.isFinite(availableQuantity)
+    ? Math.max(0, Math.floor(availableQuantity))
+    : Number.POSITIVE_INFINITY;
+
+  const addedQuantity = Math.min(
+    requestedQuantity,
+    Math.max(0, stockLimit - currentQuantity),
+  );
+
+  if (addedQuantity === 0) return { items: cart, addedQuantity };
 
   if (existing) {
-    existing.quantity += quantity;
+    existing.quantity += addedQuantity;
     // Older carts were saved without a category; backfill so promotions can scope by it.
     if (!existing.category && product.category)
       existing.category = product.category;
@@ -117,7 +134,7 @@ export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
       _id: product._id,
       name: product.name,
       price: Number(product.price) || 0,
-      quantity,
+      quantity: addedQuantity,
       image: product.image || "",
       category: product.category || undefined,
     });
@@ -125,7 +142,7 @@ export function addToCart(product: AddToCartProduct, quantity = 1): CartItem[] {
 
   saveCart(cart);
 
-  return cart;
+  return { items: cart, addedQuantity };
 }
 
 export function updateCartQuantity(id: string, quantity: number): CartItem[] {

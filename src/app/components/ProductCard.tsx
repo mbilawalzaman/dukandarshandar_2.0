@@ -41,7 +41,7 @@ export type ProductCardData = {
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
   const router = useRouter();
-  const { add, toast } = useCart();
+  const { items: cartItems, add, toast } = useCart();
   const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
 
@@ -89,7 +89,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
   const effectivePrice = effectiveSalePrice ?? regularPrice;
 
-  const outOfStock = Number(product.quantity) === 0;
+  const availableStock = Math.max(0, Number(product.quantity) || 0);
+
+  const cartQuantity =
+    cartItems.find((item) => item._id === product._id)?.quantity ?? 0;
+
+  const outOfStock = availableStock === 0;
+  const cartStockLimitReached = cartQuantity >= availableStock;
   const saved = productIds.has(product._id);
 
   const toggleWishlist = async (event: React.MouseEvent) => {
@@ -304,7 +310,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           variant="contained"
           color="primary"
           fullWidth
-          disabled={outOfStock}
+          disabled={outOfStock || cartStockLimitReached}
           onClick={() =>
             add(
               {
@@ -315,11 +321,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 category: product.category,
               },
               1,
+              availableStock,
             )
           }
           sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
         >
-          {outOfStock ? "Out of Stock" : "Add to Cart"}
+          {outOfStock
+            ? "Out of Stock"
+            : cartStockLimitReached
+              ? "Stock limit reached"
+              : "Add to Cart"}
         </Button>
       </CardActions>
     </Card>

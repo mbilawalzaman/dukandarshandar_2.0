@@ -26,7 +26,11 @@ import {
 type CartContextValue = {
   items: CartItem[];
   count: number;
-  add: (product: AddToCartProduct, quantity?: number) => void;
+  add: (
+    product: AddToCartProduct,
+    quantity?: number,
+    availableQuantity?: number,
+  ) => void;
   updateQuantity: (id: string, quantity: number) => void;
   remove: (id: string) => void;
   clear: () => void;
@@ -70,10 +74,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     () => ({
       items,
       count: cartCount(items),
-      add: (product, quantity = 1) => {
-        addItem(product, quantity);
+      add: (product, quantity = 1, availableQuantity) => {
+        const result = addItem(product, quantity, availableQuantity);
+
         refresh();
-        toast(`${product.name} added to cart`);
+
+        if (result.addedQuantity === 0) {
+          toast(
+            `You've reached the available stock for ${product.name}`,
+            "error",
+          );
+        } else if (result.addedQuantity < quantity) {
+          toast(
+            `Added ${result.addedQuantity}; that's all the remaining stock for ${product.name}`,
+            "info",
+          );
+        } else {
+          toast(`${product.name} added to cart`);
+        }
       },
       updateQuantity: (id, quantity) => {
         updateCartQuantity(id, quantity);

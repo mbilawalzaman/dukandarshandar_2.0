@@ -50,7 +50,7 @@ interface Product {
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
-  const { add } = useCart();
+  const { items: cartItems, add } = useCart();
   const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
   const [product, setProduct] = useState<Product | null>(null);
@@ -225,6 +225,7 @@ const ProductDetails = () => {
         category: product.category,
       },
       quantity,
+      availableStock,
     );
   };
 
@@ -270,8 +271,14 @@ const ProductDetails = () => {
     );
   }
 
-  const maxQty = Math.max(1, Number(product.quantity) || 1);
-  const outOfStock = Number(product.quantity) <= 0;
+  const availableStock = Math.max(0, Number(product.quantity) || 0);
+
+  const cartQuantity =
+    cartItems.find((item) => item._id === product._id)?.quantity ?? 0;
+
+  const maxQty = Math.max(1, availableStock - cartQuantity);
+  const outOfStock = availableStock <= 0;
+  const cartStockLimitReached = cartQuantity >= availableStock;
   const galleryImages = getProductImageUrls(product);
 
   return (
@@ -416,7 +423,9 @@ const ProductDetails = () => {
             <Button
               variant="outlined"
               onClick={() => setQuantity((prev) => Math.min(maxQty, prev + 1))}
-              disabled={quantity >= maxQty}
+              disabled={
+                quantity >= maxQty || quantity + cartQuantity >= availableStock
+              }
             >
               +
             </Button>
@@ -480,11 +489,15 @@ const ProductDetails = () => {
             <Button
               onClick={handleAddToCart}
               variant="outlined"
-              disabled={outOfStock}
+              disabled={outOfStock || quantity + cartQuantity > availableStock}
               fullWidth
               sx={{ py: 1.4 }}
             >
-              Add to Cart
+              {outOfStock
+                ? "Out of Stock"
+                : cartStockLimitReached
+                  ? "Stock limit reached"
+                  : "Add to Cart"}
             </Button>
           </Box>
         </Box>
