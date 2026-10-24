@@ -5,6 +5,7 @@ export interface ProductFormData {
   name: string;
   category: string;
   price: number | string;
+  discountPrice?: number | string | null;
   quantity: number | string;
   rating: number | string;
   description: string;
@@ -19,6 +20,7 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  discountPrice?: number | null;
   quantity: number;
   rating: number;
   description: string;

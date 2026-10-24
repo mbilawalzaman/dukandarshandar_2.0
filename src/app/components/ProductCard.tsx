@@ -30,6 +30,7 @@ export type ProductCardData = {
   name: string;
   category?: string;
   price: number;
+  discountPrice?: number | null;
   rating?: number;
   image?: string;
   images?: { url: string; publicId?: string }[];
@@ -43,11 +44,49 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
 
+  const regularPrice = Number(product.price) || 0;
+
+  const discountAmount =
+    typeof product.discountPrice === "number" &&
+    !isNaN(product.discountPrice) &&
+    product.discountPrice > 0 &&
+    product.discountPrice < regularPrice
+      ? product.discountPrice
+      : 0;
+
+  const hasDirectDiscount = discountAmount > 0;
+
+  const directSalePrice = hasDirectDiscount
+    ? regularPrice - discountAmount
+    : null;
+
   const deal = dealFor({
     _id: product._id,
-    price: Number(product.price) || 0,
+    price: regularPrice,
     category: product.category,
   });
+
+  const effectiveSalePrice =
+    deal && directSalePrice !== null
+      ? Math.min(deal.salePrice, directSalePrice)
+      : (deal?.salePrice ?? directSalePrice);
+
+  const directPercent =
+    hasDirectDiscount && regularPrice > 0
+      ? Math.round((discountAmount / regularPrice) * 100)
+      : 0;
+
+  const effectiveBadge =
+    deal && (!directSalePrice || deal.salePrice <= directSalePrice)
+      ? {
+          label: deal.promotion.badge?.label || `-${deal.percentOff}%`,
+          color: deal.promotion.badge?.color || "#dc2626",
+        }
+      : hasDirectDiscount
+        ? { label: `-${directPercent}%`, color: "#dc2626" }
+        : null;
+
+  const effectivePrice = effectiveSalePrice ?? regularPrice;
 
   const outOfStock = Number(product.quantity) === 0;
   const saved = productIds.has(product._id);
@@ -104,12 +143,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         }}
         onClick={() => router.push(`/products/${product._id}`)}
       >
-        {deal && (
+        {effectiveBadge && (
           <PromotionBadge
-            badge={{
-              label: `-${deal.percentOff}%`,
-              color: deal.promotion.badge?.color || "#dc2626",
-            }}
+            badge={effectiveBadge}
             sx={{ position: "absolute", top: 10, left: 10, zIndex: 1 }}
           />
         )}
@@ -227,9 +263,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
         <Box sx={{ mt: "auto", pt: 0.5 }}>
           <PriceTag
-            price={Number(product.price) || 0}
-            salePrice={deal?.salePrice}
-            badge={deal?.promotion.badge}
+            price={regularPrice}
+            salePrice={effectiveSalePrice}
+            badge={effectiveBadge}
           />
           {deal?.promotion.kind === "flash_sale" && (
             <FlashSaleCountdown endAt={deal.promotion.endAt} />
@@ -250,7 +286,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               {
                 _id: product._id,
                 name: product.name,
-                price: product.price,
+                price: effectivePrice,
                 image: getProductThumbnail(product),
                 category: product.category,
               },
@@ -273,7 +309,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               {
                 _id: product._id,
                 name: product.name,
-                price: product.price,
+                price: effectivePrice,
                 image: getProductThumbnail(product),
                 category: product.category,
               },

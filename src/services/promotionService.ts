@@ -793,6 +793,7 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
           {
             projection: {
               price: 1,
+              discountPrice: 1,
               category: 1,
               name: 1,
               image: 1,
@@ -817,10 +818,22 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
       continue;
     }
 
+    const regularPrice = Number(product.price) || 0;
+
+    const discountAmount =
+      typeof product.discountPrice === "number" &&
+      product.discountPrice > 0 &&
+      product.discountPrice < regularPrice
+        ? product.discountPrice
+        : 0;
+
+    const effectivePrice =
+      discountAmount > 0 ? regularPrice - discountAmount : regularPrice;
+
     items.push({
       productId: String(item._id),
       category: product.category ? String(product.category) : item.category,
-      price: Number(product.price) || 0,
+      price: effectivePrice,
       quantity: item.quantity,
       name: product.name ? String(product.name) : item.name,
     });

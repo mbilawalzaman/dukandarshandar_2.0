@@ -26,7 +26,7 @@ export type SessionUser = {
 
 export type IssuedSession = {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   user: SessionUser;
 };
 
@@ -103,11 +103,31 @@ export async function issueSessionForUser(
 
   const db = await getDb();
 
+  const userObjectId =
+    typeof user._id === "string" ? new ObjectId(user._id) : user._id;
+
+  const userDoc = await db.collection("users").findOne({ _id: userObjectId });
+
+  const rawList: RefreshTokenRecord[] = Array.isArray(userDoc?.refreshTokens)
+    ? (userDoc.refreshTokens as RefreshTokenRecord[])
+    : [];
+
+  const validTokens = rawList.filter(
+    (t) =>
+      t &&
+      t.expiresAt &&
+      new Date(t.expiresAt) > now &&
+      (!t.revokedAt ||
+        new Date(t.revokedAt) > new Date(now.getTime() - 60 * 1000)),
+  );
+
+  const nextTokens = [...validTokens.slice(-9), record];
+
   await db.collection("users").updateOne(
-    { _id: typeof user._id === "string" ? new ObjectId(user._id) : user._id },
+    { _id: userObjectId },
     {
       $set: {
-        refreshTokens: [record],
+        refreshTokens: nextTokens,
         updated_at: now,
       },
     },
@@ -153,8 +173,10 @@ export async function rotateRefreshToken(
   const tokenHash = hashRefreshToken(rawRefreshToken);
   const db = await getDb();
   const now = new Date();
+  const graceCutoff = new Date(now.getTime() - 30 * 1000);
 
-  const user = await db.collection("users").findOne({
+  // 1. Look for valid active token
+  let user = await db.collection("users").findOne({
     refreshTokens: {
       $elemMatch: {
         tokenHash,
@@ -164,17 +186,92 @@ export async function rotateRefreshToken(
     },
   });
 
-  if (!user) return null;
+  if (user) {
+    const userId = user._id;
+    const newRefreshToken = createRefreshToken();
+    const newTokenHash = hashRefreshToken(newRefreshToken);
 
-  return issueSessionForUser(
-    {
-      _id: user._id,
-      name: user.name,
+    const expiresAt = new Date(
+      now.getTime() + REFRESH_TOKEN_TTL_SECONDS * 1000,
+    );
+
+    const newRecord: RefreshTokenRecord = {
+      tokenHash: newTokenHash,
+      expiresAt,
+      createdAt: now,
+      userAgent: options?.userAgent,
+      revokedAt: null,
+    };
+
+    const accessToken = signAccessToken({
+      userId: String(userId),
       email: user.email,
+      userName: user.name,
       role: user.role,
+    });
+
+    const rawUserTokens: RefreshTokenRecord[] = Array.isArray(
+      user.refreshTokens,
+    )
+      ? (user.refreshTokens as RefreshTokenRecord[])
+      : [];
+
+    const updatedTokens: RefreshTokenRecord[] = rawUserTokens
+      .filter(
+        (t) =>
+          t &&
+          t.expiresAt &&
+          new Date(t.expiresAt) > now &&
+          (!t.revokedAt || new Date(t.revokedAt) > graceCutoff),
+      )
+      .map((t) => (t.tokenHash === tokenHash ? { ...t, revokedAt: now } : t));
+
+    updatedTokens.push(newRecord);
+    const trimmedTokens = updatedTokens.slice(-10);
+
+    await db.collection("users").updateOne(
+      { _id: userId },
+      {
+        $set: {
+          refreshTokens: trimmedTokens,
+          updated_at: now,
+        },
+      },
+    );
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: { name: user.name, email: user.email, role: user.role },
+    };
+  }
+
+  // 2. Check if this token was rotated within the 30-second grace period (concurrent burst from another tab/call)
+  user = await db.collection("users").findOne({
+    refreshTokens: {
+      $elemMatch: {
+        tokenHash,
+        revokedAt: { $gt: graceCutoff },
+        expiresAt: { $gt: now },
+      },
     },
-    options,
-  );
+  });
+
+  if (user) {
+    const accessToken = signAccessToken({
+      userId: String(user._id),
+      email: user.email,
+      userName: user.name,
+      role: user.role,
+    });
+
+    return {
+      accessToken,
+      user: { name: user.name, email: user.email, role: user.role },
+    };
+  }
+
+  return null;
 }
 
 export async function revokeRefreshToken(

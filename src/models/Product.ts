@@ -7,6 +7,7 @@ export interface IProduct extends Document {
   name: string;
   category: string;
   price: number;
+  discountPrice?: number | null;
   quantity: number;
   rating: number;
   image: string;
@@ -25,6 +26,7 @@ const ProductSchema: Schema = new Schema(
     name: { type: String, required: true },
     category: { type: String, required: true },
     price: { type: Number, required: true },
+    discountPrice: { type: Number, required: false, default: null },
     quantity: { type: Number, required: true },
     ratings: [Number], // Store all user ratings
     rating: { type: Number, default: 0 },

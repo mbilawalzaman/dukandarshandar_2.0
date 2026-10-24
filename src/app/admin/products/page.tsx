@@ -278,8 +278,67 @@ export default function AdminProductsPage(): React.JSX.Element {
       {
         id: "price",
         label: "Price",
-        minWidth: 100,
-        format: (val) => `PKR ${Number(val).toLocaleString()}`,
+        minWidth: 120,
+        format: (val, row) => {
+          const regularPrice = Number(val) || 0;
+
+          const discountAmount =
+            typeof row.discountPrice === "number" &&
+            row.discountPrice > 0 &&
+            row.discountPrice < regularPrice
+              ? row.discountPrice
+              : null;
+
+          if (discountAmount !== null) {
+            const salePrice = regularPrice - discountAmount;
+
+            return (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#dc2626",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  PKR {salePrice.toLocaleString()}
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "0.75rem",
+                    color: "text.secondary",
+                    textDecoration: "line-through",
+                  }}
+                >
+                  PKR {regularPrice.toLocaleString()}
+                </Typography>
+              </Box>
+            );
+          }
+
+          return (
+            <Typography
+              component="span"
+              sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+            >
+              PKR {regularPrice.toLocaleString()}
+            </Typography>
+          );
+        },
+      },
+      {
+        id: "discountPrice",
+        label: "Discount (Off)",
+        minWidth: 110,
+        format: (val) => {
+          const num = Number(val);
+
+          return val !== undefined && val !== null && !isNaN(num) && num > 0
+            ? `-PKR ${num.toLocaleString()}`
+            : "—";
+        },
       },
       {
         id: "quantity",

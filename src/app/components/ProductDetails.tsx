@@ -38,6 +38,7 @@ interface Product {
   name: string;
   category: string;
   price: number;
+  discountPrice?: number | null;
   quantity: number;
   rating: number;
   ratings: number[];
@@ -184,13 +185,42 @@ const ProductDetails = () => {
     }
   };
 
+  const getEffectivePrice = () => {
+    if (!product) return 0;
+    const regularPrice = Number(product.price) || 0;
+
+    const discountAmount =
+      typeof product.discountPrice === "number" &&
+      !isNaN(product.discountPrice) &&
+      product.discountPrice > 0 &&
+      product.discountPrice < regularPrice
+        ? product.discountPrice
+        : 0;
+
+    const directSalePrice =
+      discountAmount > 0 ? regularPrice - discountAmount : null;
+
+    const deal = dealFor({
+      _id: product._id,
+      price: regularPrice,
+      category: product.category,
+    });
+
+    const effectiveSalePrice =
+      deal && directSalePrice !== null
+        ? Math.min(deal.salePrice, directSalePrice)
+        : (deal?.salePrice ?? directSalePrice);
+
+    return effectiveSalePrice ?? regularPrice;
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
     add(
       {
         _id: product._id,
         name: product.name,
-        price: product.price,
+        price: getEffectivePrice(),
         image: getProductThumbnail(product),
         category: product.category,
       },
@@ -204,7 +234,7 @@ const ProductDetails = () => {
       {
         _id: product._id,
         name: product.name,
-        price: product.price,
+        price: getEffectivePrice(),
         image: getProductThumbnail(product),
         category: product.category,
       },
@@ -275,18 +305,55 @@ const ProductDetails = () => {
             Category: {product.category}
           </Typography>
           {(() => {
+            const regularPrice = Number(product.price) || 0;
+
+            const discountAmount =
+              typeof product.discountPrice === "number" &&
+              !isNaN(product.discountPrice) &&
+              product.discountPrice > 0 &&
+              product.discountPrice < regularPrice
+                ? product.discountPrice
+                : 0;
+
+            const hasDirectDiscount = discountAmount > 0;
+
+            const directSalePrice = hasDirectDiscount
+              ? regularPrice - discountAmount
+              : null;
+
             const deal = dealFor({
               _id: product._id,
-              price: Number(product.price) || 0,
+              price: regularPrice,
               category: product.category,
             });
+
+            const effectiveSalePrice =
+              deal && directSalePrice !== null
+                ? Math.min(deal.salePrice, directSalePrice)
+                : (deal?.salePrice ?? directSalePrice);
+
+            const directPercent =
+              hasDirectDiscount && regularPrice > 0
+                ? Math.round((discountAmount / regularPrice) * 100)
+                : 0;
+
+            const effectiveBadge =
+              deal && (!directSalePrice || deal.salePrice <= directSalePrice)
+                ? {
+                    label:
+                      deal.promotion.badge?.label || `-${deal.percentOff}%`,
+                    color: deal.promotion.badge?.color || "#dc2626",
+                  }
+                : hasDirectDiscount
+                  ? { label: `-${directPercent}%`, color: "#dc2626" }
+                  : null;
 
             return (
               <Box sx={{ mt: 2 }}>
                 <PriceTag
-                  price={Number(product.price) || 0}
-                  salePrice={deal?.salePrice}
-                  badge={deal?.promotion.badge}
+                  price={regularPrice}
+                  salePrice={effectiveSalePrice}
+                  badge={effectiveBadge}
                   size="large"
                   suffix={
                     <Typography

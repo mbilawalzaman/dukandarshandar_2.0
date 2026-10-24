@@ -98,6 +98,10 @@ export default function ProductList({
           (data.products || []).map((product: ProductCardData) => ({
             ...product,
             price: Number(product.price) || 0,
+            discountPrice:
+              typeof product.discountPrice === "number"
+                ? product.discountPrice
+                : null,
             quantity: Number(product.quantity) || 0,
             rating: Number(product.rating) || 0,
             description: product.description || "",

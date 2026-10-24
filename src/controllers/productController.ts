@@ -98,6 +98,7 @@ export const createProduct = async (req: Request) => {
       name,
       category,
       price,
+      discountPrice,
       quantity,
       description,
       rating,
@@ -146,6 +147,33 @@ export const createProduct = async (req: Request) => {
       );
     }
 
+    let normalizedDiscountPrice: number | null = null;
+
+    if (
+      discountPrice !== undefined &&
+      discountPrice !== null &&
+      discountPrice !== ""
+    ) {
+      const parsedDiscount = Number(discountPrice);
+
+      if (
+        !Number.isFinite(parsedDiscount) ||
+        parsedDiscount <= 0 ||
+        parsedDiscount >= Number(price)
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Discount amount must be greater than 0 and less than regular price.",
+          },
+          { status: 400 },
+        );
+      }
+
+      normalizedDiscountPrice = parsedDiscount;
+    }
+
     const normalizedRating =
       rating === undefined ? null : normalizeAdminRating(rating);
 
@@ -173,6 +201,7 @@ export const createProduct = async (req: Request) => {
       name,
       category,
       price: Number(price),
+      discountPrice: normalizedDiscountPrice,
       quantity: Number(quantity),
       rating: normalizedRating ?? 0,
       ratings: normalizedRating === null ? [] : [normalizedRating],
@@ -253,6 +282,7 @@ export const updateProduct = async (req: Request) => {
       "name",
       "category",
       "price",
+      "discountPrice",
       "quantity",
       "description",
       "featured",
@@ -264,6 +294,40 @@ export const updateProduct = async (req: Request) => {
         { success: false, message: "Unsupported product field" },
         { status: 400 },
       );
+    }
+
+    if (updateFields.discountPrice !== undefined) {
+      if (
+        updateFields.discountPrice === null ||
+        updateFields.discountPrice === "" ||
+        updateFields.discountPrice === 0
+      ) {
+        updateFields.discountPrice = null;
+      } else {
+        const parsedDiscount = Number(updateFields.discountPrice);
+
+        const regularPrice =
+          typeof updateFields.price === "number" && updateFields.price > 0
+            ? updateFields.price
+            : Number(product.price);
+
+        if (
+          !Number.isFinite(parsedDiscount) ||
+          parsedDiscount <= 0 ||
+          parsedDiscount >= regularPrice
+        ) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Discount amount must be greater than 0 and less than regular price.",
+            },
+            { status: 400 },
+          );
+        }
+
+        updateFields.discountPrice = parsedDiscount;
+      }
     }
 
     if (

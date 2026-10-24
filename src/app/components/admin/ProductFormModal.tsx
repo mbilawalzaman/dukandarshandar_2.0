@@ -47,6 +47,7 @@ const initialFormState: ProductFormData = {
   name: "",
   category: "",
   price: "",
+  discountPrice: "",
   quantity: "",
   rating: 5,
   description: "",
@@ -81,6 +82,11 @@ export default function ProductFormModal({
         price:
           productToEdit.price !== undefined && productToEdit.price !== null
             ? productToEdit.price
+            : "",
+        discountPrice:
+          productToEdit.discountPrice !== undefined &&
+          productToEdit.discountPrice !== null
+            ? productToEdit.discountPrice
             : "",
         quantity:
           productToEdit.quantity !== undefined &&
@@ -223,6 +229,16 @@ export default function ProductFormModal({
     setErrorMsg("");
 
     const priceNum = Number(formData.price);
+
+    const hasDiscount =
+      formData.discountPrice !== "" &&
+      formData.discountPrice !== null &&
+      formData.discountPrice !== undefined;
+
+    const discountPriceNum = hasDiscount
+      ? Number(formData.discountPrice)
+      : null;
+
     const qtyNum = Number(formData.quantity);
     const ratingNum = formData.rating !== "" ? Number(formData.rating) : 5;
 
@@ -236,6 +252,24 @@ export default function ProductFormModal({
       setErrorMsg("Please fill in all required fields with valid values.");
 
       return;
+    }
+
+    if (hasDiscount) {
+      if (
+        discountPriceNum === null ||
+        isNaN(discountPriceNum) ||
+        discountPriceNum <= 0
+      ) {
+        setErrorMsg("Discount amount must be greater than 0.");
+
+        return;
+      }
+
+      if (discountPriceNum >= priceNum) {
+        setErrorMsg("Discount amount must be less than the regular price.");
+
+        return;
+      }
     }
 
     if (!selectedImages.length) {
@@ -263,6 +297,7 @@ export default function ProductFormModal({
           ...formData,
           name: formData.name.trim(),
           price: priceNum,
+          discountPrice: hasDiscount ? discountPriceNum : null,
           quantity: isNaN(qtyNum) || qtyNum < 0 ? 0 : qtyNum,
           rating: isNaN(ratingNum) ? 5 : ratingNum,
           description: formData.description.trim(),
@@ -365,6 +400,25 @@ export default function ProductFormModal({
                 InputProps={{ readOnly }}
                 onChange={handleChange}
                 required
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Discount Amount (PKR)"
+                name="discountPrice"
+                helperText={
+                  Number(formData.price) > 0 &&
+                  Number(formData.discountPrice) > 0 &&
+                  Number(formData.discountPrice) < Number(formData.price)
+                    ? `Sale price: PKR ${(Number(formData.price) - Number(formData.discountPrice)).toLocaleString()}`
+                    : "e.g. 100 off PKR 300 = PKR 200"
+                }
+                inputProps={{ min: 0, step: "any" }}
+                value={formData.discountPrice ?? ""}
+                InputProps={{ readOnly }}
+                onChange={handleChange}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
