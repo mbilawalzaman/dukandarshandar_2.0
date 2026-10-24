@@ -389,7 +389,7 @@ export default function ProductFormModal({
                 </>
               )}
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="number"
@@ -402,7 +402,7 @@ export default function ProductFormModal({
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="number"
@@ -421,7 +421,7 @@ export default function ProductFormModal({
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="number"
@@ -434,7 +434,7 @@ export default function ProductFormModal({
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="number"
