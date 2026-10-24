@@ -10,10 +10,7 @@ export type CartItem = {
 const CART_KEY = "cart";
 const BUY_NOW_KEY = "buy_now_checkout_item";
 
-export function setBuyNowCheckoutItem(
-  product: AddToCartProduct,
-  quantity = 1,
-) {
+export function setBuyNowCheckoutItem(product: AddToCartProduct, quantity = 1) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(
     BUY_NOW_KEY,
@@ -33,10 +30,12 @@ export function getBuyNowCheckoutItem(): CartItem | null {
 
   try {
     const raw = sessionStorage.getItem(BUY_NOW_KEY);
+
     if (!raw) return null;
 
     const item = JSON.parse(raw) as Partial<CartItem>;
     const quantity = Number(item.quantity);
+
     if (!item._id || !Number.isFinite(quantity) || quantity < 1) return null;
 
     return {
@@ -54,6 +53,7 @@ export function getBuyNowCheckoutItem(): CartItem | null {
 
 export function getCheckoutReturnPath() {
   if (typeof window === "undefined") return "/checkout";
+
   return new URLSearchParams(window.location.search).get("buyNow") === "1"
     ? "/checkout?buyNow=1"
     : "/checkout";

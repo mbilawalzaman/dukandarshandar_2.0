@@ -66,11 +66,12 @@ export default function CheckoutPage() {
   const [buyNowItem, setBuyNowItem] = useState<CartItem | null>(null);
   const [isBuyNowCheckout, setIsBuyNowCheckout] = useState(false);
   const [checkoutIntentReady, setCheckoutIntentReady] = useState(false);
-  const items = isBuyNowCheckout
-    ? buyNowItem
-      ? [buyNowItem]
-      : []
-    : cartItems;
+
+  const items = useMemo(
+    () => (isBuyNowCheckout ? (buyNowItem ? [buyNowItem] : []) : cartItems),
+    [isBuyNowCheckout, buyNowItem, cartItems],
+  );
+
   const { settings, getShipping, isPromoActive } = useDeliverySettings();
   const [submitting, setSubmitting] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -97,7 +98,9 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    const isBuyNow = new URLSearchParams(window.location.search).get("buyNow") === "1";
+    const isBuyNow =
+      new URLSearchParams(window.location.search).get("buyNow") === "1";
+
     setIsBuyNowCheckout(isBuyNow);
     setBuyNowItem(isBuyNow ? getBuyNowCheckoutItem() : null);
     if (!isBuyNow) clearBuyNowCheckoutItem();
@@ -309,7 +312,13 @@ export default function CheckoutPage() {
     if (!checkoutIntentReady) return;
     requestQuote(appliedCode, effectiveShippingFee);
     // re-quote whenever the cart, voucher, or effective shipping fee changes
-  }, [checkoutIntentReady, cartFingerprint, appliedCode, effectiveShippingFee, requestQuote]);
+  }, [
+    checkoutIntentReady,
+    cartFingerprint,
+    appliedCode,
+    effectiveShippingFee,
+    requestQuote,
+  ]);
 
   // Deep link from promo emails / voucher wallet: /checkout?promo=CODE
   useEffect(() => {
@@ -655,7 +664,9 @@ export default function CheckoutPage() {
 
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
-        router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
+        router.push(
+          `/login?next=${encodeURIComponent(getCheckoutReturnPath())}`,
+        );
 
         return;
       }
@@ -710,7 +721,9 @@ export default function CheckoutPage() {
 
       if (res.status === 401) {
         toast(data.message || "Please login to place an order", "error");
-        router.push(`/login?next=${encodeURIComponent(getCheckoutReturnPath())}`);
+        router.push(
+          `/login?next=${encodeURIComponent(getCheckoutReturnPath())}`,
+        );
 
         return;
       }
