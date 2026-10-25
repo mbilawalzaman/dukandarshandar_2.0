@@ -15,13 +15,9 @@ import {
   Paper,
   Snackbar,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import CategoryIcon from "@mui/icons-material/Category";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -32,18 +28,15 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import type { ProductFormData } from "../../components/admin/ProductFormModal";
 import ProductFormModal from "../../components/admin/ProductFormModal";
 import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
+import CategoryManagerModal from "../../components/admin/CategoryManagerModal";
 import { authFetch } from "@/lib/authFetch";
 import { BRAND } from "@/lib/uiBrand";
 import { getProductThumbnail } from "@/lib/productImages";
 
 import type { Product, StockCounts } from "@/types/apps/productTypes";
-import { refreshProductCategories } from "@/lib/productCategoryStore";
 
 export default function AdminProductsPage(): React.JSX.Element {
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryError, setCategoryError] = useState("");
-  const [savingCategory, setSavingCategory] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,61 +76,6 @@ export default function AdminProductsPage(): React.JSX.Element {
     message: "",
     severity: "info",
   });
-
-  const handleAddCategory = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-      event.preventDefault();
-      setSavingCategory(true);
-      setCategoryError("");
-
-      try {
-        const response = await authFetch("/api/categories", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: categoryName }),
-        });
-
-        const data: unknown = await response.json();
-
-        if (
-          !response.ok ||
-          typeof data !== "object" ||
-          data === null ||
-          !("success" in data) ||
-          data.success !== true
-        ) {
-          const message =
-            typeof data === "object" &&
-            data !== null &&
-            "message" in data &&
-            typeof data.message === "string"
-              ? data.message
-              : "Unable to create category";
-
-          throw new Error(message);
-        }
-
-        void refreshProductCategories();
-        setCategoryOpen(false);
-        setCategoryName("");
-        setToast({
-          open: true,
-          message: "Category added successfully",
-          severity: "success",
-        });
-      } catch (error) {
-        console.error("Failed to add category:", error);
-        setCategoryError(
-          error instanceof Error ? error.message : "Unable to create category",
-        );
-      } finally {
-        setSavingCategory(false);
-      }
-    },
-    [categoryName],
-  );
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
@@ -404,20 +342,12 @@ export default function AdminProductsPage(): React.JSX.Element {
   }, []);
 
   const handleOpenCategory = useCallback((): void => {
-    setCategoryError("");
     setCategoryOpen(true);
   }, []);
 
   const handleCloseCategory = useCallback((): void => {
-    if (!savingCategory) setCategoryOpen(false);
-  }, [savingCategory]);
-
-  const handleCategoryNameChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>): void => {
-      setCategoryName(event.target.value);
-    },
-    [],
-  );
+    setCategoryOpen(false);
+  }, []);
 
   const handleCloseProductForm = useCallback((): void => {
     setIsFormModalOpen(false);
@@ -458,11 +388,11 @@ export default function AdminProductsPage(): React.JSX.Element {
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
           <Button
             variant="outlined"
-            startIcon={<AddIcon />}
+            startIcon={<CategoryIcon />}
             onClick={handleOpenCategory}
             sx={{ borderRadius: 2, color: BRAND.navy, borderColor: BRAND.gold }}
           >
-            Add Category
+            Manage Categories
           </Button>
           <Button
             variant="contained"
@@ -555,46 +485,11 @@ export default function AdminProductsPage(): React.JSX.Element {
         }}
       />
 
-      <Dialog
+      <CategoryManagerModal
         open={categoryOpen}
         onClose={handleCloseCategory}
-        fullWidth
-        maxWidth="xs"
-      >
-        <form onSubmit={handleAddCategory}>
-          <DialogTitle>Add Category</DialogTitle>
-          <DialogContent>
-            {categoryError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {categoryError}
-              </Alert>
-            )}
-            <TextField
-              autoFocus
-              fullWidth
-              required
-              label="Category name"
-              value={categoryName}
-              onChange={handleCategoryNameChange}
-              inputProps={{ maxLength: 80 }}
-              disabled={savingCategory}
-              sx={{ mt: 1 }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button disabled={savingCategory} onClick={handleCloseCategory}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={savingCategory || !categoryName.trim()}
-            >
-              {savingCategory ? "Saving…" : "Add Category"}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+        onCategoryChanged={fetchProducts}
+      />
 
       <ProductFormModal
         open={isFormModalOpen}
