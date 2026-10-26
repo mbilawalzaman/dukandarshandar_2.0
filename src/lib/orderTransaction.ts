@@ -41,40 +41,80 @@ export async function withOrderTransaction<T>(
 }
 
 /** Call only inside a transaction with the associated order write. */
-export async function reserveOrderStock(tx: OrderTransaction, items: unknown) {
-  for (const item of normalizeCartItems(items)) {
-    const result = await tx.db.collection("products").updateOne(
-      {
+export async function reserveOrderStock(
+  tx: OrderTransaction,
+  items: unknown,
+): Promise<void> {
+  const lines = normalizeCartItems(items);
+
+  const operations = lines.map((item) => ({
+    updateOne: {
+      filter: {
         _id: new ObjectId(item._id),
         ...ACTIVE_PRODUCT_FILTER,
         quantity: { $gte: item.quantity },
+        ...(item.variationId
+          ? {
+              variations: {
+                $elemMatch: {
+                  id: item.variationId,
+                  quantity: { $gte: item.quantity },
+                },
+              },
+            }
+          : { "variations.0": { $exists: false } }),
       },
-      {
-        $inc: { quantity: -item.quantity },
+      update: {
+        $inc: {
+          quantity: -item.quantity,
+          ...(item.variationId
+            ? { "variations.$.quantity": -item.quantity }
+            : {}),
+        },
         $set: { updated_at: new Date() },
       },
-      { session: tx.session },
-    );
+    },
+  }));
 
-    if (result.modifiedCount !== 1)
-      throw new CheckoutError(
-        "Some products are no longer available in the requested quantity",
-        409,
-      );
-  }
+  const result = await tx.db
+    .collection("products")
+    .bulkWrite(operations, { session: tx.session });
+
+  if (result.matchedCount !== lines.length)
+    throw new CheckoutError(
+      "Some products or variations are no longer available in the requested quantity",
+      409,
+    );
 }
 
-export async function releaseOrderStock(tx: OrderTransaction, order: Document) {
+export async function releaseOrderStock(
+  tx: OrderTransaction,
+  order: Document,
+): Promise<void> {
   if (!hasReservedStock(order)) return;
+  const lines = normalizeCartItems(order.items);
 
-  for (const item of normalizeCartItems(order.items)) {
-    await tx.db.collection("products").updateOne(
-      { _id: new ObjectId(item._id) },
-      {
-        $inc: { quantity: item.quantity },
-        $set: { updated_at: new Date() },
+  const result = await tx.db.collection("products").bulkWrite(
+    lines.map((item) => ({
+      updateOne: {
+        filter: {
+          _id: new ObjectId(item._id),
+          ...(item.variationId ? { "variations.id": item.variationId } : {}),
+        },
+        update: {
+          $inc: {
+            quantity: item.quantity,
+            ...(item.variationId
+              ? { "variations.$.quantity": item.quantity }
+              : {}),
+          },
+          $set: { updated_at: new Date() },
+        },
       },
-      { session: tx.session },
-    );
-  }
+    })),
+    { session: tx.session },
+  );
+
+  if (result.matchedCount !== lines.length)
+    throw new CheckoutError("Unable to restore product stock", 409);
 }

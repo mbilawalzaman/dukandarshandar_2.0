@@ -1,5 +1,9 @@
+import { cartLineKey } from "@/lib/productVariations";
+
 export type CartItem = {
   _id: string;
+  variationId?: string;
+  variationName?: string;
   name: string;
   price: number;
   quantity: number;
@@ -16,6 +20,8 @@ export function setBuyNowCheckoutItem(product: AddToCartProduct, quantity = 1) {
     BUY_NOW_KEY,
     JSON.stringify({
       _id: product._id,
+      variationId: product.variationId,
+      variationName: product.variationName,
       name: product.name,
       price: Number(product.price) || 0,
       quantity,
@@ -40,6 +46,8 @@ export function getBuyNowCheckoutItem(): CartItem | null {
 
     return {
       _id: String(item._id),
+      variationId: item.variationId,
+      variationName: item.variationName,
       name: String(item.name || ""),
       price: Number(item.price) || 0,
       quantity,
@@ -77,6 +85,8 @@ export function getCart(): CartItem[] {
     return parsed
       .map((item: Partial<CartItem> & { selectedQuantity?: number }) => ({
         _id: String(item._id || ""),
+        variationId: item.variationId,
+        variationName: item.variationName,
         name: String(item.name || ""),
         price: Number(item.price) || 0,
         quantity: Number(item.quantity ?? item.selectedQuantity) || 1,
@@ -97,6 +107,8 @@ export function saveCart(items: CartItem[]) {
 
 export type AddToCartProduct = {
   _id: string;
+  variationId?: string;
+  variationName?: string;
   name: string;
   price: number;
   image?: string;
@@ -109,7 +121,11 @@ export function addToCart(
   availableQuantity = Number.POSITIVE_INFINITY,
 ): { items: CartItem[]; addedQuantity: number } {
   const cart = getCart();
-  const existing = cart.find((item) => item._id === product._id);
+
+  const existing = cart.find(
+    (item) => cartLineKey(item) === cartLineKey(product),
+  );
+
   const currentQuantity = existing?.quantity ?? 0;
   const requestedQuantity = Math.max(0, Math.floor(Number(quantity) || 0));
 
@@ -132,6 +148,8 @@ export function addToCart(
   } else {
     cart.push({
       _id: product._id,
+      variationId: product.variationId,
+      variationName: product.variationName,
       name: product.name,
       price: Number(product.price) || 0,
       quantity: addedQuantity,
@@ -147,7 +165,7 @@ export function addToCart(
 
 export function updateCartQuantity(id: string, quantity: number): CartItem[] {
   const cart = getCart()
-    .map((item) => (item._id === id ? { ...item, quantity } : item))
+    .map((item) => (cartLineKey(item) === id ? { ...item, quantity } : item))
     .filter((item) => item.quantity > 0);
 
   saveCart(cart);
@@ -156,7 +174,7 @@ export function updateCartQuantity(id: string, quantity: number): CartItem[] {
 }
 
 export function removeFromCart(id: string): CartItem[] {
-  const cart = getCart().filter((item) => item._id !== id);
+  const cart = getCart().filter((item) => cartLineKey(item) !== id);
 
   saveCart(cart);
 

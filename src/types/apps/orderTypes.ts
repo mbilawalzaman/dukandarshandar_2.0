@@ -13,6 +13,8 @@ export type OrderStatusType =
   | string;
 
 export type OrderItemType = {
+  variationId?: string;
+  variationName?: string;
   _id?: string;
   name: string;
   quantity: number;

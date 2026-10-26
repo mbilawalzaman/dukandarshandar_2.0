@@ -33,7 +33,10 @@ import VoucherStrip from "@/app/components/promotions/VoucherStrip";
 import type { ProductReview } from "@/types/apps/productReviewTypes";
 import { useWishlist } from "@/app/providers/WishlistProvider";
 
+import type { ProductVariation } from "@/types/apps/productTypes";
+
 interface Product {
+  variations?: ProductVariation[];
   _id: string;
   name: string;
   category: string;
@@ -56,6 +59,11 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [variationId, setVariationId] = useState("");
+
+  const selectedVariation = product?.variations?.find(
+    (variation) => variation.id === variationId,
+  );
 
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [myReview, setMyReview] = useState<ProductReview | null>(null);
@@ -215,7 +223,7 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || (product.variations?.length && !selectedVariation)) return;
     add(
       {
         _id: product._id,
@@ -223,6 +231,8 @@ const ProductDetails = () => {
         price: getEffectivePrice(),
         image: getProductThumbnail(product),
         category: product.category,
+        variationId: selectedVariation?.id,
+        variationName: selectedVariation?.name,
       },
       quantity,
       availableStock,
@@ -230,7 +240,7 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
+    if (!product || (product.variations?.length && !selectedVariation)) return;
     setBuyNowCheckoutItem(
       {
         _id: product._id,
@@ -238,6 +248,8 @@ const ProductDetails = () => {
         price: getEffectivePrice(),
         image: getProductThumbnail(product),
         category: product.category,
+        variationId: selectedVariation?.id,
+        variationName: selectedVariation?.name,
       },
       quantity,
     );
@@ -271,12 +283,27 @@ const ProductDetails = () => {
     );
   }
 
-  const availableStock = Math.max(0, Number(product.quantity) || 0);
+  const availableStock = Math.max(
+    0,
+    Number(
+      product.variations?.length
+        ? selectedVariation?.quantity
+        : product.quantity,
+    ) || 0,
+  );
 
   const cartQuantity =
-    cartItems.find((item) => item._id === product._id)?.quantity ?? 0;
+    cartItems.find(
+      (item) =>
+        item._id === product._id && item.variationId === selectedVariation?.id,
+    )?.quantity ?? 0;
 
   const maxQty = Math.max(1, availableStock - cartQuantity);
+
+  const needsVariation = Boolean(
+    product.variations?.length && !selectedVariation,
+  );
+
   const outOfStock = availableStock <= 0;
   const cartStockLimitReached = cartQuantity >= availableStock;
   const galleryImages = getProductImageUrls(product);
@@ -406,6 +433,52 @@ const ProductDetails = () => {
             {product.description ?? "No description available"}
           </Typography>
 
+          {Boolean(product.variations?.length) && (
+            <Box sx={{ mt: 3 }}>
+              <Typography id="variation-label" sx={{ mb: 1, fontWeight: 600 }}>
+                Choose variation
+              </Typography>
+              <Box
+                role="group"
+                aria-labelledby="variation-label"
+                sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}
+              >
+                {product.variations?.map((variation) => (
+                  <Button
+                    key={variation.id}
+                    variant={
+                      variationId === variation.id ? "contained" : "outlined"
+                    }
+                    aria-pressed={variationId === variation.id}
+                    disabled={variation.quantity <= 0}
+                    onClick={() => {
+                      setVariationId(variation.id);
+                      setQuantity(1);
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      whiteSpace: "normal",
+                      overflowWrap: "anywhere",
+                      maxWidth: "100%",
+                    }}
+                  >
+                    {variation.name}
+                    {variation.quantity <= 0 ? " — Out of stock" : ""}
+                  </Button>
+                ))}
+              </Box>
+              {selectedVariation && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  {selectedVariation.quantity} in stock
+                </Typography>
+              )}
+            </Box>
+          )}
           <Box sx={{ display: "flex", alignItems: "center", mt: 3, gap: 1 }}>
             <Typography>Quantity:</Typography>
             <Button
@@ -431,7 +504,7 @@ const ProductDetails = () => {
             </Button>
           </Box>
 
-          {outOfStock && (
+          {outOfStock && !needsVariation && (
             <Typography color="error" sx={{ mt: 1 }}>
               Out of stock
             </Typography>
@@ -494,7 +567,9 @@ const ProductDetails = () => {
               sx={{ py: 1.4 }}
             >
               {outOfStock
-                ? "Out of Stock"
+                ? needsVariation
+                  ? "Choose variation"
+                  : "Out of Stock"
                 : cartStockLimitReached
                   ? "Stock limit reached"
                   : "Add to Cart"}
@@ -637,7 +712,11 @@ const ProductDetails = () => {
                 ) : (
                   <Typography
                     variant="body2"
-                    sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}
+                    sx={{
+                      mt: 1,
+                      color: "text.secondary",
+                      fontStyle: "italic",
+                    }}
                   >
                     No written comment
                   </Typography>

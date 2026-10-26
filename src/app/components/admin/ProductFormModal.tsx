@@ -104,6 +104,9 @@ export default function ProductFormModal({
         description: productToEdit.description || "",
         image: existingImages[0] || productToEdit.image || "",
         images: productToEdit.images,
+        variations:
+          productToEdit.variations?.map((variation) => ({ ...variation })) ??
+          [],
         featured: Boolean(productToEdit.featured),
       });
       setSelectedImages(existingImages);
@@ -231,7 +234,28 @@ export default function ProductFormModal({
       ? Number(formData.discountPrice)
       : null;
 
-    const qtyNum = Number(formData.quantity);
+    const qtyNum = formData.variations?.length
+      ? formData.variations.reduce(
+          (sum, variation) => sum + variation.quantity,
+          0,
+        )
+      : Number(formData.quantity);
+
+    if (
+      formData.variations?.some(
+        (variation) =>
+          !variation.name.trim() ||
+          !Number.isSafeInteger(variation.quantity) ||
+          variation.quantity < 0,
+      )
+    ) {
+      setErrorMsg(
+        "Each variation needs a name and nonnegative whole stock quantity.",
+      );
+
+      return;
+    }
+
     const ratingNum = formData.rating !== "" ? Number(formData.rating) : 5;
 
     if (
@@ -433,11 +457,24 @@ export default function ProductFormModal({
               <TextField
                 fullWidth
                 type="number"
-                label="Quantity"
+                label={
+                  formData.variations?.length
+                    ? "Total stock (all variations)"
+                    : "Quantity"
+                }
                 name="quantity"
                 inputProps={{ min: 0, step: 1 }}
-                value={formData.quantity}
-                InputProps={{ readOnly }}
+                value={
+                  formData.variations?.length
+                    ? formData.variations.reduce(
+                        (sum, variation) => sum + variation.quantity,
+                        0,
+                      )
+                    : formData.quantity
+                }
+                InputProps={{
+                  readOnly: readOnly || Boolean(formData.variations?.length),
+                }}
                 onChange={handleChange}
                 required
               />
@@ -453,6 +490,86 @@ export default function ProductFormModal({
                 InputProps={{ readOnly }}
                 onChange={handleChange}
               />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1">Variations</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Each variation has separate stock. Price and images are shared.
+                Keep existing variations for restocking; set stock to zero to
+                mark them sold out.
+              </Typography>
+              {(formData.variations ?? []).map((variation, index) => (
+                <Box
+                  key={variation.id}
+                  sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap" }}
+                >
+                  <TextField
+                    label="Variation"
+                    value={variation.name}
+                    InputProps={{ readOnly }}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        variations: previous.variations?.map((entry, i) =>
+                          i === index
+                            ? { ...entry, name: event.target.value }
+                            : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <TextField
+                    label="Stock"
+                    type="number"
+                    value={variation.quantity}
+                    inputProps={{ min: 0, step: 1 }}
+                    InputProps={{ readOnly }}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        variations: previous.variations?.map((entry, i) =>
+                          i === index
+                            ? { ...entry, quantity: Number(event.target.value) }
+                            : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  {!readOnly &&
+                    !productToEdit?.variations?.some(
+                      (entry) => entry.id === variation.id,
+                    ) && (
+                      <IconButton
+                        aria-label="Remove variation"
+                        onClick={() =>
+                          setFormData((previous) => ({
+                            ...previous,
+                            variations: previous.variations?.filter(
+                              (entry) => entry.id !== variation.id,
+                            ),
+                          }))
+                        }
+                      >
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    )}
+                </Box>
+              ))}
+              {!readOnly && (formData.variations?.length ?? 0) < 50 && (
+                <Button
+                  onClick={() =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      variations: [
+                        ...(previous.variations ?? []),
+                        { id: crypto.randomUUID(), name: "", quantity: 0 },
+                      ],
+                    }))
+                  }
+                >
+                  Add Variation
+                </Button>
+              )}
             </Grid>
             <Grid item xs={12}>
               <TextField

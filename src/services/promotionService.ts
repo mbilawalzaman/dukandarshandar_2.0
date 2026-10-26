@@ -8,6 +8,7 @@ import {
 
 import type { OrderTransaction } from "@/lib/orderTransaction";
 import {
+  CheckoutError,
   normalizeCartItems,
   isAvailableProduct,
 } from "@/lib/checkoutValidation";
@@ -694,6 +695,7 @@ export async function getPublicPromotions(): Promise<PublicPromotion[]> {
 export interface QuoteCartParams {
   items: Array<{
     _id: string;
+    variationId?: string;
     price?: number;
     quantity: number;
     category?: string;
@@ -710,6 +712,8 @@ export interface QuoteCartParams {
 
 /** Order line as persisted on an order document: what was actually charged. */
 export interface OrderLineItem {
+  variationId?: string;
+  variationName?: string;
   _id: string;
   name: string;
   quantity: number;
@@ -792,6 +796,8 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
           { _id: { $in: ids } },
           {
             projection: {
+              variations: 1,
+              quantity: 1,
               price: 1,
               discountPrice: 1,
               category: 1,
@@ -818,6 +824,28 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
       continue;
     }
 
+    const variations = Array.isArray(product.variations)
+      ? product.variations
+      : [];
+
+    const variation = variations.find(
+      (entry: { id: string }) => entry.id === item.variationId,
+    );
+
+    if (
+      (variations.length > 0 && !variation) ||
+      (!variations.length && item.variationId)
+    )
+      throw new CheckoutError(
+        "Please select an available variation for " + String(product.name),
+      );
+    if (Number(variation?.quantity ?? product.quantity) < item.quantity)
+      throw new CheckoutError(
+        "Insufficient stock for " +
+          String(product.name) +
+          (variation ? ` (${variation.name})` : ""),
+        409,
+      );
     const regularPrice = Number(product.price) || 0;
 
     const discountAmount =
@@ -832,6 +860,8 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
 
     items.push({
       productId: String(item._id),
+      variationId: item.variationId,
+      variationName: variation?.name,
       category: product.category ? String(product.category) : item.category,
       price: effectivePrice,
       quantity: item.quantity,
@@ -895,6 +925,8 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
   });
 
   const orderItems: OrderLineItem[] = result.lines.map((line) => ({
+    variationId: line.variationId,
+    variationName: line.variationName,
     _id: line.productId,
     name: line.name || "",
     quantity: line.quantity,

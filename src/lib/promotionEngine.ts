@@ -23,6 +23,8 @@ export type EnginePromotion = Promotion | PublicPromotion;
 
 export interface EngineCartItem {
   productId: string;
+  variationId?: string;
+  variationName?: string;
   category?: string;
   price: number;
   quantity: number;

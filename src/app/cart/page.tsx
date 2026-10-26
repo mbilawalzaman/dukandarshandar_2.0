@@ -20,6 +20,8 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import { cartLineKey } from "@/lib/productVariations";
+
 import PageBanner from "../components/PageBanner";
 import DeliveryShippingLine from "../components/DeliveryShippingLine";
 import FreeDeliveryPromoBanner from "../components/FreeDeliveryPromoBanner";
@@ -52,6 +54,7 @@ export default function CartPage() {
   const quote = quoteLocal(
     items.map((i) => ({
       productId: i._id,
+      variationId: i.variationId,
       category: i.category,
       price: i.price,
       quantity: i.quantity,
@@ -60,7 +63,13 @@ export default function CartPage() {
     { shippingFee: getShipping(subtotal) },
   );
 
-  const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
+  const lineById = new Map(
+    quote.lines.map((line) => [
+      cartLineKey({ _id: line.productId, variationId: line.variationId }),
+      line,
+    ]),
+  );
+
   const shipping = quote.shipping;
 
   const promoActive =
@@ -100,7 +109,7 @@ export default function CartPage() {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {items.map((item) => (
                   <Card
-                    key={item._id}
+                    key={cartLineKey(item)}
                     sx={{
                       borderRadius: 3,
                       boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
@@ -145,12 +154,17 @@ export default function CartPage() {
                             sx={{ fontWeight: 700, lineHeight: 1.3 }}
                           >
                             {item.name}
+                            {item.variationName
+                              ? ` (${item.variationName})`
+                              : ""}
                           </Typography>
                           <Box sx={{ mt: 0.5 }}>
                             <PriceTag
                               price={item.price}
-                              salePrice={lineById.get(item._id)?.unitPrice}
-                              badge={lineById.get(item._id)?.badge}
+                              salePrice={
+                                lineById.get(cartLineKey(item))?.unitPrice
+                              }
+                              badge={lineById.get(cartLineKey(item))?.badge}
                             />
                           </Box>
                         </Box>
@@ -182,7 +196,10 @@ export default function CartPage() {
                           <IconButton
                             size="small"
                             onClick={() =>
-                              updateQuantity(item._id, item.quantity - 1)
+                              updateQuantity(
+                                cartLineKey(item),
+                                item.quantity - 1,
+                              )
                             }
                           >
                             <RemoveIcon fontSize="small" />
@@ -193,7 +210,10 @@ export default function CartPage() {
                           <IconButton
                             size="small"
                             onClick={() =>
-                              updateQuantity(item._id, item.quantity + 1)
+                              updateQuantity(
+                                cartLineKey(item),
+                                item.quantity + 1,
+                              )
                             }
                           >
                             <AddIcon fontSize="small" />
@@ -209,13 +229,13 @@ export default function CartPage() {
                         >
                           PKR{" "}
                           {(
-                            lineById.get(item._id)?.lineTotal ??
+                            lineById.get(cartLineKey(item))?.lineTotal ??
                             item.price * item.quantity
                           ).toLocaleString()}
                         </Typography>
                         <IconButton
                           color="error"
-                          onClick={() => remove(item._id)}
+                          onClick={() => remove(cartLineKey(item))}
                           sx={{ p: 1 }}
                         >
                           <DeleteIcon />

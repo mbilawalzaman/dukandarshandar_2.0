@@ -102,7 +102,12 @@ export function newsletterWelcomeEmail(shopName = "") {
 export function orderConfirmationEmail(input: {
   name: string;
   orderId: string;
-  items: { name: string; quantity: number; price: number }[];
+  items: {
+    name: string;
+    variationName?: string;
+    quantity: number;
+    price: number;
+  }[];
   total: number;
   subtotal?: number;
   shipping?: number;
@@ -125,7 +130,7 @@ export function orderConfirmationEmail(input: {
     .map(
       (item) =>
         `<tr>
-          <td style="padding:8px 0; border-bottom:1px solid #e2e8f0;">${escapeHtml(item.name)} × ${item.quantity}</td>
+          <td style="padding:8px 0; border-bottom:1px solid #e2e8f0;">${escapeHtml(item.name)}${item.variationName ? ` (${escapeHtml(item.variationName)})` : ""} × ${item.quantity}</td>
           <td style="padding:8px 0; border-bottom:1px solid #e2e8f0; text-align:right;">PKR ${(item.price * item.quantity).toLocaleString()}</td>
         </tr>`,
     )

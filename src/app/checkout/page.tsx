@@ -19,6 +19,8 @@ import {
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 
+import { cartLineKey } from "@/lib/productVariations";
+
 import PageBanner from "../components/PageBanner";
 import SafepayPaymentForm from "../components/checkout/SafepayPaymentForm";
 import PaymentMethodSelector from "../components/checkout/PaymentMethodSelector";
@@ -234,6 +236,7 @@ export default function CheckoutPage() {
     () =>
       items.map((i) => ({
         productId: i._id,
+        variationId: i.variationId,
         category: i.category,
         price: i.price,
         quantity: i.quantity,
@@ -243,7 +246,7 @@ export default function CheckoutPage() {
   );
 
   const cartFingerprint = items
-    .map((item) => `${item._id}:${item.quantity}`)
+    .map((item) => `${item._id}:${item.variationId ?? ""}:${item.quantity}`)
     .join("|");
 
   // Voucher + server-authoritative quote. The local engine gives an instant preview until the server answers.
@@ -263,7 +266,11 @@ export default function CheckoutPage() {
           headers: authHeaders(),
           credentials: "include",
           body: JSON.stringify({
-            items: items.map((i) => ({ _id: i._id, quantity: i.quantity })),
+            items: items.map((i) => ({
+              _id: i._id,
+              variationId: i.variationId,
+              quantity: i.quantity,
+            })),
             voucherCode: code,
             customerEmail:
               form.customer_email.trim().toLowerCase() || undefined,
@@ -383,7 +390,13 @@ export default function CheckoutPage() {
       voucherCode: appliedCode,
     });
 
-  const lineById = new Map(quote.lines.map((l) => [l.productId, l]));
+  const lineById = new Map(
+    quote.lines.map((line) => [
+      cartLineKey({ _id: line.productId, variationId: line.variationId }),
+      line,
+    ]),
+  );
+
   const subtotal = quote.subtotal;
   const shipping = quote.shipping;
 
@@ -610,7 +623,11 @@ export default function CheckoutPage() {
   const checkoutRequestKey = () => {
     const content = JSON.stringify({
       form,
-      items: items.map(({ _id, quantity }) => ({ _id, quantity })),
+      items: items.map(({ _id, variationId, quantity }) => ({
+        _id,
+        variationId,
+        quantity,
+      })),
       paymentMethod,
       appliedCode,
     });
@@ -978,7 +995,7 @@ export default function CheckoutPage() {
                 </Typography>
                 {items.map((item) => (
                   <Box
-                    key={item._id}
+                    key={`${item._id}:${item.variationId ?? ""}`}
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -986,12 +1003,15 @@ export default function CheckoutPage() {
                     }}
                   >
                     <Typography variant="body2">
-                      {item.name} × {item.quantity}
+                      {item.name}
+                      {item.variationName
+                        ? ` (${item.variationName})`
+                        : ""} × {item.quantity}
                     </Typography>
                     <Typography variant="body2">
                       PKR{" "}
                       {(
-                        lineById.get(item._id)?.lineTotal ??
+                        lineById.get(cartLineKey(item))?.lineTotal ??
                         item.price * item.quantity
                       ).toLocaleString()}
                     </Typography>

@@ -9,6 +9,7 @@ export class CheckoutError extends Error {
 
 export type CheckoutItem = {
   _id: string;
+  variationId?: string;
   quantity: number;
   name: string;
   price: number;
@@ -29,8 +30,18 @@ export function normalizeCartItems(value: unknown): CheckoutItem[] {
       throw new CheckoutError("Invalid product in cart");
     const id = item._id.toLowerCase();
 
-    if (seen.has(id)) throw new CheckoutError("Duplicate product in cart");
-    seen.add(id);
+    const variationId = item.variationId;
+
+    if (
+      variationId !== undefined &&
+      (typeof variationId !== "string" ||
+        !/^[a-zA-Z0-9-]{1,64}$/.test(variationId))
+    )
+      throw new CheckoutError("Invalid product variation");
+    const key = `${id}:${variationId ?? ""}`;
+
+    if (seen.has(key)) throw new CheckoutError("Duplicate product in cart");
+    seen.add(key);
 
     if (
       typeof item.quantity !== "number" ||
@@ -44,7 +55,13 @@ export function normalizeCartItems(value: unknown): CheckoutItem[] {
     }
 
     // Descriptions and prices will be loaded from the catalog; never trust client values.
-    return { _id: id, quantity: item.quantity, name: "Product", price: 0 };
+    return {
+      _id: id,
+      ...(variationId ? { variationId } : {}),
+      quantity: item.quantity,
+      name: "Product",
+      price: 0,
+    };
   });
 }
 

@@ -11,12 +11,13 @@ function matches(row, query) {
   return Object.entries(query).every(([key, value]) => {
     if (key === '$or') return value.some(q => matches(row, q));
     if (key === '$and') return value.every(q => matches(row, q));
-    const actual = row[key];
+    const values = key.split(".").reduce((values, part) => values.flatMap(value => Array.isArray(value) ? value.map(entry => entry?.[part]) : [value?.[part]]), [row]);
+    const actual = values.length === 1 ? values[0] : values;
     if (value === null) return actual == null;
     if (value && typeof value === 'object' && !(value instanceof ObjectId) && !(value instanceof Date)) {
-      return Object.entries(value).every(([op,v]) => ({ $gte: () => actual >= v, $ne: () => !equal(actual,v), $nin: () => !v.includes(actual), $in: () => v.includes(actual) }[op]?.() ?? false));
+      return Object.entries(value).every(([op,v]) => ({ $exists: () => (actual !== undefined) === v, $elemMatch: () => Array.isArray(actual) && actual.some(entry => matches(entry, v)), $gte: () => actual >= v, $ne: () => !equal(actual,v), $nin: () => !v.includes(actual), $in: () => v.includes(actual) }[op]?.() ?? false));
     }
-    return equal(actual,value);
+    return Array.isArray(actual) ? actual.some(entry => equal(entry, value)) : equal(actual,value);
   });
 }
 module.exports = function orderStore(initial) {
@@ -29,8 +30,19 @@ module.exports = function orderStore(initial) {
       async updateOne(q, update) {
         const row = find(q); if (!row) return { matchedCount: 0, modifiedCount: 0 };
         Object.assign(row, clone(update.$set || {}));
-        for (const [k,v] of Object.entries(update.$inc || {})) row[k] = (row[k] || 0) + v;
+        for (const [k,v] of Object.entries(update.$inc || {})) {
+          if (k === "variations.$.quantity") {
+            const variationId = q["variations.id"] ?? q.variations?.$elemMatch?.id;
+            const variation = row.variations.find(entry => entry.id === variationId);
+            variation.quantity += v;
+          } else row[k] = (row[k] || 0) + v;
+        }
         return { matchedCount: 1, modifiedCount: 1 };
+      },
+      async bulkWrite(operations) {
+        let matchedCount = 0;
+        for (const { updateOne } of operations) matchedCount += (await this.updateOne(updateOne.filter, updateOne.update)).matchedCount;
+        return { matchedCount };
       },
       async findOneAndUpdate(q, update) { const before = clone(find(q)); await this.updateOne(q, update); return before ? clone(find({ _id: before._id })) : null; },
       async insertOne(row) { if (find({ _id: row._id })) throw Object.assign(new Error('duplicate'), { code: 11000 }); rows[name].push(clone(row)); return { insertedId: row._id }; },

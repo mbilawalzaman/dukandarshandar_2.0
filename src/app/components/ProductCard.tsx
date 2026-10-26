@@ -26,7 +26,10 @@ import FlashSaleCountdown from "@/app/components/promotions/FlashSaleCountdown";
 import { useWishlist } from "@/app/providers/WishlistProvider";
 import { BRAND } from "@/lib/uiBrand";
 
+import type { ProductVariation } from "@/types/apps/productTypes";
+
 export type ProductCardData = {
+  variations?: ProductVariation[];
   _id: string;
   name: string;
   category?: string;
@@ -95,7 +98,10 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
     cartItems.find((item) => item._id === product._id)?.quantity ?? 0;
 
   const outOfStock = availableStock === 0;
-  const cartStockLimitReached = cartQuantity >= availableStock;
+
+  const cartStockLimitReached =
+    !product.variations?.length && cartQuantity >= availableStock;
+
   const saved = productIds.has(product._id);
 
   const toggleWishlist = async (event: React.MouseEvent) => {
@@ -282,29 +288,31 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
       {/* Action Buttons */}
       <CardActions sx={{ px: 2, pb: 2, pt: 0, gap: 1 }}>
-        <Button
-          size="small"
-          variant="outlined"
-          color="primary"
-          fullWidth
-          disabled={outOfStock}
-          onClick={() => {
-            setBuyNowCheckoutItem(
-              {
-                _id: product._id,
-                name: product.name,
-                price: effectivePrice,
-                image: getProductThumbnail(product),
-                category: product.category,
-              },
-              1,
-            );
-            router.push("/checkout?buyNow=1");
-          }}
-          sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
-        >
-          Buy Now
-        </Button>
+        {!product.variations?.length && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            fullWidth
+            disabled={outOfStock}
+            onClick={() => {
+              setBuyNowCheckoutItem(
+                {
+                  _id: product._id,
+                  name: product.name,
+                  price: effectivePrice,
+                  image: getProductThumbnail(product),
+                  category: product.category,
+                },
+                1,
+              );
+              router.push("/checkout?buyNow=1");
+            }}
+            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
+          >
+            Buy Now
+          </Button>
+        )}
         <Button
           size="small"
           variant="contained"
@@ -312,17 +320,19 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           fullWidth
           disabled={outOfStock || cartStockLimitReached}
           onClick={() =>
-            add(
-              {
-                _id: product._id,
-                name: product.name,
-                price: effectivePrice,
-                image: getProductThumbnail(product),
-                category: product.category,
-              },
-              1,
-              availableStock,
-            )
+            product.variations?.length
+              ? router.push(`/products/${product._id}`)
+              : add(
+                  {
+                    _id: product._id,
+                    name: product.name,
+                    price: effectivePrice,
+                    image: getProductThumbnail(product),
+                    category: product.category,
+                  },
+                  1,
+                  availableStock,
+                )
           }
           sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
         >
@@ -330,7 +340,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             ? "Out of Stock"
             : cartStockLimitReached
               ? "Stock limit reached"
-              : "Add to Cart"}
+              : product.variations?.length
+                ? "Choose variation"
+                : "Add to Cart"}
         </Button>
       </CardActions>
     </Card>

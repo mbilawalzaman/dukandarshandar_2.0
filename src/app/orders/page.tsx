@@ -814,7 +814,10 @@ function OrdersContent() {
                           {order.created_at && (
                             <Typography
                               variant="caption"
-                              sx={{ color: "text.secondary", fontWeight: 500 }}
+                              sx={{
+                                color: "text.secondary",
+                                fontWeight: 500,
+                              }}
                             >
                               • {formatDateTime(order.created_at)}
                             </Typography>
@@ -913,6 +916,9 @@ function OrdersContent() {
                                     }}
                                   >
                                     {item.name}
+                                    {item.variationName
+                                      ? ` (${item.variationName})`
+                                      : ""}
                                   </Typography>
                                   <Typography
                                     variant="caption"
@@ -1208,7 +1214,9 @@ function OrdersContent() {
                                       backgroundColor:
                                         "var(--theme-primary-main, #0284c7)",
                                       color: "#ffffff",
-                                      "&:hover": { backgroundColor: "#0369a1" },
+                                      "&:hover": {
+                                        backgroundColor: "#0369a1",
+                                      },
                                     }}
                                   >
                                     Track Parcel

@@ -45,6 +45,7 @@ import BulkPostExBookingModal from "@/components/admin/orders/BulkPostExBookingM
 import PostExShipperAdviceModal from "@/components/admin/orders/PostExShipperAdviceModal";
 
 interface OrderItem {
+  variationName?: string;
   name: string;
   price: number;
   quantity: number;
@@ -493,6 +494,22 @@ export default function AdminOrdersPage() {
       format: (val) => String(val).slice(-8).toUpperCase(),
     },
     { id: "customer_name", label: "Customer", minWidth: 100 },
+    {
+      id: "items",
+      label: "Products / Variations",
+      minWidth: 180,
+      format: (_value, row) => (
+        <Box>
+          {row.items?.map((item, index) => (
+            <Typography key={index} variant="body2">
+              {item.name}
+              {item.variationName ? ` (${item.variationName})` : ""} ×{" "}
+              {item.quantity}
+            </Typography>
+          ))}
+        </Box>
+      ),
+    },
     {
       id: "address",
       label: "Shipping Address",

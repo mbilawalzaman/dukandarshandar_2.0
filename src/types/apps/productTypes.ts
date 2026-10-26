@@ -1,11 +1,18 @@
 import type { ProductImage } from "@/lib/productImages";
 
+export interface ProductVariation {
+  id: string;
+  name: string;
+  quantity: number;
+}
+
 export interface ProductFormData {
   _id?: string;
   name: string;
   category: string;
   price: number | string;
   discountPrice?: number | string | null;
+  variations?: ProductVariation[];
   quantity: number | string;
   rating: number | string;
   description: string;
@@ -21,6 +28,7 @@ export interface Product {
   category: string;
   price: number;
   discountPrice?: number | null;
+  variations?: ProductVariation[];
   quantity: number;
   rating: number;
   description: string;

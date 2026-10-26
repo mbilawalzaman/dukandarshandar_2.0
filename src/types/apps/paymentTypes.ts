@@ -95,6 +95,7 @@ export type CreatePaymentSessionBody = {
   payment_method?: "card" | "raast" | "wallet";
   items: Array<{
     _id: string;
+    variationId?: string;
     name: string;
     quantity: number;
     price: number;

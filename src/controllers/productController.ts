@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { ObjectId } from "mongodb";
 
-import { ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
+import { normalizeProductVariations } from "@/lib/productVariations";
+import { withOrderTransaction } from "@/lib/orderTransaction";
+
+import { CheckoutError, ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
 import { escapeRegex } from "@/lib/escapeRegex";
 
 import { getDb } from "@/lib/db";
@@ -119,6 +122,7 @@ export const createProduct = async (req: Request) => {
       price,
       discountPrice,
       quantity,
+      variations,
       description,
       rating,
       image,
@@ -206,7 +210,6 @@ export const createProduct = async (req: Request) => {
       );
     }
 
-    const db = await getDb();
     const storedImages = await resolveImagesInput(imageInputs);
 
     if (!storedImages.length) {
@@ -216,12 +219,33 @@ export const createProduct = async (req: Request) => {
       );
     }
 
+    let normalizedVariations;
+
+    try {
+      normalizedVariations = normalizeProductVariations(variations);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Invalid variations",
+        },
+        { status: 400 },
+      );
+    }
+
     const newProduct = {
       name,
       category,
       price: Number(price),
       discountPrice: normalizedDiscountPrice,
-      quantity: Number(quantity),
+      variations: normalizedVariations,
+      quantity: normalizedVariations.length
+        ? normalizedVariations.reduce(
+            (sum, variation) => sum + variation.quantity,
+            0,
+          )
+        : Number(quantity),
       rating: normalizedRating ?? 0,
       ratings: normalizedRating === null ? [] : [normalizedRating],
       description,
@@ -234,7 +258,13 @@ export const createProduct = async (req: Request) => {
       updated_at: new Date(),
     };
 
-    const result = await db.collection("products").insertOne(newProduct);
+    const result = await withOrderTransaction((tx) =>
+      tx.db
+        .collection("products")
+        .insertOne(newProduct, { session: tx.session }),
+    );
+
+    const db = await getDb();
 
     const insertedProduct = await db
       .collection("products")
@@ -303,6 +333,7 @@ export const updateProduct = async (req: Request) => {
       "price",
       "discountPrice",
       "quantity",
+      "variations",
       "description",
       "featured",
       "status",
@@ -383,6 +414,45 @@ export const updateProduct = async (req: Request) => {
       );
     }
 
+    if (
+      updateFields.variations !== undefined ||
+      (Array.isArray(product.variations) &&
+        product.variations.length &&
+        updateFields.quantity !== undefined)
+    ) {
+      try {
+        const variations = normalizeProductVariations(
+          updateFields.variations ?? product.variations,
+        );
+
+        const previous = normalizeProductVariations(product.variations);
+
+        if (
+          previous.some(
+            (variation) => !variations.some((next) => next.id === variation.id),
+          )
+        )
+          throw new Error(
+            "Existing variations must be kept for order restocking; set their stock to zero instead",
+          );
+        updateFields.variations = variations;
+        if (variations.length)
+          updateFields.quantity = variations.reduce(
+            (sum, variation) => sum + variation.quantity,
+            0,
+          );
+      } catch (error) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              error instanceof Error ? error.message : "Invalid variations",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const updateQuery: { $set: Record<string, unknown> } = {
       $set: { ...updateFields, updated_at: new Date() },
     };
@@ -430,9 +500,48 @@ export const updateProduct = async (req: Request) => {
       updateQuery.$set.ratings = ratings;
     }
 
-    const updateResult = await db
-      .collection("products")
-      .updateOne({ _id: new ObjectId(_id) }, updateQuery);
+    const updateResult = await withOrderTransaction(async (tx) => {
+      if (
+        !product.variations?.length &&
+        Array.isArray(updateFields.variations) &&
+        updateFields.variations.length
+      ) {
+        const existingOrder = await tx.db.collection("orders").findOne(
+          {
+            items: { $elemMatch: { _id, variationId: { $exists: false } } },
+            status: { $nin: ["cancelled", "payment_failed"] },
+          },
+          { session: tx.session, projection: { _id: 1 } },
+        );
+
+        if (existingOrder)
+          throw new CheckoutError(
+            "This product has existing orders without variations. Create a new product for variations.",
+          );
+      }
+
+      // Reject a stale stock form rather than overwriting a concurrent sale.
+      const result = await tx.db.collection("products").updateOne(
+        {
+          _id: new ObjectId(_id),
+          quantity: product.quantity,
+          variations: product.variations ?? { $exists: false },
+        },
+        updateQuery,
+        { session: tx.session },
+      );
+
+      return result;
+    });
+
+    if (!updateResult.matchedCount)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Stock changed. Reopen the product and try again.",
+        },
+        { status: 409 },
+      );
 
     if (updateResult.modifiedCount === 0) {
       return NextResponse.json(
@@ -454,8 +563,14 @@ export const updateProduct = async (req: Request) => {
     console.error("Error updating product:", error);
 
     return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
-      { status: 500 },
+      {
+        success: false,
+        message:
+          error instanceof CheckoutError
+            ? error.message
+            : "Internal Server Error",
+      },
+      { status: error instanceof CheckoutError ? error.status : 500 },
     );
   }
 };
@@ -554,8 +669,14 @@ export const submitProductRating = async (req: Request) => {
     console.error("Error submitting product rating:", error);
 
     return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
-      { status: 500 },
+      {
+        success: false,
+        message:
+          error instanceof CheckoutError
+            ? error.message
+            : "Internal Server Error",
+      },
+      { status: error instanceof CheckoutError ? error.status : 500 },
     );
   }
 };
