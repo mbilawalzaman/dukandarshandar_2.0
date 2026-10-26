@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
+import { uploadImageToCloudinary } from "@/lib/cloudinaryClientUpload";
 import { authFetch } from "@/lib/authFetch";
 
 interface Product {
@@ -24,6 +25,8 @@ interface UploadProductProps {
 }
 
 const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
+  const [uploading, setUploading] = useState(false);
+  const [imagePublicId, setImagePublicId] = useState("");
   const [selectedImage, setSelectedImage] = useState<string>("");
 
   const [product, setProduct] = useState<Product>({
@@ -44,16 +47,28 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
     type: "success" | "error";
   } | null>(null);
 
-  const handleBase64 = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ): Promise<void> => {
     const file = e.target.files?.[0];
 
-    if (!file) return;
+    if (!file || uploading) return;
+    setUploading(true);
 
-    const reader = new FileReader();
+    try {
+      const image = await uploadImageToCloudinary(file);
 
-    reader.readAsDataURL(file);
-    reader.onload = () => setSelectedImage(reader.result as string);
-    reader.onerror = (error) => console.error("Error:", error);
+      setSelectedImage(image.url);
+      setImagePublicId(image.publicId);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      setStatusMsg({
+        text: error instanceof Error ? error.message : "Image upload failed",
+        type: "error",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +77,7 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (uploading) return;
     setStatusMsg(null);
 
     if (!selectedImage) {
@@ -80,7 +96,11 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ...product, image: selectedImage }),
+          body: JSON.stringify({
+            ...product,
+            image: selectedImage,
+            images: [{ url: selectedImage, publicId: imagePublicId }],
+          }),
         });
 
         const data = await response.json();
@@ -198,12 +218,14 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
           <input
             accept="image/*"
             type="file"
+            disabled={uploading}
             id="image-upload"
-            onChange={handleBase64}
+            onChange={handleImageUpload}
             className="hidden"
           />
         </div>
 
+        {uploading && <p role="status">Uploading image…</p>}
         {selectedImage && (
           <Image
             src={selectedImage}
@@ -215,6 +237,7 @@ const UploadProduct: React.FC<UploadProductProps> = ({ onProductUpload }) => {
         )}
 
         <button
+          disabled={uploading}
           type="submit"
           className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
         >

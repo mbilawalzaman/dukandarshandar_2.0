@@ -27,6 +27,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import CategoryLoadStatus from "@/app/components/catalog/CategoryLoadStatus";
+import { uploadImageToCloudinary } from "@/lib/cloudinaryClientUpload";
 import { authFetch } from "@/lib/authFetch";
 import { useProductCategories } from "@/hooks/useProductCategories";
 import { getProductImageUrls, MAX_PRODUCT_IMAGES } from "@/lib/productImages";
@@ -65,6 +66,9 @@ export default function ProductFormModal({
 }: ProductFormModalProps): React.JSX.Element {
   const { categories } = useProductCategories();
   const [formData, setFormData] = useState<ProductFormData>(initialFormState);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const imageIds = useRef(new Map<string, string>());
+  const uploadLock = useRef(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -123,9 +127,8 @@ export default function ProductFormModal({
     }));
   };
 
-  const processFiles = (files: FileList | File[]): void => {
-    if (readOnly) return;
-    const fileArray = Array.from(files);
+  const processFiles = async (files: FileList | File[]): Promise<void> => {
+    if (readOnly || uploadLock.current || submitting) return;
     const remaining = MAX_PRODUCT_IMAGES - selectedImages.length;
 
     if (remaining <= 0) {
@@ -134,46 +137,35 @@ export default function ProductFormModal({
       return;
     }
 
-    const toAdd = fileArray.slice(0, remaining);
-    let pending = toAdd.length;
-    const newImages: string[] = [];
+    uploadLock.current = true;
+    setUploadingImages(true);
+    setErrorMsg("");
 
-    toAdd.forEach((file) => {
-      if (!file.type.startsWith("image/")) {
-        setErrorMsg("Please upload valid image files (JPEG, PNG, WebP).");
-        pending -= 1;
+    try {
+      const results = await Promise.allSettled(
+        Array.from(files).slice(0, remaining).map(uploadImageToCloudinary),
+      );
 
-        return;
-      }
+      const urls: string[] = [];
 
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMsg("Each image must be under 5MB.");
-        pending -= 1;
-
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.readAsDataURL(file);
-
-      reader.onload = () => {
-        newImages.push(reader.result as string);
-        pending -= 1;
-
-        if (pending === 0) {
-          setErrorMsg("");
-          setSelectedImages((prev) =>
-            [...prev, ...newImages].slice(0, MAX_PRODUCT_IMAGES),
+      results.forEach((result): void => {
+        if (result.status === "fulfilled") {
+          imageIds.current.set(result.value.url, result.value.publicId);
+          urls.push(result.value.url);
+        } else {
+          console.error("Product image upload failed:", result.reason);
+          setErrorMsg(
+            result.reason instanceof Error
+              ? result.reason.message
+              : "Image upload failed. Please retry.",
           );
         }
-      };
-
-      reader.onerror = () => {
-        pending -= 1;
-        setErrorMsg("Failed to read one or more image files.");
-      };
-    });
+      });
+      setSelectedImages((previous) => [...previous, ...urls]);
+    } finally {
+      uploadLock.current = false;
+      setUploadingImages(false);
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,7 +217,7 @@ export default function ProductFormModal({
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (readOnly) return;
+    if (readOnly || uploadLock.current) return;
     setErrorMsg("");
 
     const priceNum = Number(formData.price);
@@ -301,7 +293,13 @@ export default function ProductFormModal({
           quantity: isNaN(qtyNum) || qtyNum < 0 ? 0 : qtyNum,
           rating: isNaN(ratingNum) ? 5 : ratingNum,
           description: formData.description.trim(),
-          images: selectedImages,
+          images: selectedImages.map((url) => ({
+            url,
+            publicId:
+              imageIds.current.get(url) ||
+              formData.images?.find((image) => image.url === url)?.publicId ||
+              "",
+          })),
           image: selectedImages[0],
           created_by: "admin",
         }),
@@ -328,7 +326,12 @@ export default function ProductFormModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={uploadingImages || submitting ? undefined : onClose}
+      maxWidth="md"
+      fullWidth
+    >
       <DialogTitle sx={{ fontWeight: 700 }}>
         {readOnly
           ? "Product Details"
@@ -341,6 +344,11 @@ export default function ProductFormModal({
           {errorMsg && (
             <Typography color="error" variant="body2" sx={{ mb: 2 }}>
               {errorMsg}
+            </Typography>
+          )}
+          {uploadingImages && (
+            <Typography role="status" sx={{ mb: 2 }}>
+              Uploading images…
             </Typography>
           )}
           <Grid container spacing={2}>
@@ -680,7 +688,11 @@ export default function ProductFormModal({
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} color="inherit" disabled={submitting}>
+          <Button
+            onClick={onClose}
+            color="inherit"
+            disabled={submitting || uploadingImages}
+          >
             {readOnly ? "Close" : "Cancel"}
           </Button>
           {!readOnly && (
@@ -688,7 +700,7 @@ export default function ProductFormModal({
               type="submit"
               variant="contained"
               color="primary"
-              disabled={submitting}
+              disabled={submitting || uploadingImages}
             >
               {submitting
                 ? "Saving..."

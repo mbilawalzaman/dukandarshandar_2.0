@@ -43,14 +43,33 @@ function getStoredImages(
 }
 
 async function resolveImagesInput(
-  input: string[],
+  input: (string | ProductImage)[],
   existing: StoredProductImage[] = [],
 ): Promise<StoredProductImage[]> {
   const existingByUrl = new Map(existing.map((img) => [img.url, img]));
   const result: StoredProductImage[] = [];
 
   for (const item of input.slice(0, MAX_PRODUCT_IMAGES)) {
-    if (!item?.trim()) continue;
+    if (typeof item !== "string") {
+      if (
+        item &&
+        typeof item.url === "string" &&
+        item.url.startsWith("https://res.cloudinary.com/")
+      ) {
+        const previous = existingByUrl.get(item.url);
+
+        result.push(
+          previous ?? {
+            url: item.url,
+            publicId: typeof item.publicId === "string" ? item.publicId : "",
+          },
+        );
+      }
+
+      continue;
+    }
+
+    if (!item.trim()) continue;
 
     if (item.startsWith("data:")) {
       const uploaded = await uploadImage(item);
@@ -108,7 +127,7 @@ export const createProduct = async (req: Request) => {
       created_by,
     } = await req.json();
 
-    const imageInputs: string[] =
+    const imageInputs: (string | ProductImage)[] =
       Array.isArray(images) && images.length > 0
         ? images
         : image

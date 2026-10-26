@@ -65,3 +65,49 @@ export async function uploadVideoToCloudinary(file: File): Promise<{
     duration: uploadData.duration as number | undefined,
   };
 }
+
+/** Upload product bytes directly; only signed parameters pass through the app. */
+export async function uploadImageToCloudinary(
+  file: File,
+): Promise<{ url: string; publicId: string }> {
+  if (
+    !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)
+  )
+    throw new Error("Choose a JPEG, PNG, WebP, or GIF image.");
+  if (file.size > 5 * 1024 * 1024)
+    throw new Error("Each image must be under 5MB.");
+
+  const signedResponse = await authFetch("/api/admin/media/sign", {
+    method: "POST",
+    body: JSON.stringify({ resourceType: "image", folder: "products" }),
+  });
+
+  const signed = await signedResponse.json();
+
+  if (!signedResponse.ok || !signed.success || !signed.upload)
+    throw new Error(signed.message || "Could not start image upload");
+  const { cloudName, apiKey, timestamp, folder, signature } = signed.upload;
+  const body = new FormData();
+
+  body.append("file", file);
+  body.append("api_key", apiKey);
+  body.append("timestamp", String(timestamp));
+  body.append("folder", folder);
+  body.append("signature", signature);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: "POST", body },
+  );
+
+  const data = await response.json();
+
+  if (
+    !response.ok ||
+    typeof data.secure_url !== "string" ||
+    typeof data.public_id !== "string"
+  )
+    throw new Error(data.error?.message || "Image upload failed");
+
+  return { url: data.secure_url, publicId: data.public_id };
+}
