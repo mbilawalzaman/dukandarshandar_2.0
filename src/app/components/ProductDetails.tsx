@@ -61,9 +61,9 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [variationId, setVariationId] = useState("");
 
-  const selectedVariation = product?.variations?.find(
-    (variation) => variation.id === variationId,
-  );
+  const selectedVariation = product?.variations
+    ?.filter((variation) => !variation.archived)
+    .find((variation) => variation.id === variationId);
 
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [myReview, setMyReview] = useState<ProductReview | null>(null);
@@ -443,30 +443,32 @@ const ProductDetails = () => {
                 aria-labelledby="variation-label"
                 sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}
               >
-                {product.variations?.map((variation) => (
-                  <Button
-                    key={variation.id}
-                    variant={
-                      variationId === variation.id ? "contained" : "outlined"
-                    }
-                    aria-pressed={variationId === variation.id}
-                    disabled={variation.quantity <= 0}
-                    onClick={() => {
-                      setVariationId(variation.id);
-                      setQuantity(1);
-                    }}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      whiteSpace: "normal",
-                      overflowWrap: "anywhere",
-                      maxWidth: "100%",
-                    }}
-                  >
-                    {variation.name}
-                    {variation.quantity <= 0 ? " — Out of stock" : ""}
-                  </Button>
-                ))}
+                {product.variations
+                  ?.filter((variation) => !variation.archived)
+                  .map((variation) => (
+                    <Button
+                      key={variation.id}
+                      variant={
+                        variationId === variation.id ? "contained" : "outlined"
+                      }
+                      aria-pressed={variationId === variation.id}
+                      disabled={variation.quantity <= 0}
+                      onClick={() => {
+                        setVariationId(variation.id);
+                        setQuantity(1);
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        whiteSpace: "normal",
+                        overflowWrap: "anywhere",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {variation.name}
+                      {variation.quantity <= 0 ? " — Out of stock" : ""}
+                    </Button>
+                  ))}
               </Box>
               {selectedVariation && (
                 <Typography

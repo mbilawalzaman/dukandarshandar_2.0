@@ -1,6 +1,7 @@
 import type { ProductImage } from "@/lib/productImages";
 
 export interface ProductVariation {
+  archived?: boolean;
   id: string;
   name: string;
   quantity: number;

@@ -58,6 +58,7 @@ export async function reserveOrderStock(
               variations: {
                 $elemMatch: {
                   id: item.variationId,
+                  archived: { $ne: true },
                   quantity: { $gte: item.quantity },
                 },
               },
@@ -94,6 +95,22 @@ export async function releaseOrderStock(
   if (!hasReservedStock(order)) return;
   const lines = normalizeCartItems(order.items);
 
+  const products = await tx.db
+    .collection("products")
+    .find(
+      { _id: { $in: lines.map((item) => new ObjectId(item._id)) } },
+      { session: tx.session, projection: { variations: 1 } },
+    )
+    .toArray();
+
+  const archivedKeys = new Set(
+    products.flatMap((product) =>
+      ((product.variations ?? []) as Array<{ id: string; archived?: boolean }>)
+        .filter((variation) => variation.archived)
+        .map((variation) => `${product._id}:${variation.id}`),
+    ),
+  );
+
   const result = await tx.db.collection("products").bulkWrite(
     lines.map((item) => ({
       updateOne: {
@@ -103,7 +120,9 @@ export async function releaseOrderStock(
         },
         update: {
           $inc: {
-            quantity: item.quantity,
+            quantity: archivedKeys.has(`${item._id}:${item.variationId}`)
+              ? 0
+              : item.quantity,
             ...(item.variationId
               ? { "variations.$.quantity": item.quantity }
               : {}),

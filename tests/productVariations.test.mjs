@@ -85,3 +85,15 @@ test('concurrent purchases cannot oversell a variation even when other variation
   assert.equal(f.store.snapshot().products[0].quantity, 3);
   assert.equal(f.store.snapshot().products[0].variations[0].quantity, 0);
 });
+
+
+test('archived variations cannot be purchased and cancellation restores only their internal stock', async () => {
+  const store = orderStore({ products: [{ _id: new ObjectId(id), status: 'active', quantity: 3, variations: [{ id: 'red', name: 'Red', quantity: 1, archived: true }, { id: 'blue', name: 'Blue', quantity: 3 }] }] });
+  const load = createLoader({ '@/lib/mongodb': Promise.resolve(store.client), '@/services/promotionService': { invalidatePromotionCache() {} } });
+  const f = load('src/lib/orderTransaction.ts');
+  const items = [{ _id: id, variationId: 'red', quantity: 1 }];
+  await assert.rejects(f.withOrderTransaction(tx => f.reserveOrderStock(tx, items)));
+  await f.withOrderTransaction(tx => f.releaseOrderStock(tx, { stock_reserved: true, items }));
+  assert.equal(store.snapshot().products[0].quantity, 3);
+  assert.equal(store.snapshot().products[0].variations[0].quantity, 2);
+});

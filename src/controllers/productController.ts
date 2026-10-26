@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { ObjectId } from "mongodb";
 
+import type { ProductVariation } from "@/types/apps/productTypes";
 import { normalizeProductVariations } from "@/lib/productVariations";
 import { withOrderTransaction } from "@/lib/orderTransaction";
 
@@ -425,16 +426,6 @@ export const updateProduct = async (req: Request) => {
           updateFields.variations ?? product.variations,
         );
 
-        const previous = normalizeProductVariations(product.variations);
-
-        if (
-          previous.some(
-            (variation) => !variations.some((next) => next.id === variation.id),
-          )
-        )
-          throw new Error(
-            "Existing variations must be kept for order restocking; set their stock to zero instead",
-          );
         updateFields.variations = variations;
         if (variations.length)
           updateFields.quantity = variations.reduce(
@@ -501,6 +492,53 @@ export const updateProduct = async (req: Request) => {
     }
 
     const updateResult = await withOrderTransaction(async (tx) => {
+      if (Array.isArray(updateFields.variations)) {
+        const next = normalizeProductVariations(updateFields.variations);
+
+        const previous = (product.variations ?? []) as ProductVariation[];
+
+        const removed = previous.filter(
+          (variation) => !next.some((entry) => entry.id === variation.id),
+        );
+
+        const referenced = removed.length
+          ? await tx.db
+              .collection("orders")
+              .find(
+                {
+                  items: {
+                    $elemMatch: {
+                      _id,
+                      variationId: { $in: removed.map((entry) => entry.id) },
+                    },
+                  },
+                  status: { $nin: ["cancelled", "delivered"] },
+                },
+                { session: tx.session, projection: { items: 1 } },
+              )
+              .toArray()
+          : [];
+
+        const referencedIds = new Set(
+          referenced.flatMap((order) =>
+            (order.items as Array<{ _id: string; variationId?: string }>)
+              .filter((item) => item._id === _id)
+              .map((item) => item.variationId),
+          ),
+        );
+
+        const archived = removed
+          .filter((entry) => referencedIds.has(entry.id))
+          .map((entry) => ({ ...entry, archived: true }));
+
+        updateQuery.$set.variations = [...next, ...archived];
+        // Removing the last option leaves the product sold out until new stock is entered.
+        updateQuery.$set.quantity = next.reduce(
+          (sum, entry) => sum + entry.quantity,
+          0,
+        );
+      }
+
       if (
         !product.variations?.length &&
         Array.isArray(updateFields.variations) &&

@@ -105,8 +105,9 @@ export default function ProductFormModal({
         image: existingImages[0] || productToEdit.image || "",
         images: productToEdit.images,
         variations:
-          productToEdit.variations?.map((variation) => ({ ...variation })) ??
-          [],
+          productToEdit.variations
+            ?.filter((variation) => !variation.archived)
+            .map((variation) => ({ ...variation })) ?? [],
         featured: Boolean(productToEdit.featured),
       });
       setSelectedImages(existingImages);
@@ -495,8 +496,8 @@ export default function ProductFormModal({
               <Typography variant="subtitle1">Variations</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Each variation has separate stock. Price and images are shared.
-                Keep existing variations for restocking; set stock to zero to
-                mark them sold out.
+                Removed variations used by active orders are archived for safe
+                restocking.
               </Typography>
               {(formData.variations ?? []).map((variation, index) => (
                 <Box
@@ -535,24 +536,21 @@ export default function ProductFormModal({
                       }))
                     }
                   />
-                  {!readOnly &&
-                    !productToEdit?.variations?.some(
-                      (entry) => entry.id === variation.id,
-                    ) && (
-                      <IconButton
-                        aria-label="Remove variation"
-                        onClick={() =>
-                          setFormData((previous) => ({
-                            ...previous,
-                            variations: previous.variations?.filter(
-                              (entry) => entry.id !== variation.id,
-                            ),
-                          }))
-                        }
-                      >
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    )}
+                  {!readOnly && (
+                    <IconButton
+                      aria-label="Remove variation"
+                      onClick={() =>
+                        setFormData((previous) => ({
+                          ...previous,
+                          variations: previous.variations?.filter(
+                            (entry) => entry.id !== variation.id,
+                          ),
+                        }))
+                      }
+                    >
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  )}
                 </Box>
               ))}
               {!readOnly && (formData.variations?.length ?? 0) < 50 && (

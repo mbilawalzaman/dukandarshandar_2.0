@@ -15,7 +15,7 @@ function matches(row, query) {
     const actual = values.length === 1 ? values[0] : values;
     if (value === null) return actual == null;
     if (value && typeof value === 'object' && !(value instanceof ObjectId) && !(value instanceof Date)) {
-      return Object.entries(value).every(([op,v]) => ({ $exists: () => (actual !== undefined) === v, $elemMatch: () => Array.isArray(actual) && actual.some(entry => matches(entry, v)), $gte: () => actual >= v, $ne: () => !equal(actual,v), $nin: () => !v.includes(actual), $in: () => v.includes(actual) }[op]?.() ?? false));
+      return Object.entries(value).every(([op,v]) => ({ $exists: () => (actual !== undefined) === v, $elemMatch: () => Array.isArray(actual) && actual.some(entry => matches(entry, v)), $gte: () => actual >= v, $ne: () => !equal(actual,v), $nin: () => !v.includes(actual), $in: () => v.some(entry => equal(actual, entry)) }[op]?.() ?? false));
     }
     return Array.isArray(actual) ? actual.some(entry => equal(entry, value)) : equal(actual,value);
   });
@@ -26,6 +26,7 @@ module.exports = function orderStore(initial) {
     rows[name] ||= [];
     const find = q => rows[name].find(r => matches(r,q));
     return {
+      find(q) { return { toArray: async () => clone(rows[name].filter(row => matches(row, q))) }; },
       async findOne(q) { return clone(find(q) || null); },
       async updateOne(q, update) {
         const row = find(q); if (!row) return { matchedCount: 0, modifiedCount: 0 };

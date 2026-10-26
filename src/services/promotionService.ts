@@ -829,7 +829,8 @@ export async function quoteCart(params: QuoteCartParams): Promise<CartQuote> {
       : [];
 
     const variation = variations.find(
-      (entry: { id: string }) => entry.id === item.variationId,
+      (entry: { id: string; archived?: boolean }) =>
+        entry.id === item.variationId && !entry.archived,
     );
 
     if (
