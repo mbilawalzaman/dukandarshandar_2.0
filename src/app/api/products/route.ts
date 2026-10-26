@@ -12,7 +12,12 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get("maxPrice");
 
   const result = await fetchProductsPaginated({
-    includeInactive: getAuthUser(req)?.role === "admin",
+    includeInactive:
+      getAuthUser(req)?.role === "admin" &&
+      searchParams.get("view") !== "storefront",
+    stockFirst:
+      searchParams.get("view") === "storefront" ||
+      getAuthUser(req)?.role !== "admin",
     page,
     limit,
     search: searchParams.get("search") || undefined,

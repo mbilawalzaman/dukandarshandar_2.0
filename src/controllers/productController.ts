@@ -614,6 +614,7 @@ type ProductQueryOptions = {
   sortBy?: string;
   stock?: string;
   includeInactive?: boolean;
+  stockFirst?: boolean;
 };
 
 function buildProductFilter(options: ProductQueryOptions) {
@@ -708,13 +709,31 @@ export const fetchProductsPaginated = async (
       lowStockCount,
       outOfStockCount,
     ] = await Promise.all([
-      db
-        .collection("products")
-        .find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
+      options.stockFirst
+        ? db
+            .collection("products")
+            .aggregate([
+              { $match: filter },
+              {
+                $set: {
+                  _stockPriority: {
+                    $cond: [{ $gt: [{ $ifNull: ["$quantity", 0] }, 0] }, 0, 1],
+                  },
+                },
+              },
+              { $sort: { _stockPriority: 1, ...sort, _id: 1 } },
+              { $skip: skip },
+              { $limit: limit },
+              { $unset: "_stockPriority" },
+            ])
+            .toArray()
+        : db
+            .collection("products")
+            .find(filter)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .toArray(),
       db.collection("products").countDocuments(filter),
       db
         .collection("products")
@@ -774,7 +793,7 @@ export const getTopRatedProducts = async (limit: number = 8) => {
 
     return await db
       .collection("products")
-      .find(ACTIVE_PRODUCT_FILTER)
+      .find({ ...ACTIVE_PRODUCT_FILTER, quantity: { $gt: 0 } })
       .sort({ rating: -1 })
       .limit(count)
       .toArray();

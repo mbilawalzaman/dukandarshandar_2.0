@@ -79,6 +79,7 @@ export default function ProductList({
       setLoading(true);
 
       const params = new URLSearchParams({
+        view: "storefront",
         page: String(page),
         limit: String(perPage),
       });
