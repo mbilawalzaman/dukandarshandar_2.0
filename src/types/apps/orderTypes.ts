@@ -58,6 +58,8 @@ export type OrderType = {
     orderStatus?: string;
     statusHistory?: Array<Record<string, unknown>>;
   };
+  safepay_tracker?: string | null;
+  paid_at?: string;
   items: OrderItemType[];
 };
 

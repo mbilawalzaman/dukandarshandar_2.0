@@ -39,6 +39,9 @@ import {
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import ShippingLabelModal from "../../components/admin/orders/ShippingLabelModal";
+import OrderDetailsModal from "../../components/admin/orders/OrderDetailsModal";
+import type { OrderType } from "@/types/apps/orderTypes";
+import type { DropdownItem } from "../../components/ui/Dropdown";
 import ConfirmDeleteModal from "../../components/admin/ConfirmDeleteModal";
 import PostExBookingModal from "@/components/admin/orders/PostExBookingModal";
 import BulkPostExBookingModal from "@/components/admin/orders/BulkPostExBookingModal";
@@ -157,6 +160,23 @@ export default function AdminOrdersPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const syncSearchFromUrl = (): void => {
+      const search =
+        new URLSearchParams(window.location.search).get("search") ?? "";
+
+      setSearchTerm(search);
+      setDebouncedSearch(search);
+      setPage(0);
+    };
+
+    syncSearchFromUrl();
+    window.addEventListener("popstate", syncSearchFromUrl);
+
+    return () => window.removeEventListener("popstate", syncSearchFromUrl);
+  }, []);
+
   const [total, setTotal] = useState(0);
 
   const [summary, setSummary] = useState<OrderSummary>({
@@ -175,6 +195,11 @@ export default function AdminOrdersPage() {
     useState<Order | null>(null);
 
   const [labelModalOpen, setLabelModalOpen] = useState(false);
+
+  const [selectedOrderForDetails, setSelectedOrderForDetails] =
+    useState<Order | null>(null);
+
+  const [orderDetailsModalOpen, setOrderDetailsModalOpen] = useState(false);
 
   const [selectedOrderForPostex, setSelectedOrderForPostex] =
     useState<Order | null>(null);
@@ -204,6 +229,49 @@ export default function AdminOrdersPage() {
   const handleOpenLabelModal = (order: Order) => {
     setSelectedOrderForLabel(order);
     setLabelModalOpen(true);
+  };
+
+  const handleViewOrderDetails = (order: Order) => {
+    setSelectedOrderForDetails(order);
+    setOrderDetailsModalOpen(true);
+  };
+
+  const getOrderExtraActions = (order: Order): DropdownItem<Order>[] => {
+    const st = (order.status || "").toLowerCase();
+    const isCancelled = st === "cancelled" || st === "payment_failed";
+
+    const canPrint =
+      st === "ready_to_ship" || st === "shipped" || st === "delivered";
+
+    const hasTracking = Boolean(order.postexDetails?.trackingNumber);
+
+    const actions: DropdownItem<Order>[] = [];
+
+    if (canPrint) {
+      actions.push({
+        label: "Print Shipping Label",
+        icon: <PrintIcon fontSize="small" sx={{ color: "#d97706" }} />,
+        onClick: (ord) => handleOpenLabelModal(ord),
+      });
+    }
+
+    if (!isCancelled && !hasTracking) {
+      actions.push({
+        label: "Book with PostEx",
+        icon: <LocalShippingIcon fontSize="small" sx={{ color: "#2563eb" }} />,
+        onClick: (ord) => handleOpenPostexModal(ord),
+      });
+    }
+
+    if (hasTracking && st !== "cancelled" && st !== "delivered") {
+      actions.push({
+        label: "PostEx Shipper Advice",
+        icon: <SupportAgentIcon fontSize="small" sx={{ color: "#d97706" }} />,
+        onClick: (ord) => handleOpenShipperAdviceModal(ord),
+      });
+    }
+
+    return actions;
   };
 
   const handleOpenPostexModal = (order: Order) => {
@@ -747,6 +815,12 @@ export default function AdminOrdersPage() {
       minWidth: 85,
       format: (val) => (val ? formatDate(String(val)) : "N/A"),
     },
+    {
+      id: "actions",
+      label: "Actions",
+      minWidth: 100,
+      align: "center",
+    },
   ];
 
   const pendingCount = summary.statusCounts?.pending ?? 0;
@@ -1004,6 +1078,9 @@ export default function AdminOrdersPage() {
         data={filteredOrders}
         searchPlaceholder="Search by customer name..."
         loading={loading}
+        onView={handleViewOrderDetails}
+        extraActions={getOrderExtraActions}
+        onDelete={(order) => handleOpenDeleteModal([order._id])}
         selectable
         selectedIds={selectedOrderIds}
         onSelectChange={setSelectedOrderIds}
@@ -1048,29 +1125,6 @@ export default function AdminOrdersPage() {
             </Button>
           </Box>
         }
-        onDelete={(row) => handleOpenDeleteModal([row._id])}
-        extraActions={(row) => {
-          const st = (row.status || "").toLowerCase();
-
-          if (st === "cancelled" || st === "payment_failed") return [];
-
-          return [
-            {
-              label: "Print Shipping Label",
-              icon: <LocalShippingIcon fontSize="small" />,
-              disabled: row.status !== "shipped",
-              onClick: () => {
-                if (row.status === "shipped") {
-                  handleOpenLabelModal(row);
-                }
-              },
-              color:
-                row.status === "shipped"
-                  ? "var(--theme-primary-main, #0284c7)"
-                  : "#94a3b8",
-            },
-          ];
-        }}
         serverPagination={{
           total: total,
           page,
@@ -1170,6 +1224,15 @@ export default function AdminOrdersPage() {
           {toast.message}
         </Alert>
       </Snackbar>
+      <OrderDetailsModal
+        open={orderDetailsModalOpen}
+        order={selectedOrderForDetails as unknown as OrderType}
+        onClose={() => setOrderDetailsModalOpen(false)}
+        onPrintLabel={(ord) => {
+          setOrderDetailsModalOpen(false);
+          handleOpenLabelModal(ord as unknown as Order);
+        }}
+      />
     </Box>
   );
 }

@@ -10,7 +10,14 @@ export interface User {
   email: string;
   password?: string;
   role: UserRole;
-  created_at?: Date;
+  phone?: string;
+  province?: string;
+  city?: string;
+  area?: string;
+  address?: string;
+  image?: string;
+  authProvider?: string;
+  created_at?: Date | string;
 }
 
 export const getUsers = async (): Promise<User[]> => {
@@ -19,7 +26,20 @@ export const getUsers = async (): Promise<User[]> => {
   const users = await db
     .collection("users")
     .find()
-    .project({ password: 0 })
+    .project({
+      name: 1,
+      email: 1,
+      role: 1,
+      phone: 1,
+      province: 1,
+      city: 1,
+      area: 1,
+      address: 1,
+      image: 1,
+      authProvider: 1,
+      created_at: 1,
+      createdAt: 1,
+    })
     .toArray();
 
   return users.map((user) => ({
@@ -27,6 +47,13 @@ export const getUsers = async (): Promise<User[]> => {
     name: user.name,
     email: user.email,
     role: user.role,
+    phone: user.phone,
+    province: user.province,
+    city: user.city,
+    area: user.area,
+    address: user.address,
+    image: user.image,
+    authProvider: user.authProvider,
     created_at: user.created_at || user.createdAt,
   })) as User[];
 };
@@ -34,12 +61,25 @@ export const getUsers = async (): Promise<User[]> => {
 export const getUserById = async (userId: string): Promise<User | null> => {
   const db = await getDb();
 
-  const user = await db
-    .collection<User>("users")
-    .findOne(
-      { _id: new ObjectId(userId) },
-      { projection: { name: 1, email: 1, role: 1, created_at: 1 } },
-    );
+  const user = await db.collection<User>("users").findOne(
+    { _id: new ObjectId(userId) },
+    {
+      projection: {
+        name: 1,
+        email: 1,
+        role: 1,
+        phone: 1,
+        province: 1,
+        city: 1,
+        area: 1,
+        address: 1,
+        image: 1,
+        authProvider: 1,
+        created_at: 1,
+        createdAt: 1,
+      },
+    },
+  );
 
   return user || null;
 };

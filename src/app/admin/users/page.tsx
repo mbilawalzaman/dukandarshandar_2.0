@@ -8,18 +8,16 @@ import { authFetch } from "@/lib/authFetch";
 
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import type { UserDetailsData } from "../../components/admin/users/UserDetailsModal";
+import UserDetailsModal from "../../components/admin/users/UserDetailsModal";
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role?: string;
-  created_at?: string;
-}
+type User = UserDetailsData;
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -48,6 +46,11 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setDetailsOpen(true);
+  };
+
   const columns: ColumnDef<User>[] = [
     { id: "name", label: "User Name", minWidth: 160 },
     { id: "email", label: "Email Address", minWidth: 200 },
@@ -71,6 +74,12 @@ export default function AdminUsersPage() {
       minWidth: 160,
       format: (val) =>
         val ? new Date(String(val)).toLocaleDateString() : "N/A",
+    },
+    {
+      id: "actions",
+      label: "Actions",
+      minWidth: 100,
+      align: "center",
     },
   ];
 
@@ -103,6 +112,13 @@ export default function AdminUsersPage() {
         searchField="name"
         searchPlaceholder="Search by user name or email..."
         loading={loading}
+        onView={handleViewUser}
+      />
+
+      <UserDetailsModal
+        open={detailsOpen}
+        user={selectedUser}
+        onClose={() => setDetailsOpen(false)}
       />
     </Box>
   );

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   Box,
@@ -27,6 +27,8 @@ import { authFetch } from "@/lib/authFetch";
 
 import type { ColumnDef } from "../../components/admin/AdminDataTable";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import OrderDetailsModal from "../../components/admin/orders/OrderDetailsModal";
+import type { DropdownItem } from "../../components/ui/Dropdown";
 import { formatDate, formatDateTime } from "@/lib/dateUtils";
 import type {
   AdminPaymentRecord,
@@ -164,6 +166,7 @@ function StatCard({
 }
 
 export default function AdminPaymentsPage() {
+  const router = useRouter();
   const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
   const [stats, setStats] = useState<AdminPaymentStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
@@ -172,6 +175,12 @@ export default function AdminPaymentsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [copiedTracker, setCopiedTracker] = useState<string | null>(null);
+
+  const [selectedOrderIdForDetails, setSelectedOrderIdForDetails] = useState<
+    string | null
+  >(null);
+
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   const fetchPayments = useCallback(async () => {
     try {
@@ -218,6 +227,38 @@ export default function AdminPaymentsPage() {
       /* clipboard unavailable */
     }
   };
+
+  const handleViewPaymentDetails = useCallback((record: AdminPaymentRecord) => {
+    setSelectedOrderIdForDetails(record._id);
+    setDetailsModalOpen(true);
+  }, []);
+
+  const getPaymentExtraActions = useCallback(
+    (record: AdminPaymentRecord): DropdownItem<AdminPaymentRecord>[] => {
+      const actions: DropdownItem<AdminPaymentRecord>[] = [
+        {
+          label: "View in Orders List",
+          icon: <OpenInNewIcon fontSize="small" sx={{ color: "#0284c7" }} />,
+          onClick: (row) => {
+            router.push(`/admin/orders?search=${row._id}`);
+          },
+        },
+      ];
+
+      if (record.safepay_tracker) {
+        actions.push({
+          label: "Copy Tracker ID",
+          icon: <ContentCopyIcon fontSize="small" />,
+          onClick: (row) => {
+            if (row.safepay_tracker) copyTracker(row.safepay_tracker);
+          },
+        });
+      }
+
+      return actions;
+    },
+    [router],
+  );
 
   const columns: ColumnDef<AdminPaymentRecord>[] = useMemo(
     () => [
@@ -309,21 +350,9 @@ export default function AdminPaymentsPage() {
       },
       {
         id: "actions",
-        label: "Order",
-        minWidth: 80,
+        label: "Actions",
+        minWidth: 100,
         align: "center",
-        format: (_val, row) => (
-          <Tooltip title={`Order …${String(row._id).slice(-8).toUpperCase()}`}>
-            <IconButton
-              size="small"
-              component={Link}
-              href="/admin/orders"
-              color="primary"
-            >
-              <OpenInNewIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-        ),
       },
     ],
     [],
@@ -483,6 +512,14 @@ export default function AdminPaymentsPage() {
         searchField="customer_name"
         searchPlaceholder="Search by customer name..."
         loading={loading}
+        onView={handleViewPaymentDetails}
+        extraActions={getPaymentExtraActions}
+      />
+
+      <OrderDetailsModal
+        open={detailsModalOpen}
+        orderId={selectedOrderIdForDetails}
+        onClose={() => setDetailsModalOpen(false)}
       />
 
       <Snackbar
