@@ -112,7 +112,7 @@ export default async function ContactPage() {
                 <Box>
                   <Typography fontWeight={700}>Location</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {deliverySettings.shopAddress || "N/A"}
+                    Lahore, Pakistan
                   </Typography>
                 </Box>
               </CardContent>
