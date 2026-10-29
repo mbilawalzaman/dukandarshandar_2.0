@@ -92,7 +92,14 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
   const effectivePrice = effectiveSalePrice ?? regularPrice;
 
-  const availableStock = Math.max(0, Number(product.quantity) || 0);
+  const totalVariationStock =
+    product.variations
+      ?.filter((v) => !v.archived)
+      .reduce((sum, v) => sum + (Number(v.quantity) || 0), 0) ?? 0;
+
+  const availableStock = product.variations?.length
+    ? totalVariationStock
+    : Math.max(0, Number(product.quantity) || 0);
 
   const cartQuantity =
     cartItems.find((item) => item._id === product._id)?.quantity ?? 0;
@@ -288,14 +295,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
 
       {/* Action Buttons */}
       <CardActions sx={{ px: 2, pb: 2, pt: 0, gap: 1 }}>
-        {!product.variations?.length && (
-          <Button
-            size="small"
-            variant="outlined"
-            color="primary"
-            fullWidth
-            disabled={outOfStock}
-            onClick={() => {
+        <Button
+          size="small"
+          variant="outlined"
+          color="primary"
+          fullWidth
+          disabled={outOfStock}
+          onClick={() => {
+            if (product.variations?.length) {
+              router.push(`/products/${product._id}`);
+            } else {
               setBuyNowCheckoutItem(
                 {
                   _id: product._id,
@@ -307,42 +316,42 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 1,
               );
               router.push("/checkout?buyNow=1");
-            }}
-            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
-          >
-            Buy Now
-          </Button>
-        )}
+            }
+          }}
+          sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
+        >
+          Buy Now
+        </Button>
         <Button
           size="small"
           variant="contained"
           color="primary"
           fullWidth
           disabled={outOfStock || cartStockLimitReached}
-          onClick={() =>
-            product.variations?.length
-              ? router.push(`/products/${product._id}`)
-              : add(
-                  {
-                    _id: product._id,
-                    name: product.name,
-                    price: effectivePrice,
-                    image: getProductThumbnail(product),
-                    category: product.category,
-                  },
-                  1,
-                  availableStock,
-                )
-          }
+          onClick={() => {
+            if (product.variations?.length) {
+              router.push(`/products/${product._id}`);
+            } else {
+              add(
+                {
+                  _id: product._id,
+                  name: product.name,
+                  price: effectivePrice,
+                  image: getProductThumbnail(product),
+                  category: product.category,
+                },
+                1,
+                availableStock,
+              );
+            }
+          }}
           sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
         >
           {outOfStock
             ? "Out of Stock"
             : cartStockLimitReached
               ? "Stock limit reached"
-              : product.variations?.length
-                ? "Choose variation"
-                : "Add to Cart"}
+              : "Add to Cart"}
         </Button>
       </CardActions>
     </Card>
