@@ -202,7 +202,9 @@ export default function FilterSidebar({
                       backgroundColor: "rgba(254, 190, 76, 0.18)",
                       fontWeight: 700,
                       color: "#92400e",
-                      "&:hover": { backgroundColor: "rgba(254, 190, 76, 0.28)" },
+                      "&:hover": {
+                        backgroundColor: "rgba(254, 190, 76, 0.28)",
+                      },
                     },
                   }}
                 >
