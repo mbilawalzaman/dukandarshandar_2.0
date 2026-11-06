@@ -284,8 +284,11 @@ export default function ProductList({
               size="small"
               sx={{ minWidth: 180, width: { xs: "100%", sm: "auto" } }}
             >
-              <InputLabel>Sort By</InputLabel>
+              <InputLabel id="product-sort-label">Sort By</InputLabel>
               <Select
+                id="product-sort"
+                labelId="product-sort-label"
+                aria-label="Sort products"
                 value={filters.sortBy}
                 label="Sort By"
                 onChange={(e) => handleFilterChange("sortBy", e.target.value)}
