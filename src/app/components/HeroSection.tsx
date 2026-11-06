@@ -140,6 +140,7 @@ export default function HeroSection({ config: propConfig }: HeroSectionProps) {
                   </Avatar>
                   <Typography
                     variant="h6"
+                    component="p"
                     sx={{
                       fontWeight: 700,
                       color: "#0f172a",

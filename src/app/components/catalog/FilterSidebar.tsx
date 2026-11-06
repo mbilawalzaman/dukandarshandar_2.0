@@ -70,6 +70,7 @@ export default function FilterSidebar({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TuneIcon sx={{ color: BRAND.navy, fontSize: 22 }} />
           <Typography
+            component="h2"
             variant="h6"
             sx={{ fontWeight: 700, color: BRAND.navy, fontSize: "1.1rem" }}
           >
@@ -107,6 +108,7 @@ export default function FilterSidebar({
           fullWidth
           size="small"
           placeholder="Search products..."
+          inputProps={{ "aria-label": "Search products" }}
           value={searchInput}
           onChange={(e) => onFilterChange("searchInput", e.target.value)}
           InputProps={{
@@ -119,6 +121,7 @@ export default function FilterSidebar({
               <InputAdornment position="end">
                 <IconButton
                   size="small"
+                  aria-label="Clear product search"
                   onClick={() => onFilterChange("searchInput", "")}
                 >
                   <ClearIcon fontSize="small" />

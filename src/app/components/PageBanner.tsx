@@ -92,6 +92,7 @@ export default function PageBanner({
       <Box sx={{ position: "relative", zIndex: 1 }}>
         <Typography
           variant="h3"
+          component="h1"
           sx={{
             fontWeight: 800,
             letterSpacing: 1,

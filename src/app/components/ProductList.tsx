@@ -151,7 +151,11 @@ export default function ProductList({
     <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
       {!hideHeader && (
         <Box sx={{ textAlign: "center", mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: BRAND.navy }}>
+          <Typography
+            component="h2"
+            variant="h4"
+            sx={{ fontWeight: 800, color: BRAND.navy }}
+          >
             {title}
           </Typography>
           {subtitle && (
@@ -265,6 +269,7 @@ export default function ProductList({
           >
             <Box>
               <Typography
+                component="h3"
                 variant="h5"
                 sx={{ fontWeight: 800, color: BRAND.navy }}
               >

@@ -264,6 +264,7 @@ export default function Navbar() {
                       </Box>
                       <Typography
                         variant="h6"
+                        component="span"
                         sx={{
                           fontWeight: 800,
                           color: "inherit",

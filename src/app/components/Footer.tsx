@@ -71,7 +71,11 @@ export default function Footer() {
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>
-            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+            <Typography
+              component="h2"
+              variant="h5"
+              sx={{ fontWeight: 800, mb: 1 }}
+            >
               Visit our website and enjoy fast shipping
             </Typography>
             <Typography
@@ -120,6 +124,7 @@ export default function Footer() {
                 {social.instagram && (
                   <IconButton
                     component="a"
+                    aria-label="Instagram"
                     href={
                       social.instagram.startsWith("http")
                         ? social.instagram
@@ -142,6 +147,7 @@ export default function Footer() {
                 {social.facebook && (
                   <IconButton
                     component="a"
+                    aria-label="Facebook"
                     href={
                       social.facebook.startsWith("http")
                         ? social.facebook
@@ -164,6 +170,7 @@ export default function Footer() {
                 {social.youtube && (
                   <IconButton
                     component="a"
+                    aria-label="YouTube"
                     href={
                       social.youtube.startsWith("http")
                         ? social.youtube
@@ -241,6 +248,7 @@ export default function Footer() {
                 type="email"
                 required
                 placeholder="Email address"
+                inputProps={{ "aria-label": "Email address" }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 size="small"

@@ -45,6 +45,7 @@ export default function TopRatedProducts({
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
       <Typography
+        component="h2"
         variant="h4"
         sx={{ textAlign: "center", mb: 4, fontWeight: 800, color: BRAND.navy }}
       >

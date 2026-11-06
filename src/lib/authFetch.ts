@@ -73,6 +73,7 @@ export async function logoutClientSession(): Promise<void> {
 export async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   if (sessionStorage.getItem(LOGOUT_GUARD_KEY) === "1") return null;
+  if (!localStorage.getItem("token")) return null;
 
   if (!refreshPromise) {
     refreshPromise = (async () => {
@@ -118,7 +119,7 @@ export async function ensureFreshAccessToken(
   const token = localStorage.getItem("token");
 
   if (!token) {
-    return refreshAccessToken();
+    return null;
   }
 
   try {
