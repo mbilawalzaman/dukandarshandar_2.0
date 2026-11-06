@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -32,6 +33,7 @@ type FirebaseContextValue = {
 const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
+  const authUnsubscribeRef = useRef<(() => void) | null>(null);
   const [ready, setReady] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,12 +50,6 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
-      try {
-        await signOut(getFirebaseAuth());
-      } catch {
-        /* ignore */
-      }
-
       setFirebaseUser(null);
       setReady(true);
 
@@ -105,24 +101,44 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    refreshFirebaseAuth();
-
-    const auth = getFirebaseAuth();
-
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-    });
-
     const onAuthChange = () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        const authWasInitialized = Boolean(authUnsubscribeRef.current);
+
+        authUnsubscribeRef.current?.();
+        authUnsubscribeRef.current = null;
+        setFirebaseUser(null);
+
+        // Sign out only if this provider already initialized Firebase Auth.
+        if (authWasInitialized) {
+          void signOut(getFirebaseAuth()).catch(() => undefined);
+        }
+
+        setReady(true);
+
+        return;
+      }
+
+      if (!authUnsubscribeRef.current) {
+        authUnsubscribeRef.current = onAuthStateChanged(
+          getFirebaseAuth(),
+          (user) => setFirebaseUser(user),
+        );
+      }
+
       setReady(false);
-      refreshFirebaseAuth();
+      void refreshFirebaseAuth();
     };
 
     window.addEventListener("authChange", onAuthChange);
     window.addEventListener("storage", onAuthChange);
+    onAuthChange();
 
     return () => {
-      unsub();
+      authUnsubscribeRef.current?.();
+      authUnsubscribeRef.current = null;
       window.removeEventListener("authChange", onAuthChange);
       window.removeEventListener("storage", onAuthChange);
     };

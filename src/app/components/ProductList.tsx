@@ -186,7 +186,12 @@ export default function ProductList({
           sx={{
             textTransform: "none",
             fontWeight: 600,
-            borderColor: "#cbd5e1",
+            color: BRAND.navy,
+            borderColor: BRAND.navy,
+            "&:hover": {
+              borderColor: BRAND.navy,
+              backgroundColor: "rgba(15, 23, 42, 0.04)",
+            },
           }}
         >
           Filters {hasActiveFilters && "• Active"}

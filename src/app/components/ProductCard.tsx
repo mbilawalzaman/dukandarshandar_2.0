@@ -178,6 +178,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               src={productImage}
               alt={product.name}
               fill
+              quality={65}
               sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 20vw"
               style={{
                 objectFit: "contain",

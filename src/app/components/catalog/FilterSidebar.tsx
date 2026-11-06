@@ -10,6 +10,7 @@ import {
   Chip,
   Divider,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
   FormControlLabel,
@@ -99,6 +100,7 @@ export default function FilterSidebar({
       {/* Live Search */}
       <Box>
         <Typography
+          component="h3"
           variant="subtitle2"
           sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}
         >
@@ -135,88 +137,95 @@ export default function FilterSidebar({
       {/* Categories with Count Badges */}
       <Box>
         <Typography
+          component="h3"
           variant="subtitle2"
           sx={{ fontWeight: 700, mb: 1, color: "#1e293b" }}
         >
           Categories
         </Typography>
         <List dense disablePadding sx={{ borderRadius: 2, overflow: "hidden" }}>
-          <ListItemButton
-            selected={category === "all"}
-            onClick={() => onFilterChange("category", "all")}
-            sx={{
-              borderRadius: 1.5,
-              mb: 0.5,
-              py: 0.75,
-              "&.Mui-selected": {
-                backgroundColor: "rgba(254, 190, 76, 0.18)",
-                fontWeight: 700,
-                color: "#92400e",
-                "&:hover": { backgroundColor: "rgba(254, 190, 76, 0.28)" },
-              },
-            }}
-          >
-            <ListItemText
-              primary="All Categories"
-              primaryTypographyProps={{
-                fontSize: "0.9rem",
-                fontWeight: category === "all" ? 700 : 500,
-              }}
-            />
-            <Chip
-              label={categoryCounts.all || 0}
-              size="small"
+          <ListItem component="li" disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              selected={category === "all"}
+              onClick={() => onFilterChange("category", "all")}
               sx={{
-                height: 20,
-                fontSize: "0.75rem",
-                backgroundColor:
-                  category === "all"
-                    ? BRAND.gold
-                    : "var(--theme-bg-default, #f1f5f9)",
+                borderRadius: 1.5,
+                py: 0.75,
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(254, 190, 76, 0.18)",
+                  fontWeight: 700,
+                  color: "#92400e",
+                  "&:hover": { backgroundColor: "rgba(254, 190, 76, 0.28)" },
+                },
               }}
-            />
-          </ListItemButton>
+            >
+              <ListItemText
+                primary="All Categories"
+                primaryTypographyProps={{
+                  fontSize: "0.9rem",
+                  fontWeight: category === "all" ? 700 : 500,
+                }}
+              />
+              <Chip
+                label={categoryCounts.all || 0}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.75rem",
+                  backgroundColor:
+                    category === "all"
+                      ? BRAND.gold
+                      : "var(--theme-bg-default, #f1f5f9)",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
 
           {categories.map((cat) => {
             const isSelected = category.toLowerCase() === cat.toLowerCase();
             const count = categoryCounts[cat] || 0;
 
             return (
-              <ListItemButton
+              <ListItem
+                component="li"
+                disablePadding
                 key={cat}
-                selected={isSelected}
-                onClick={() => onFilterChange("category", cat)}
-                sx={{
-                  borderRadius: 1.5,
-                  mb: 0.5,
-                  py: 0.75,
-                  "&.Mui-selected": {
-                    backgroundColor: "rgba(254, 190, 76, 0.18)",
-                    fontWeight: 700,
-                    color: "#92400e",
-                    "&:hover": { backgroundColor: "rgba(254, 190, 76, 0.28)" },
-                  },
-                }}
+                sx={{ mb: 0.5 }}
               >
-                <ListItemText
-                  primary={cat}
-                  primaryTypographyProps={{
-                    fontSize: "0.9rem",
-                    fontWeight: isSelected ? 700 : 500,
-                  }}
-                />
-                <Chip
-                  label={count}
-                  size="small"
+                <ListItemButton
+                  selected={isSelected}
+                  onClick={() => onFilterChange("category", cat)}
                   sx={{
-                    height: 20,
-                    fontSize: "0.75rem",
-                    backgroundColor: isSelected
-                      ? BRAND.gold
-                      : "var(--theme-bg-default, #f1f5f9)",
+                    borderRadius: 1.5,
+                    py: 0.75,
+                    "&.Mui-selected": {
+                      backgroundColor: "rgba(254, 190, 76, 0.18)",
+                      fontWeight: 700,
+                      color: "#92400e",
+                      "&:hover": { backgroundColor: "rgba(254, 190, 76, 0.28)" },
+                    },
                   }}
-                />
-              </ListItemButton>
+                >
+                  <ListItemText
+                    primary={cat}
+                    primaryTypographyProps={{
+                      fontSize: "0.9rem",
+                      fontWeight: isSelected ? 700 : 500,
+                    }}
+                  />
+                  <Chip
+                    label={count}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.75rem",
+                      backgroundColor: isSelected
+                        ? BRAND.gold
+                        : "var(--theme-bg-default, #f1f5f9)",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
             );
           })}
         </List>
@@ -225,6 +234,7 @@ export default function FilterSidebar({
       {/* Price Range & Quick Presets */}
       <Box>
         <Typography
+          component="h3"
           variant="subtitle2"
           sx={{ fontWeight: 700, mb: 1.5, color: "#1e293b" }}
         >
@@ -281,6 +291,7 @@ export default function FilterSidebar({
       {/* Availability */}
       <Box>
         <Typography
+          component="h3"
           variant="subtitle2"
           sx={{ fontWeight: 700, mb: 0.5, color: "#1e293b" }}
         >
