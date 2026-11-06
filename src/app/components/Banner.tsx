@@ -139,6 +139,7 @@ const Banner = ({
     afterChange: (index: number) => setCurrentSlide(index),
     appendDots: (dots: React.ReactNode) => (
       <Box
+        component="ul"
         sx={{
           position: "absolute",
           bottom: "16px",
@@ -146,6 +147,9 @@ const Banner = ({
           display: "flex",
           justifyContent: "center",
           zIndex: 10,
+          listStyle: "none",
+          m: 0,
+          p: 0,
         }}
       >
         {dots}

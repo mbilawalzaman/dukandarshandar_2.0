@@ -40,7 +40,7 @@ export default function PriceTag({
         sx={{
           fontWeight: 800,
           fontSize: s.main,
-          color: onSale ? "#dc2626" : "#0f172a",
+          color: onSale ? "#b91c1c" : "#0f172a",
           lineHeight: 1.2,
         }}
       >
@@ -51,7 +51,7 @@ export default function PriceTag({
           component="span"
           sx={{
             fontSize: s.strike,
-            color: "#94a3b8",
+            color: "#64748b",
             textDecoration: "line-through",
             fontWeight: 500,
           }}

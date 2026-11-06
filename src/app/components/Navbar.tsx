@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 import {
   AppBar,
@@ -232,12 +233,14 @@ export default function Navbar() {
                   }}
                 >
                   {storeLogo ? (
-                    <Box
-                      component="img"
+                    <Image
                       src={storeLogo}
                       alt={storeName}
-                      sx={{
-                        height: { xs: 36, md: 44 },
+                      width={280}
+                      height={280}
+                      style={{
+                        height: "clamp(36px, 3vw, 44px)",
+                        width: "auto",
                         maxWidth: 180,
                         objectFit: "contain",
                       }}
@@ -584,11 +587,17 @@ export default function Navbar() {
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {storeLogo ? (
-              <Box
-                component="img"
+              <Image
                 src={storeLogo}
                 alt="Store Logo"
-                sx={{ height: 32, maxWidth: 140, objectFit: "contain" }}
+                width={280}
+                height={280}
+                style={{
+                  height: 32,
+                  width: "auto",
+                  maxWidth: 140,
+                  objectFit: "contain",
+                }}
               />
             ) : (
               <>

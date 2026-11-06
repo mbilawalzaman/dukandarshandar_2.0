@@ -323,7 +323,17 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               router.push("/checkout?buyNow=1");
             }
           }}
-          sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600 }}
+          sx={{
+            textTransform: "none",
+            borderRadius: 2,
+            fontWeight: 600,
+            color: BRAND.navy,
+            borderColor: BRAND.navy,
+            "&:hover": {
+              borderColor: BRAND.navy,
+              backgroundColor: "rgba(15, 23, 42, 0.04)",
+            },
+          }}
         >
           Buy Now
         </Button>
