@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 import {
   Card,
@@ -91,6 +92,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         : null;
 
   const effectivePrice = effectiveSalePrice ?? regularPrice;
+  const productImage = getProductThumbnail(product);
 
   const totalVariationStock =
     product.variations
@@ -169,18 +171,21 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             sx={{ position: "absolute", top: 10, left: 10, zIndex: 1 }}
           />
         )}
-        <Box
-          component="img"
-          className="product-img"
-          src={getProductThumbnail(product)}
-          alt={product.name}
-          sx={{
-            maxHeight: "100%",
-            maxWidth: "100%",
-            objectFit: "contain",
-            transition: "transform 0.3s ease",
-          }}
-        />
+        <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+          {productImage && (
+            <Image
+              className="product-img"
+              src={productImage}
+              alt={product.name}
+              fill
+              sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 20vw"
+              style={{
+                objectFit: "contain",
+                transition: "transform 0.3s ease",
+              }}
+            />
+          )}
+        </Box>
         {outOfStock && (
           <Chip
             label="Out of Stock"

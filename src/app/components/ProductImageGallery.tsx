@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 
+import Image from "next/image";
+
 import { Box, IconButton } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -19,7 +21,10 @@ export default function ProductImageGallery({
   alt,
   fallback = "",
 }: ProductImageGalleryProps) {
-  const galleryImages = images.length > 0 ? images : [fallback];
+  const galleryImages = (images.length > 0 ? images : [fallback]).filter(
+    Boolean,
+  );
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [thumbStart, setThumbStart] = useState(0);
 
@@ -43,6 +48,7 @@ export default function ProductImageGallery({
     <Box sx={{ width: "100%" }}>
       <Box
         sx={{
+          position: "relative",
           width: "100%",
           aspectRatio: "1 / 1",
           maxHeight: 480,
@@ -55,12 +61,15 @@ export default function ProductImageGallery({
           justifyContent: "center",
         }}
       >
-        <Box
-          component="img"
-          src={galleryImages[activeIndex]}
-          alt={alt}
-          sx={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
+        {galleryImages[activeIndex] && (
+          <Image
+            src={galleryImages[activeIndex]}
+            alt={alt}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            style={{ objectFit: "contain" }}
+          />
+        )}
       </Box>
 
       {galleryImages.length > 1 && (
@@ -89,6 +98,7 @@ export default function ProductImageGallery({
                       flex: "0 0 calc(20% - 8px)",
                       minWidth: 56,
                       aspectRatio: "1 / 1",
+                      position: "relative",
                       borderRadius: 1,
                       overflow: "hidden",
                       border: selected
@@ -99,16 +109,12 @@ export default function ProductImageGallery({
                       transition: "border-color 0.15s ease",
                     }}
                   >
-                    <Box
-                      component="img"
+                    <Image
                       src={src}
                       alt={`${alt} thumbnail ${index + 1}`}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
+                      fill
+                      sizes="(max-width: 768px) 20vw, 96px"
+                      style={{ objectFit: "cover", display: "block" }}
                     />
                   </Box>
                 );
