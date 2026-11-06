@@ -352,10 +352,23 @@ export default function ProductList({
             </Box>
           )}
 
-          <Grid container spacing={3}>
+          <Grid
+            container
+            component="ul"
+            spacing={3}
+            sx={{ listStyle: "none", m: 0, p: 0 }}
+          >
             {loading ? (
               [...Array(6)].map((_, index) => (
-                <Grid item xs={12} sm={6} md={6} lg={4} key={index}>
+                <Grid
+                  item
+                  component="li"
+                  xs={12}
+                  sm={6}
+                  md={6}
+                  lg={4}
+                  key={index}
+                >
                   <Skeleton
                     variant="rectangular"
                     height={320}
@@ -364,7 +377,7 @@ export default function ProductList({
                 </Grid>
               ))
             ) : products.length === 0 ? (
-              <Grid item xs={12}>
+              <Grid item component="li" xs={12}>
                 <Paper
                   sx={{
                     p: 6,
@@ -400,7 +413,15 @@ export default function ProductList({
               </Grid>
             ) : (
               products.map((product) => (
-                <Grid item xs={12} sm={6} md={6} lg={4} key={product._id}>
+                <Grid
+                  item
+                  component="li"
+                  xs={12}
+                  sm={6}
+                  md={6}
+                  lg={4}
+                  key={product._id}
+                >
                   <ProductCard product={product} />
                 </Grid>
               ))

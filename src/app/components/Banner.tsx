@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import Link from "next/link";
 
@@ -28,6 +28,7 @@ const Banner = ({
   bannerMode = "image_slider",
   images,
 }: BannerProps) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
   const { settings: storeDeliverySettings } = useDeliverySettings();
   const storeName = storeDeliverySettings.shopName || "";
 
@@ -122,15 +123,20 @@ const Banner = ({
     return null;
   }
 
+  const visibleSlideIndex = Math.min(currentSlide, activeBanners.length - 1);
+
   const settings = {
     dots: true,
-    infinite: activeBanners.length > 1,
+    // Avoid Slick's cloned slides, which can leave focusable links inside
+    // slides that it marks aria-hidden.
+    infinite: false,
     speed: 600,
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: activeBanners.length > 1,
     autoplaySpeed: 4500,
     pauseOnHover: true,
+    afterChange: (index: number) => setCurrentSlide(index),
     appendDots: (dots: React.ReactNode) => (
       <Box
         sx={{
@@ -203,6 +209,7 @@ const Banner = ({
                 <Box
                   component={Link}
                   href={goToLink}
+                  tabIndex={index === visibleSlideIndex ? 0 : -1}
                   target={isExternal ? "_blank" : undefined}
                   rel={isExternal ? "noopener noreferrer" : undefined}
                   sx={{ display: "block", textDecoration: "none" }}

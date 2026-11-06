@@ -35,14 +35,76 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getDeliverySettings().catch(() => null);
+
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://www.dukandarshandar.com"
+  ).replace(/\/+$/, "");
+
+  const storeName =
+    settings?.shopName?.trim() ||
+    process.env.NEXT_PUBLIC_STORE_NAME ||
+    "Dukandar Shandar";
+
+  const sameAsCandidates = [
+    settings?.socialLinks?.instagram,
+    settings?.socialLinks?.facebook,
+    settings?.socialLinks?.youtube,
+    process.env.DARAZ_STORE_URL,
+  ];
+
+  const sameAs = sameAsCandidates.filter((url): url is string => {
+    if (!url) return false;
+
+    try {
+      return new URL(url).protocol === "https:";
+    } catch {
+      return false;
+    }
+  });
+
+  const logoCandidate = settings?.storeLogo;
+  let logoUrl = `${siteUrl}/icon.png`;
+
+  if (logoCandidate) {
+    try {
+      if (new URL(logoCandidate).protocol === "https:") logoUrl = logoCandidate;
+    } catch {
+      // Use the app's actual logo when no valid absolute HTTPS store logo is configured.
+    }
+  }
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    "@id": `${siteUrl}/#organization`,
+    name: storeName,
+    url: siteUrl,
+    logo: logoUrl,
+    ...(sameAs.length ? { sameAs } : {}),
+  };
+
+  /*
+   * Use only HTTPS URLs from the store's configured social profiles and the
+   * optional official Daraz URL; never publish guessed profile URLs.
+   */
+  const schemaJson = JSON.stringify(organizationSchema).replace(
+    /</g,
+    "\\u003c",
+  );
+
   return (
     <html lang="en">
       <body className={`${poppins.variable} antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: schemaJson }}
+        />
         <ThemeRegistry>
           <AppShell>{children}</AppShell>
         </ThemeRegistry>

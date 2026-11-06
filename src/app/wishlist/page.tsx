@@ -84,9 +84,22 @@ export default function WishlistPage() {
           </Button>
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Grid
+          container
+          component="ul"
+          spacing={3}
+          sx={{ listStyle: "none", m: 0, p: 0 }}
+        >
           {visibleProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
+            <Grid
+              item
+              component="li"
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              key={product._id}
+            >
               <ProductCard product={product} />
             </Grid>
           ))}

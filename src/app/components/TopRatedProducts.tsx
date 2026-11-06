@@ -51,11 +51,17 @@ export default function TopRatedProducts({
       >
         Top Searches & Highly Rated
       </Typography>
-      <Grid container spacing={3}>
+      <Grid
+        container
+        component="ul"
+        spacing={3}
+        sx={{ listStyle: "none", m: 0, p: 0 }}
+      >
         {loading
           ? [...Array(count)].map((_, index) => (
               <Grid
                 item
+                component="li"
                 xs={12}
                 sm={6}
                 md={4}
@@ -72,6 +78,7 @@ export default function TopRatedProducts({
           : products.map((product) => (
               <Grid
                 item
+                component="li"
                 xs={12}
                 sm={6}
                 md={4}
