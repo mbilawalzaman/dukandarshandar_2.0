@@ -128,7 +128,7 @@ export default function BannerMediaRenderer({
       sx={{
         position: "relative",
         width: "100%",
-        height: { xs: "240px", sm: "380px", md: "500px" },
+        height: { xs: "240px", sm: "360px", md: "clamp(460px, 30vw, 620px)" },
         ...style,
       }}
     >
@@ -142,7 +142,7 @@ export default function BannerMediaRenderer({
         sizes="100vw"
         style={{
           objectFit: "cover",
-          objectPosition: "center",
+          objectPosition: "center 30%",
         }}
       />
     </Box>

@@ -22,6 +22,8 @@ import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import type {
   PageSettings,
@@ -58,6 +60,53 @@ export default function HomeTab({
   onReplaceSlideImage,
   onSavePage,
 }: HomeTabProps) {
+  const handleMoveSlide = (index: number, direction: "prev" | "next") => {
+    const targetIndex = direction === "prev" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= settings.home.banners.length) return;
+    setSettings((prev) => {
+      const newBanners = [...prev.home.banners];
+      const [movedSlide] = newBanners.splice(index, 1);
+
+      newBanners.splice(targetIndex, 0, movedSlide);
+
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          banners: newBanners.map((banner, idx) => ({
+            ...banner,
+            order: idx + 1,
+          })),
+        },
+      };
+    });
+  };
+
+  const handleMoveSlide = (index: number, direction: "prev" | "next") => {
+    const targetIndex = direction === "prev" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= settings.home.banners.length) return;
+
+    setSettings((prev) => {
+      const newBanners = [...prev.home.banners];
+      const [movedSlide] = newBanners.splice(index, 1);
+
+      newBanners.splice(targetIndex, 0, movedSlide);
+
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          banners: newBanners.map((banner, idx) => ({
+            ...banner,
+            order: idx + 1,
+          })),
+        },
+      };
+    });
+  };
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
@@ -382,14 +431,41 @@ export default function HomeTab({
                             </Button>
                           </label>
 
-                          <IconButton
-                            size="small"
-                            color="error"
-                            disabled={settings.home.banners.length <= 1}
-                            onClick={() => onRemoveSlide(slide.id)}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
                           >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
+                            <IconButton
+                              size="small"
+                              title="Move Left (Earlier in slideshow)"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveSlide(idx, "prev")}
+                            >
+                              <ArrowBackIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              title="Move Right (Later in slideshow)"
+                              disabled={
+                                idx === settings.home.banners.length - 1
+                              }
+                              onClick={() => handleMoveSlide(idx, "next")}
+                            >
+                              <ArrowForwardIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              title="Delete Slide"
+                              disabled={settings.home.banners.length <= 1}
+                              onClick={() => onRemoveSlide(slide.id)}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </CardActions>
                       </Card>
                     </Grid>

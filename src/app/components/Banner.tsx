@@ -62,7 +62,7 @@ const Banner = ({
         sx={{
           position: "relative",
           width: "100%",
-          height: { xs: 240, sm: 380, md: 480 },
+          height: { xs: 240, sm: 360, md: "clamp(460px, 30vw, 620px)" },
           cursor: goToLink ? "pointer" : "default",
         }}
       >
@@ -81,7 +81,7 @@ const Banner = ({
           width: "100%",
           overflow: "hidden",
           position: "relative",
-          minHeight: { xs: 240, sm: 380, md: 480 },
+          minHeight: { xs: 240, sm: 360, md: "clamp(460px, 30vw, 620px)" },
           backgroundColor: "#0f172a",
         }}
       >
@@ -176,7 +176,7 @@ const Banner = ({
         width: "100%",
         overflow: "hidden",
         position: "relative",
-        minHeight: { xs: 240, sm: 380, md: 480 },
+        minHeight: { xs: 240, sm: 360, md: "clamp(460px, 30vw, 620px)" },
         backgroundColor: "var(--theme-bg-default, #f8fafc)",
       }}
     >
@@ -194,7 +194,7 @@ const Banner = ({
               sx={{
                 position: "relative",
                 width: "100%",
-                height: { xs: 240, sm: 380, md: 480 },
+                height: { xs: 240, sm: 360, md: "clamp(460px, 30vw, 620px)" },
                 cursor: goToLink ? "pointer" : "default",
               }}
             >
