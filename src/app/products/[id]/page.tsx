@@ -1,3 +1,6 @@
+import { cache } from "react";
+
+import type { Metadata } from "next";
 import { ObjectId } from "mongodb";
 
 import ProductDetails from "@/app/components/ProductDetails";
@@ -6,6 +9,7 @@ import { ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
 import { getProductImageUrls } from "@/lib/productImages";
 import { getDb } from "@/lib/db";
 import { getPublicPromotions } from "@/services/promotionService";
+import { getDeliverySettings } from "@/lib/deliverySettings.server";
 import type { ProductVariation } from "@/types/apps/productTypes";
 
 type ProductForStructuredData = {
@@ -23,27 +27,132 @@ type ProductForStructuredData = {
   reviewCount?: number;
 };
 
+const getProductCached = cache(
+  async (id: string): Promise<ProductForStructuredData | null> => {
+    if (!ObjectId.isValid(id)) return null;
+
+    try {
+      const db = await getDb();
+
+      return (await db.collection("products").findOne({
+        _id: new ObjectId(id),
+        ...ACTIVE_PRODUCT_FILTER,
+      })) as ProductForStructuredData | null;
+    } catch (error) {
+      console.error("Could not load product for SEO/metadata:", error);
+
+      return null;
+    }
+  },
+);
+
+function cleanDescription(text?: string, fallback = ""): string {
+  if (!text) return fallback;
+
+  const stripped = text
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (stripped.length > 155) {
+    return `${stripped.slice(0, 152)}...`;
+  }
+
+  return stripped || fallback;
+}
+
+function getWhatsAppOgImage(url: string): string {
+  if (
+    !url ||
+    !url.includes("res.cloudinary.com") ||
+    !url.includes("/upload/")
+  ) {
+    return url;
+  }
+
+  if (url.includes("/upload/c_pad")) {
+    return url;
+  }
+
+  return url.replace("/upload/", "/upload/c_pad,b_white,w_1200,h_630/");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductCached(id);
+  const deliverySettings = await getDeliverySettings().catch(() => null);
+  const shopName = deliverySettings?.shopName?.trim() || "Dukandar Shandar";
+
+  if (!product) {
+    return {
+      title: "Product Not Found",
+      description: "The requested product is unavailable or does not exist.",
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://www.dukandarshandar.com"
+  ).replace(/\/+$/, "");
+
+  const productUrl = `${siteUrl}/products/${id}`;
+  const productName = product.name?.trim() || "Product";
+  const basePrice = Number(product.price) || 0;
+
+  const fallbackDescription = `Buy ${productName} online in Pakistan${
+    basePrice > 0 ? ` for PKR ${basePrice.toLocaleString()}` : ""
+  }. Quality stationery, craft & school supplies with fast nationwide delivery from ${shopName}.`;
+
+  const description = cleanDescription(
+    product.description,
+    fallbackDescription,
+  );
+
+  const images = [...new Set(getProductImageUrls(product))].filter((url) =>
+    /^https?:\/\//i.test(url),
+  );
+
+  const ogImages = images.slice(0, 4).map((url) => ({
+    url: getWhatsAppOgImage(url),
+    width: 1200,
+    height: 630,
+    alt: productName,
+  }));
+
+  return {
+    title: productName,
+    description,
+    alternates: {
+      canonical: productUrl,
+    },
+    openGraph: {
+      title: `${productName} | ${shopName}`,
+      description,
+      url: productUrl,
+      siteName: shopName,
+      type: "website",
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${productName} | ${shopName}`,
+      description,
+      images: images.length > 0 ? [getWhatsAppOgImage(images[0])] : [],
+    },
+  };
+}
+
 export default async function ProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  let product: ProductForStructuredData | null = null;
-
-  if (ObjectId.isValid(id)) {
-    try {
-      const db = await getDb();
-
-      product = (await db.collection("products").findOne({
-        _id: new ObjectId(id),
-        ...ACTIVE_PRODUCT_FILTER,
-      })) as ProductForStructuredData | null;
-    } catch (error) {
-      // Keep the product page available if the optional SEO lookup fails.
-      console.error("Could not load product structured data:", error);
-    }
-  }
+  const product = await getProductCached(id);
 
   let productJsonLd: Record<string, unknown> | null = null;
 
