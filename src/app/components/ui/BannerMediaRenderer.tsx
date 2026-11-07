@@ -138,7 +138,7 @@ export default function BannerMediaRenderer({
         fill
         priority={priority}
         fetchPriority={priority ? "high" : undefined}
-        quality={60}
+        quality={95}
         sizes="100vw"
         style={{
           objectFit: "cover",
