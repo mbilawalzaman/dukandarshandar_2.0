@@ -64,29 +64,6 @@ export default function HomeTab({
     const targetIndex = direction === "prev" ? index - 1 : index + 1;
 
     if (targetIndex < 0 || targetIndex >= settings.home.banners.length) return;
-    setSettings((prev) => {
-      const newBanners = [...prev.home.banners];
-      const [movedSlide] = newBanners.splice(index, 1);
-
-      newBanners.splice(targetIndex, 0, movedSlide);
-
-      return {
-        ...prev,
-        home: {
-          ...prev.home,
-          banners: newBanners.map((banner, idx) => ({
-            ...banner,
-            order: idx + 1,
-          })),
-        },
-      };
-    });
-  };
-
-  const handleMoveSlide = (index: number, direction: "prev" | "next") => {
-    const targetIndex = direction === "prev" ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= settings.home.banners.length) return;
 
     setSettings((prev) => {
       const newBanners = [...prev.home.banners];
