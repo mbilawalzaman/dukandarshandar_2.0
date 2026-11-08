@@ -35,6 +35,63 @@ import { useWishlist } from "@/app/providers/WishlistProvider";
 
 import type { ProductVariation } from "@/types/apps/productTypes";
 
+function ProductDescription({ text }: { text: string }) {
+  const lines = text.split("\n");
+
+  return (
+    <Box sx={{ mt: 2, lineHeight: 1.8 }}>
+      {lines.map((line, i) => {
+        // ## Heading line → bold, slightly larger
+        if (line.startsWith("## ")) {
+          return (
+            <Typography
+              key={i}
+              component="p"
+              sx={{
+                fontWeight: 700,
+                fontSize: "1rem",
+                mt: i === 0 ? 0 : 1.5,
+                mb: 0.5,
+              }}
+            >
+              {renderInline(line.slice(3))}
+            </Typography>
+          );
+        }
+
+        // Empty line → spacing gap
+        if (!line.trim()) {
+          return <Box key={i} sx={{ height: "0.6em" }} />;
+        }
+
+        // Normal line
+        return (
+          <Typography
+            key={i}
+            component="p"
+            variant="body1"
+            sx={{ lineHeight: 1.75 }}
+          >
+            {renderInline(line)}
+          </Typography>
+        );
+      })}
+    </Box>
+  );
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+
+    return part;
+  });
+}
+
 interface Product {
   variations?: ProductVariation[];
   _id: string;
@@ -429,13 +486,9 @@ const ProductDetails = () => {
             </Typography>
           </Box>
 
-          <Typography
-            variant="body1"
-            component="div"
-            sx={{ mt: 2, lineHeight: 1.7, whiteSpace: "pre-line" }}
-          >
-            {product.description ?? "No description available"}
-          </Typography>
+          <ProductDescription
+            text={product.description ?? "No description available"}
+          />
 
           {Boolean(product.variations?.length) && (
             <Box sx={{ mt: 3 }}>
