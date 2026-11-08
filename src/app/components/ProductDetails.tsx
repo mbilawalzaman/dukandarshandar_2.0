@@ -429,7 +429,11 @@ const ProductDetails = () => {
             </Typography>
           </Box>
 
-          <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body1"
+            component="div"
+            sx={{ mt: 2, lineHeight: 1.7, whiteSpace: "pre-line" }}
+          >
             {product.description ?? "No description available"}
           </Typography>
 

@@ -532,11 +532,13 @@ export const updateProduct = async (req: Request) => {
           .map((entry) => ({ ...entry, archived: true }));
 
         updateQuery.$set.variations = [...next, ...archived];
-        // Removing the last option leaves the product sold out until new stock is entered.
-        updateQuery.$set.quantity = next.reduce(
-          (sum, entry) => sum + entry.quantity,
-          0,
-        );
+
+        if (previous.length > 0 || next.length > 0) {
+          updateQuery.$set.quantity = next.reduce(
+            (sum, entry) => sum + entry.quantity,
+            0,
+          );
+        }
       }
 
       if (
