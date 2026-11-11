@@ -3,7 +3,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { ObjectId } from "mongodb";
 
-import ProductDetails from "@/app/components/ProductDetails";
+import ProductDetails, { type Product } from "@/app/components/ProductDetails";
 import { bestDealForProduct } from "@/lib/promotionEngine";
 import { ACTIVE_PRODUCT_FILTER } from "@/lib/checkoutValidation";
 import { getProductImageUrls } from "@/lib/productImages";
@@ -24,6 +24,7 @@ type ProductForStructuredData = {
   image?: string;
   images?: { url: string; publicId?: string }[];
   rating?: number;
+  ratings?: number[];
   reviewCount?: number;
 };
 
@@ -266,6 +267,28 @@ export default async function ProductPage({
     };
   }
 
+  const initialProduct: Product | null = product
+    ? {
+        _id: String(product._id),
+        name: product.name ?? "",
+        category: product.category ?? "",
+        price: Number(product.price) || 0,
+        discountPrice:
+          typeof product.discountPrice === "number"
+            ? product.discountPrice
+            : null,
+        quantity: Number(product.quantity) || 0,
+        rating: Number(product.rating) || 0,
+        ratings: Array.isArray(product.ratings) ? product.ratings : [],
+        image: product.image ?? "",
+        images: Array.isArray(product.images) ? product.images : [],
+        description: product.description ?? "",
+        variations: Array.isArray(product.variations)
+          ? product.variations
+          : undefined,
+      }
+    : null;
+
   return (
     <>
       {productJsonLd && (
@@ -276,7 +299,7 @@ export default async function ProductPage({
           }}
         />
       )}
-      <ProductDetails />
+      <ProductDetails initialProduct={initialProduct} />
     </>
   );
 }

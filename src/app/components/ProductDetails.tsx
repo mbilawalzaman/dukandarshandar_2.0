@@ -92,7 +92,7 @@ function renderInline(text: string): React.ReactNode[] {
   });
 }
 
-interface Product {
+export interface Product {
   variations?: ProductVariation[];
   _id: string;
   name: string;
@@ -107,14 +107,22 @@ interface Product {
   description: string;
 }
 
-const ProductDetails = () => {
+export interface ProductDetailsProps {
+  initialProduct?: Product | null;
+}
+
+const ProductDetails = ({ initialProduct }: ProductDetailsProps = {}) => {
   const { id } = useParams();
   const router = useRouter();
   const { items: cartItems, add } = useCart();
   const { productIds, toggle } = useWishlist();
   const { dealFor } = usePromotions();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const [product, setProduct] = useState<Product | null>(
+    initialProduct ?? null,
+  );
+
+  const [loading, setLoading] = useState(!initialProduct);
   const [quantity, setQuantity] = useState(1);
   const [variationId, setVariationId] = useState("");
 
@@ -125,7 +133,11 @@ const ProductDetails = () => {
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [myReview, setMyReview] = useState<ProductReview | null>(null);
   const [canReview, setCanReview] = useState(false);
-  const [averageRating, setAverageRating] = useState(0);
+
+  const [averageRating, setAverageRating] = useState(
+    initialProduct?.rating ? Number(initialProduct.rating) : 0,
+  );
+
   const [reviewCount, setReviewCount] = useState(0);
   const [draftRating, setDraftRating] = useState<number | null>(null);
   const [draftComment, setDraftComment] = useState("");
@@ -169,9 +181,16 @@ const ProductDetails = () => {
   useEffect(() => {
     if (!productId) return;
 
+    if (initialProduct && initialProduct._id === productId) {
+      void loadReviews(productId);
+
+      return;
+    }
+
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
+
         const res = await fetch(`/api/products/${productId}`);
         const data = await res.json();
 
@@ -188,8 +207,8 @@ const ProductDetails = () => {
       }
     };
 
-    fetchProductDetails();
-  }, [productId, loadReviews]);
+    void fetchProductDetails();
+  }, [productId, initialProduct, loadReviews]);
 
   const handleSubmitReview = async () => {
     if (!productId || draftRating === null) {
