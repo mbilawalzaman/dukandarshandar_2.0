@@ -389,7 +389,12 @@ const ProductDetails = () => {
         </Box>
 
         <Box>
-          <Typography variant="h4" sx={{ color: BRAND.navy }}>
+          {/* SEO: Visible H1 containing the product name — one per page */}
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ color: BRAND.navy, fontWeight: 700 }}
+          >
             {product.name}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>

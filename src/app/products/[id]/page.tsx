@@ -152,7 +152,13 @@ export default async function ProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await getProductCached(id);
+
+  const [product, deliverySettings] = await Promise.all([
+    getProductCached(id),
+    getDeliverySettings().catch(() => null),
+  ]);
+
+  const shopName = deliverySettings?.shopName?.trim() || "Dukandar Shandar";
 
   let productJsonLd: Record<string, unknown> | null = null;
 
@@ -223,6 +229,11 @@ export default async function ProductPage({
       ...(product.description ? { description: product.description } : {}),
       ...(images.length ? { image: images } : {}),
       productID: String(product._id),
+      sku: String(product._id),
+      brand: {
+        "@type": "Brand",
+        name: shopName,
+      },
       url: productUrl,
       ...(promotionsLoaded
         ? {
